@@ -1,6 +1,7 @@
 export const ELEMENTS = ['fire', 'water', 'lightning', 'wind', 'earth', 'shadow', 'light'] as const;
 export type ElementId = typeof ELEMENTS[number];
 export type Affinities = Record<ElementId, number>;
+export type Synergy = 'plasma' | 'mud';
 
 export const ELEMENT: Record<ElementId, { name: string; glyph: string; color: number; css: string }> = {
   fire: { name: 'FOGO', glyph: '♨', color: 0xff7045, css: '#ff9c65' },
@@ -33,13 +34,14 @@ export function affinityDamageBonus(affinities: Affinities): number {
   return Math.floor(totalAffinity(affinities) / 2);
 }
 
-/** Three reproducible altar offerings. An owned element stays available for focused builds. */
+/** Owned elements stay available, so a chosen pair can reach 3 + 3. */
 export function altarChoices(seed: number, roomId: number, affinities: Affinities): ElementId[] {
   let value = (seed ^ Math.imul(roomId + 1, 0x9e3779b1)) >>> 0;
   const pool = ELEMENTS.filter(id => affinities[id] < 5);
   const choices: ElementId[] = [];
-  const primary = primaryElement(affinities);
-  if (primary && affinities[primary] < 5) choices.push(primary);
+  for (const id of [...ELEMENTS].sort((a, b) => affinities[b] - affinities[a])) {
+    if (affinities[id] > 0 && affinities[id] < 5 && choices.length < 2) choices.push(id);
+  }
   for (let attempt = 0; choices.length < 3 && choices.length < pool.length && attempt < 24; attempt++) {
     value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
     const pick = pool[value % pool.length];
@@ -51,4 +53,12 @@ export function altarChoices(seed: number, roomId: number, affinities: Affinitie
 
 export function hasPureMastery(affinities: Affinities, id: ElementId): boolean {
   return affinities[id] >= 5;
+}
+
+/** First two fusion prototypes. Other pairings still use the shared hybrid attack bonus. */
+export function activeSynergy(affinities: Affinities): Synergy | null {
+  if (ELEMENTS.some(id => hasPureMastery(affinities, id))) return null;
+  if (affinities.fire >= 3 && affinities.lightning >= 3) return 'plasma';
+  if (affinities.water >= 3 && affinities.earth >= 3) return 'mud';
+  return null;
 }

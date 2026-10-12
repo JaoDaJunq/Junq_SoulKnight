@@ -3,11 +3,12 @@ import { Soundscape } from '../audio/Soundscape';
 import { BIOMES } from '../content/biomes';
 import { encounterFor, SPAWNS, type EnemyKind } from '../content/encounters';
 import { blocked, moveAroundObstacle, normalizedMovement, OBSTACLES, type EscapeStep } from '../core/arena';
-import { generateRun, parseRunSeed, type Direction, type Room } from '../core/run';
+import { FIRST_CHECKPOINT_WORLD, generateRun, parseRunSeed, STAGES_PER_WORLD, type Direction, type Room } from '../core/run';
 import { createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS, type WeaponId } from '../core/weapons';
 import { closestTarget } from '../core/targeting';
-import { altarChoices, affinityDamageBonus, ELEMENT, ELEMENTS, emptyAffinities, gainAffinity, hasPureMastery, primaryElement, totalAffinity,
+import { activeSynergy, altarChoices, affinityDamageBonus, ELEMENT, ELEMENTS, emptyAffinities, gainAffinity, hasPureMastery, primaryElement, totalAffinity,
   type Affinities, type ElementId } from '../core/affinities';
+import { emptyEquipment, energyRegen, GEAR, gearChoices, GEAR_IDS, maxEnergy, maxHealth, maxShield, type Equipment, type GearId } from '../core/equipment';
 import openingArt from '../assets/abertura.webp';
 import selectionArt from '../assets/selecao.webp';
 import roomArt from '../assets/sala-atrio.webp';
@@ -24,21 +25,29 @@ import guiWalk1 from '../assets/gui-walk1.png';
 import jaoWalk2 from '../assets/jao-walk2.png';
 import aliceWalk2 from '../assets/alice-walk2.png';
 import guiWalk2 from '../assets/gui-walk2.png';
+import jaoFire from '../assets/jao-fire.png';
+import jaoFireBack from '../assets/jao-back-fire.png';
+import jaoFireWalk1 from '../assets/jao-walk1-fire.png';
+import jaoFireWalk2 from '../assets/jao-walk2-fire.png';
+import jaoPlasma from '../assets/jao-plasma.png';
+import jaoPlasmaBack from '../assets/jao-back-plasma.png';
+import jaoPlasmaWalk1 from '../assets/jao-walk1-plasma.png';
+import jaoPlasmaWalk2 from '../assets/jao-walk2-plasma.png';
 import chaserArt from '../assets/enemy-chaser.png';
 import shooterArt from '../assets/enemy-shooter.png';
 import sentryArt from '../assets/enemy-sentry.png';
 import bruteArt from '../assets/enemy-brute.png';
 import bossArt from '../assets/enemy-boss.png';
 
-type State = 'menu' | 'selecting' | 'playing' | 'altar' | 'paused' | 'dead' | 'cleared';
+type State = 'menu' | 'selecting' | 'playing' | 'altar' | 'chest' | 'interlude' | 'paused' | 'dead' | 'cleared';
 type HeroId = 'jao' | 'alice' | 'gui';
 const HEROES: { id: HeroId; name: string; description: string }[] = [
   { id: 'jao', name: 'JÃO', description: 'O explorador de jaqueta vinho' },
   { id: 'alice', name: 'ALICE', description: 'Coragem e olhar atento' },
   { id: 'gui', name: 'GUI', description: 'O guardião de cabelos longos' },
 ];
-type Enemy = { view: Phaser.GameObjects.Container; kind: EnemyKind; x: number; y: number; hp: number; maxHp: number; speed: number; cooldown: number; windup: number; escape?: EscapeStep };
-type Bullet = { view: Phaser.GameObjects.Arc; vx: number; vy: number; life: number; damage: number };
+type Enemy = { view: Phaser.GameObjects.Container; kind: EnemyKind; x: number; y: number; hp: number; maxHp: number; speed: number; cooldown: number; windup: number; slowTimer: number; escape?: EscapeStep };
+type Bullet = { view: Phaser.GameObjects.Arc | Phaser.GameObjects.Rectangle; vx: number; vy: number; life: number; damage: number; synergy?: 'plasma' | 'mud' };
 type Coin = { view: Phaser.GameObjects.Arc; x: number; y: number };
 
 const W = 960;
@@ -53,6 +62,8 @@ export class ArenaScene extends Phaser.Scene {
   private heroX = 480;
   private heroY = 385;
   private heroHp = 5;
+  private heroShield = 0;
+  private shieldRecharge = 0;
   private hurtTimer = 0;
   private fireTimer = 0;
   private energy = MAX_ENERGY;
@@ -77,6 +88,8 @@ export class ArenaScene extends Phaser.Scene {
   private coins = 0;
   private weapon: WeaponId = 'bolt';
   private claimedAltars = new Set<number>();
+  private claimedChests = new Set<number>();
+  private equipment: Equipment = emptyEquipment();
   private affinities: Affinities = emptyAffinities();
   private attackCount = 0;
   private damageTaken = 0;
@@ -98,6 +111,7 @@ export class ArenaScene extends Phaser.Scene {
   private hud!: Phaser.GameObjects.Text;
   private affinityHud: Phaser.GameObjects.Text[] = [];
   private energyText!: Phaser.GameObjects.Text;
+  private gearHud!: Phaser.GameObjects.Text;
   private energyBar!: Phaser.GameObjects.Graphics;
   private hint!: Phaser.GameObjects.Text;
   private joyBase!: Phaser.GameObjects.Arc;
@@ -127,6 +141,8 @@ export class ArenaScene extends Phaser.Scene {
       'jao-back': jaoBack, 'alice-back': aliceBack, 'gui-back': guiBack,
       'jao-walk1': jaoWalk1, 'alice-walk1': aliceWalk1, 'gui-walk1': guiWalk1,
       'jao-walk2': jaoWalk2, 'alice-walk2': aliceWalk2, 'gui-walk2': guiWalk2,
+      'jao-fire': jaoFire, 'jao-back-fire': jaoFireBack, 'jao-walk1-fire': jaoFireWalk1, 'jao-walk2-fire': jaoFireWalk2,
+      'jao-plasma': jaoPlasma, 'jao-back-plasma': jaoPlasmaBack, 'jao-walk1-plasma': jaoPlasmaWalk1, 'jao-walk2-plasma': jaoPlasmaWalk2,
       'enemy-chaser': chaserArt, 'enemy-shooter': shooterArt, 'enemy-sentry': sentryArt,
       'enemy-brute': bruteArt, 'enemy-boss': bossArt,
     })) this.load.image(key, url);
@@ -149,6 +165,7 @@ export class ArenaScene extends Phaser.Scene {
       { fontFamily: 'Georgia, serif', fontSize: '17px', color: '#80715f', fontStyle: 'bold' }).setDepth(20));
     this.energyText = this.add.text(352, 16, '', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#cddded', fontStyle: 'bold' }).setDepth(20);
     this.energyBar = this.add.graphics().setDepth(20);
+    this.gearHud = this.add.text(351, 73, '', { fontFamily: 'Georgia, serif', fontSize: '13px', color: '#f6d5a3', backgroundColor: '#241813' }).setDepth(20);
     if (new URLSearchParams(location.search).has('debug')) {
       this.debugFps = this.add.text(740, 77, '', { fontFamily: 'monospace', fontSize: '11px', color: '#93d8c7' }).setDepth(25);
     }
@@ -201,6 +218,7 @@ export class ArenaScene extends Phaser.Scene {
     const palette = BIOMES[room?.biome ?? 'atrium'];
     const backdrop = this.add.image(480, 270, room?.biome === 'forge' ? 'room-forge' : 'room-atrium')
       .setDisplaySize(W, H).setDepth(-2);
+    if (room?.biome === 'crypt') backdrop.setTint(0xb8a6d2);
     const g = this.add.graphics();
     for (const o of room?.obstacles ?? OBSTACLES) {
       g.fillStyle(0x130b0b, 0.7); g.fillRect(o.x + 6, o.y + 9, o.w, o.h);
@@ -221,11 +239,11 @@ export class ArenaScene extends Phaser.Scene {
         g.fillStyle(open ? 0xe3ad5a : 0x743e34);
       }
     }
-    const roomName = room?.kind === 'boss' ? 'GUARDIÃO FINAL' : 'COMBATE';
-    const title = this.add.text(480, 110, room ? `${palette.name} · SALA ${String(room.id + 1).padStart(2, '0')} · ${this.cleared.has(room.id) ? 'PORTAS ABERTAS' : roomName}` : 'ÁTRIO · SALA 01',
+    const roomName = room?.kind === 'boss' ? 'GUARDIÃO' : 'COMBATE';
+    const title = this.add.text(480, 110, room ? `MUNDO ${room.world} · ${room.stage}/5 · ${palette.name} · ${this.cleared.has(room.id) ? 'PORTAS ABERTAS' : roomName}` : 'ÁTRIO · 1/5',
       { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#ffe0a2', letterSpacing: 2, backgroundColor: '#281814' }).setOrigin(0.5).setDepth(3);
     this.roomArt = [backdrop, g, title];
-    if (room && room.kind !== 'boss' && this.cleared.has(room.id) && !this.claimedAltars.has(room.id)) {
+    if (room?.reward === 'affinity' && this.cleared.has(room.id) && !this.claimedAltars.has(room.id)) {
       const altar = this.add.graphics().setDepth(6);
       altar.fillStyle(0x201713); altar.fillRect(439, 261, 82, 37);
       altar.fillStyle(0x725339); altar.fillRect(445, 254, 70, 37);
@@ -235,6 +253,16 @@ export class ArenaScene extends Phaser.Scene {
       altar.fillStyle(0xf7d188); altar.fillTriangle(480, 259, 472, 275, 488, 275);
       const prompt = this.add.text(480, 314, 'TOQUE NO ALTAR', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#ffe2a0', fontStyle: 'bold', backgroundColor: '#281814' }).setOrigin(0.5).setDepth(6);
       this.roomArt.push(altar, prompt);
+    }
+    if (room?.reward === 'gear' && this.cleared.has(room.id) && !this.claimedChests.has(room.id)) {
+      const chest = this.add.graphics().setDepth(6);
+      chest.fillStyle(0x24150f); chest.fillRect(445, 264, 76, 44);
+      chest.fillStyle(0x83502e); chest.fillRect(448, 247, 64, 47);
+      chest.lineStyle(4, 0xe0b56e); chest.strokeRect(448, 247, 64, 47);
+      chest.fillStyle(0xf2d27f); chest.fillRect(475, 251, 10, 38);
+      chest.fillStyle(0xf8e0a5); chest.fillRect(478, 265, 4, 7);
+      const prompt = this.add.text(480, 321, 'ABRIR BAÚ', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#ffe2a0', fontStyle: 'bold', backgroundColor: '#281814' }).setOrigin(0.5).setDepth(6);
+      this.roomArt.push(chest, prompt);
     }
   }
 
@@ -255,9 +283,12 @@ export class ArenaScene extends Phaser.Scene {
   private animateHero(mx: number, my: number): void {
     const moving = Math.hypot(mx, my) > 0.15;
     if (moving) this.facing = Math.abs(mx) > Math.abs(my) ? mx > 0 ? 'east' : 'west' : my < 0 ? 'north' : 'south';
-    const key = !moving || this.facing === 'south' ? this.selectedHero
+    const baseKey = !moving || this.facing === 'south' ? this.selectedHero
       : this.facing === 'north' ? `${this.selectedHero}-back`
       : `${this.selectedHero}-walk${Math.floor(this.elapsed * 8) % 2 + 1}`;
+    const form = this.selectedHero === 'jao' && activeSynergy(this.affinities) === 'plasma' ? '-plasma'
+      : this.selectedHero === 'jao' && hasPureMastery(this.affinities, 'fire') ? '-fire' : '';
+    const key = baseKey + form;
     if (this.heroSprite.texture.key !== key) {
       this.heroSprite.setTexture(key);
       const frame = this.textures.get(key).get();
@@ -274,10 +305,11 @@ export class ArenaScene extends Phaser.Scene {
     const sprite = this.add.image(0, kind === 'boss' ? -18 : -9, `enemy-${kind}`);
     sprite.setDisplaySize(sprite.width / sprite.height * height, height);
     const view = this.add.container(x, y, [shadow, sprite]).setDepth(9);
-    const hp = kind === 'boss' ? 32 : kind === 'brute' ? 6 : kind === 'sentry' ? 4 : 3;
+    const world = this.rooms[this.currentRoom]?.world ?? 1;
+    const hp = kind === 'boss' ? 26 + world * 6 : (kind === 'brute' ? 6 : kind === 'sentry' ? 4 : 3) + Math.min(3, world - 1);
     return { view, kind, x, y, hp, maxHp: hp,
       speed: kind === 'sentry' ? 0 : kind === 'boss' ? 55 : kind === 'brute' ? 48 : kind === 'shooter' ? 58 : 84,
-      cooldown: kind === 'boss' ? 1.8 : kind === 'sentry' ? 1.4 : kind === 'shooter' ? 1 : 0, windup: 0 };
+      cooldown: kind === 'boss' ? 1.8 : kind === 'sentry' ? 1.4 : kind === 'shooter' ? 1 : 0, windup: 0, slowTimer: 0 };
   }
 
   private requestMobileFullscreen(): void {
@@ -302,6 +334,7 @@ export class ArenaScene extends Phaser.Scene {
     this.storedCoins.clear(); this.coins = 0;
     this.weapon = this.selectedHero === 'jao' ? 'bolt' : this.selectedHero === 'alice' ? 'fan' : 'lance';
     this.affinities = emptyAffinities(); this.attackCount = 0; this.claimedAltars.clear(); this.damageTaken = 0;
+    this.claimedChests.clear(); this.equipment = emptyEquipment(); this.heroShield = 0; this.shieldRecharge = 0;
     this.groundCoins.forEach(coin => coin.view.destroy()); this.groundCoins = [];
     this.heroHp = 5; this.hurtTimer = 0; this.fireTimer = 0; this.energy = MAX_ENERGY; this.energyCooldown = 0; this.elapsed = 0;
     this.dashTimer = 0; this.dashCooldown = 0; this.skillCooldown = 0;
@@ -357,11 +390,15 @@ export class ArenaScene extends Phaser.Scene {
     this.hurtTimer = Math.max(0, this.hurtTimer - dt);
     this.fireTimer -= dt;
     this.energyCooldown = Math.max(0, this.energyCooldown - dt);
-    this.energy = restoreEnergy(this.energy, dt, this.energyCooldown);
+    this.energy = restoreEnergy(this.energy, dt, this.energyCooldown, maxEnergy(this.equipment), energyRegen(this.equipment));
     this.drawEnergy();
     this.dashTimer = Math.max(0, this.dashTimer - dt);
     this.dashCooldown = Math.max(0, this.dashCooldown - dt);
     this.skillCooldown = Math.max(0, this.skillCooldown - dt);
+    this.shieldRecharge = Math.max(0, this.shieldRecharge - dt);
+    if (this.shieldRecharge === 0 && this.heroShield < maxShield(this.equipment)) {
+      this.heroShield = maxShield(this.equipment); this.refreshHud();
+    }
     const space = this.consumeKey('Space'), pulseKey = this.consumeKey('KeyE'), healKey = this.consumeKey('KeyH');
     if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || space) this.dash();
     if (Phaser.Input.Keyboard.JustDown(this.keys.E) || pulseKey) this.pulse();
@@ -400,8 +437,9 @@ export class ArenaScene extends Phaser.Scene {
       const motion = enemy.kind === 'sentry' || (enemy.kind === 'boss' && enemy.windup > 0) ? 0
         : enemy.kind === 'shooter' && length < 260 && length >= 190 ? 0 : preferred;
       const radius = enemy.kind === 'boss' ? 30 : enemy.kind === 'brute' ? 20 : 15;
+      enemy.slowTimer = Math.max(0, enemy.slowTimer - dt);
       const moved = moveAroundObstacle(enemy.x, enemy.y, dx / length * motion, dy / length * motion,
-        enemy.speed * dt, radius, obstacles, enemy.escape);
+        enemy.speed * (enemy.slowTimer > 0 ? 0.55 : 1) * dt, radius, obstacles, enemy.escape);
       enemy.x = moved.x; enemy.y = moved.y; enemy.escape = moved.escape;
       enemy.view.setPosition(enemy.x, enemy.y);
       const sprite = enemy.view.list[1] as Phaser.GameObjects.Image;
@@ -448,6 +486,7 @@ export class ArenaScene extends Phaser.Scene {
       const target = this.enemies.find(e => Math.hypot(e.x - bullet.view.x, e.y - bullet.view.y) < (e.kind === 'boss' ? 37 : e.kind === 'brute' ? 26 : 21));
       if (!target) continue;
       this.removeBullet(bullet);
+      if (bullet.synergy === 'mud') target.slowTimer = 2.2;
       this.damageEnemy(target, bullet.damage);
       if (this.state !== 'playing' || this.enemies.length === 0) return;
     }
@@ -511,21 +550,24 @@ export class ArenaScene extends Phaser.Scene {
     this.bossWarning.clear();
     this.drawRoom();
     this.refreshHud();
-    if (this.rooms[this.currentRoom].kind === 'boss') { this.finish(true); return; }
-    // Toda sala não chefe revela um altar após o combate. Ele permanece até a escolha.
+    if (this.rooms[this.currentRoom].kind === 'boss') { this.finishWorld(); return; }
   }
 
   private fire(): void {
     if (this.fireTimer > 0 || this.bullets.length >= 32) return;
     const target = closestTarget({ x: this.heroX, y: this.heroY }, this.enemies, this.rooms[this.currentRoom].obstacles);
     if (!target) return;
+    if (this.weapon === 'bolt' && Math.hypot(target.x - this.heroX, target.y - this.heroY) > 310) return;
     const remaining = spendEnergy(this.energy, this.weapon);
     if (remaining === null) { this.drawEnergy(); return; }
     const dx = target.x - this.heroX, dy = target.y - this.heroY;
     const shots = createShots(this.weapon, dx, dy, affinityDamageBonus(this.affinities));
+    const synergy = activeSynergy(this.affinities);
+    if (synergy === 'plasma') for (const shot of shots) { shot.color = 0xffa3e5; shot.damage += 2; shot.vx *= 1.25; shot.vy *= 1.25; }
+    if (synergy === 'mud') for (const shot of shots) { shot.color = 0x87aa63; shot.damage += 1; }
     const weave = ELEMENTS.flatMap(id => Array<ElementId>(this.affinities[id]).fill(id));
     const infused = weave.length ? weave[this.attackCount++ % weave.length] : null;
-    if (infused) for (const shot of shots) shot.color = ELEMENT[infused].color;
+    if (infused && !synergy) for (const shot of shots) shot.color = ELEMENT[infused].color;
     this.energy = remaining;
     this.energyCooldown = ENERGY_DELAY;
     this.fireTimer = WEAPONS[this.weapon].cadence;
@@ -534,15 +576,19 @@ export class ArenaScene extends Phaser.Scene {
     if (Math.hypot(dx, dy) < 32) {
       const impact = this.add.circle(target.x, target.y, 20, shots[0].color, 0.65).setDepth(8);
       this.tweens.add({ targets: impact, alpha: 0, scale: 1.5, duration: 140, onComplete: () => impact.destroy() });
+      if (synergy === 'mud') target.slowTimer = 2.2;
       this.damageEnemy(target, shots.reduce((damage, shot) => damage + shot.damage, 0));
       return;
     }
     for (const shot of shots) {
       if (this.bullets.length >= 32) break;
-      const view = this.add.circle(this.heroX + shot.vx / Math.hypot(shot.vx, shot.vy) * 20,
-        this.heroY + shot.vy / Math.hypot(shot.vx, shot.vy) * 20, shot.radius, shot.color)
-        .setStrokeStyle(2, 0xf3ffff).setDepth(8);
-      this.bullets.push({ view, ...shot });
+      const x = this.heroX + shot.vx / Math.hypot(shot.vx, shot.vy) * 20;
+      const y = this.heroY + shot.vy / Math.hypot(shot.vx, shot.vy) * 20;
+      const view = this.weapon === 'lance'
+        ? this.add.rectangle(x, y, 12, 17, shot.color).setAngle(Math.atan2(shot.vy, shot.vx) * 180 / Math.PI + 90).setStrokeStyle(2, 0xf5e1b7).setDepth(8)
+        : this.add.rectangle(x, y, this.weapon === 'fan' ? 21 : 16, this.weapon === 'fan' ? 4 : 7, shot.color)
+          .setAngle(Math.atan2(shot.vy, shot.vx) * 180 / Math.PI).setStrokeStyle(2, 0xf3ffff).setDepth(8);
+      this.bullets.push({ view, ...shot, synergy: synergy ?? undefined });
     }
   }
 
@@ -560,7 +606,11 @@ export class ArenaScene extends Phaser.Scene {
 
   private damageHero(): void {
     if (this.hurtTimer > 0 || this.dashTimer > 0 || this.state !== 'playing') return;
-    this.hurtTimer = 1; this.heroHp--; this.damageTaken++;
+    this.hurtTimer = 1;
+    if (this.heroShield > 0) this.heroShield--;
+    else this.heroHp--;
+    this.shieldRecharge = 8;
+    this.damageTaken++;
     this.soundscape.play('hurt');
     this.cameras.main.shake(90, 0.005); this.refreshHud();
     if (this.heroHp <= 0) this.finish(false);
@@ -578,6 +628,8 @@ export class ArenaScene extends Phaser.Scene {
     if (this.state !== 'playing' || this.skillCooldown > 0) return;
     const bonus = affinityDamageBonus(this.affinities);
     const infusion = primaryElement(this.affinities);
+    const synergy = activeSynergy(this.affinities);
+    const effectColor = synergy === 'plasma' ? 0xffa3e5 : synergy === 'mud' ? 0x87aa63 : infusion ? ELEMENT[infusion].color : 0xffd4a0;
     if (this.selectedHero === 'jao') {
       const target = closestTarget({ x: this.heroX, y: this.heroY }, this.enemies, this.rooms[this.currentRoom].obstacles);
       if (!target) return;
@@ -586,7 +638,7 @@ export class ArenaScene extends Phaser.Scene {
       const dx = target.x - oldX, dy = target.y - oldY, length = Math.max(1, Math.hypot(dx, dy));
       const mastered = hasPureMastery(this.affinities, 'lightning');
       const slash = this.add.graphics().setDepth(12);
-      slash.lineStyle(mastered ? 8 : 5, mastered ? ELEMENT.lightning.color : infusion ? ELEMENT[infusion].color : 0xffd4a0, 0.9);
+      slash.lineStyle(mastered || synergy ? 8 : 5, mastered ? ELEMENT.lightning.color : effectColor, 0.9);
       slash.lineBetween(oldX, oldY, mastered ? target.x + dx / length * 43 : target.x, mastered ? target.y + dy / length * 43 : target.y);
       this.tweens.add({ targets: slash, alpha: 0, duration: 260, onComplete: () => slash.destroy() });
       if (mastered) {
@@ -596,25 +648,35 @@ export class ArenaScene extends Phaser.Scene {
           this.dashTimer = 0.22;
         }
       }
-      this.damageEnemy(target, (mastered ? 5 : 2) + bonus);
+      if (hasPureMastery(this.affinities, 'fire')) {
+        const blaze = this.add.circle(target.x, target.y, 12, 0xff9a36, 0.45).setStrokeStyle(5, 0xffdf75).setDepth(8);
+        this.tweens.add({ targets: blaze, radius: 72, alpha: 0, duration: 350, onComplete: () => blaze.destroy() });
+        for (const nearby of [...this.enemies]) {
+          if (nearby === target || Math.hypot(nearby.x - target.x, nearby.y - target.y) > 72) continue;
+          this.damageEnemy(nearby, 2 + bonus);
+        }
+      }
+      if (synergy === 'mud') target.slowTimer = 3;
+      this.damageEnemy(target, (mastered ? 5 : synergy === 'plasma' ? 5 : hasPureMastery(this.affinities, 'fire') ? 4 : 2) + bonus);
       this.refreshHud();
       return;
     }
     this.skillCooldown = 6;
     this.soundscape.play('pulse');
-    const color = infusion ? ELEMENT[infusion].color : this.selectedHero === 'alice' ? 0xd9c191 : 0xc5a17b;
+    const color = infusion || synergy ? effectColor : this.selectedHero === 'alice' ? 0xd9c191 : 0xc5a17b;
     const radius = this.selectedHero === 'alice' ? 170 : 135;
     const wave = this.add.circle(this.heroX, this.heroY, 15, color, 0.09).setStrokeStyle(4, color).setDepth(7);
     this.tweens.add({ targets: wave, radius, alpha: 0, duration: 320, onComplete: () => wave.destroy() });
     for (const enemy of [...this.enemies]) {
       if (Math.hypot(enemy.x - this.heroX, enemy.y - this.heroY) > radius) continue;
-      this.damageEnemy(enemy, (this.selectedHero === 'alice' ? 1 : 2) + bonus);
+      if (synergy === 'mud') enemy.slowTimer = 3;
+      this.damageEnemy(enemy, (this.selectedHero === 'alice' ? 1 : 2) + bonus + (synergy === 'plasma' ? 2 : 0));
     }
     this.refreshHud();
   }
 
   private buyHeal(): void {
-    if (this.state !== 'playing' || !this.cleared.has(this.currentRoom) || this.heroHp >= 5 || this.coins < 3) return;
+    if (this.state !== 'playing' || !this.cleared.has(this.currentRoom) || this.heroHp >= maxHealth(this.equipment) || this.coins < 3) return;
     this.coins -= 3; this.heroHp++; this.refreshHud();
   }
 
@@ -630,7 +692,7 @@ export class ArenaScene extends Phaser.Scene {
     card.lineStyle(5, 0xd5a35d); card.strokeRect(143, 81, 674, 385);
     card.lineStyle(2, 0xc49b64); card.lineBetween(200, 147, 760, 147);
     const heading = this.add.text(480, 119, 'ALTAR DAS AFINIDADES', { fontFamily: 'Georgia, serif', fontSize: '30px', color: '#ffe1a0', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
-    const detail = this.add.text(480, 184, `Escolha um elemento · ${totalAffinity(this.affinities)}/5 fragmentos nesta run`,
+    const detail = this.add.text(480, 184, `Escolha um elemento · ${totalAffinity(this.affinities)} fragmentos nesta run`,
       { fontFamily: 'Georgia, serif', fontSize: '17px', color: '#f4ddb7' }).setOrigin(0.5).setDepth(42);
     this.overlay = [shade, card, heading, detail];
     for (const [index, element] of altarChoices(this.seed, this.currentRoom, this.affinities).entries()) {
@@ -643,7 +705,7 @@ export class ArenaScene extends Phaser.Scene {
       plate.on('pointerdown', () => this.chooseAffinity(element));
       this.overlay.push(plate, glyph, name, level);
     }
-    const hint = this.add.text(480, 428, 'Cada escolha fortalece o ataque. Domínio puro exige 5 no mesmo elemento.',
+    const hint = this.add.text(480, 428, 'Domínio puro: 5 iguais · Plasma ou Lodo: 3 + 3.',
       { fontFamily: 'Georgia, serif', fontSize: '15px', color: '#ddc396' }).setOrigin(0.5).setDepth(43);
     this.overlay.push(hint);
   }
@@ -652,49 +714,120 @@ export class ArenaScene extends Phaser.Scene {
     if (this.state !== 'altar') return;
     this.affinities = gainAffinity(this.affinities, element);
     this.claimedAltars.add(this.currentRoom);
+    this.clearOverlay(); this.state = 'playing'; this.drawRoom(); this.animateHero(0, 0); this.refreshHud();
+  }
+
+  private openChest(): void {
+    if (this.state !== 'playing' || !this.cleared.has(this.currentRoom) || this.rooms[this.currentRoom].reward !== 'gear'
+      || this.claimedChests.has(this.currentRoom)) return;
+    const choices = gearChoices(this.seed, this.currentRoom, this.equipment);
+    if (!choices.length) { this.claimedChests.add(this.currentRoom); this.drawRoom(); return; }
+    this.state = 'chest'; this.soundscape.play('chest'); this.clearOverlay();
+    const shade = this.add.rectangle(480, 270, W, H, 0x1a110d, 0.9).setDepth(40);
+    const card = this.add.graphics().setDepth(41);
+    card.fillStyle(0x342119, 0.98); card.fillRect(143, 81, 674, 385);
+    card.lineStyle(5, 0xd5a35d); card.strokeRect(143, 81, 674, 385);
+    card.lineStyle(2, 0xc49b64); card.lineBetween(200, 147, 760, 147);
+    const heading = this.add.text(480, 119, 'BAÚ DE RELÍQUIAS', { fontFamily: 'Georgia, serif', fontSize: '30px', color: '#ffe1a0', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
+    const detail = this.add.text(480, 184, 'Escolha um equipamento para levar entre as masmorras',
+      { fontFamily: 'Georgia, serif', fontSize: '17px', color: '#f4ddb7' }).setOrigin(0.5).setDepth(42);
+    this.overlay = [shade, card, heading, detail];
+    for (const [index, id] of choices.entries()) {
+      const x = 279 + index * 201;
+      const plate = this.add.rectangle(x, 304, 177, 187, 0x4b3125).setStrokeStyle(3, 0xe2b674)
+        .setDepth(42).setInteractive({ useHandCursor: true });
+      const glyph = this.add.text(x, 257, GEAR[id].glyph, { fontFamily: 'Georgia, serif', fontSize: '48px', color: '#f7d591' }).setOrigin(0.5).setDepth(43);
+      const name = this.add.text(x, 309, GEAR[id].name, { fontFamily: 'Georgia, serif', fontSize: '16px', color: '#fff0c9', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
+      const description = this.add.text(x, 355, `${GEAR[id].description}\nNível ${this.equipment[id]} → ${this.equipment[id] + 1}`,
+        { fontFamily: 'Georgia, serif', fontSize: '12px', color: '#f1cfa2', align: 'center', wordWrap: { width: 159 } }).setOrigin(0.5).setDepth(43);
+      plate.on('pointerdown', () => this.chooseGear(id));
+      this.overlay.push(plate, glyph, name, description);
+    }
+    const hint = this.add.text(480, 429, 'Relíquias duram até o fim desta run; armas continuam próprias de cada herói.',
+      { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#ddc396' }).setOrigin(0.5).setDepth(43);
+    this.overlay.push(hint);
+  }
+
+  private chooseGear(id: GearId): void {
+    if (this.state !== 'chest') return;
+    this.equipment = { ...this.equipment, [id]: this.equipment[id] + 1 };
+    if (id === 'ring') this.heroHp++;
+    if (id === 'armor') this.heroShield++;
+    if (id === 'pendant') this.energy += 20;
+    this.claimedChests.add(this.currentRoom);
     this.clearOverlay(); this.state = 'playing'; this.drawRoom(); this.refreshHud();
   }
 
   private refreshHud(): void {
     this.hud.setX(this.touchMode ? 78 : 35);
-    this.hud.setText(`${this.selectedHero.toUpperCase()}  ${'♥'.repeat(this.heroHp)}${'♡'.repeat(5 - this.heroHp)}  ${this.cleared.size}/6\n${WEAPONS[this.weapon].name}   ◈ ${this.coins} moedas`);
+    const room = this.rooms[this.currentRoom];
+    this.hud.setText(`${this.selectedHero.toUpperCase()}  ${'♥'.repeat(this.heroHp)}${'♡'.repeat(maxHealth(this.equipment) - this.heroHp)} ${'⬡'.repeat(this.heroShield)}  ${room?.world ?? 1}-${room?.stage ?? 1}/5\n${WEAPONS[this.weapon].name}   ◈ ${this.coins} moedas`);
     for (const [index, id] of ELEMENTS.entries()) {
       this.affinityHud[index].setText(`${ELEMENT[id].glyph}${this.affinities[id]}`);
       this.affinityHud[index].setColor(this.affinities[id] ? ELEMENT[id].css : '#8a7764');
     }
-    this.skillLabel.setText(this.selectedHero === 'jao' ? 'CORTE' : this.selectedHero === 'alice' ? 'FOCO' : 'IMPACTO');
+    const synergy = activeSynergy(this.affinities);
+    this.skillLabel.setText(synergy === 'plasma' ? 'PLASMA' : synergy === 'mud' ? 'LODO' : this.selectedHero === 'jao' ? 'CORTE' : this.selectedHero === 'alice' ? 'FOCO' : 'CARTAS');
+    this.gearHud.setText(GEAR_IDS.map(id => `${GEAR[id].glyph}${this.equipment[id]}`).join('  ') + (synergy ? ` · ${synergy === 'plasma' ? 'PLASMA' : 'LODO'}`
+      : hasPureMastery(this.affinities, 'fire') ? ' · FOGO VIVO' : hasPureMastery(this.affinities, 'lightning') ? ' · RAIO 5' : ''));
     this.healButton.setVisible(this.state === 'playing' && this.cleared.has(this.currentRoom));
     this.healLabel.setVisible(this.healButton.visible);
-    this.healButton.setAlpha(this.coins >= 3 && this.heroHp < 5 ? 1 : 0.4);
+    this.healButton.setAlpha(this.coins >= 3 && this.heroHp < maxHealth(this.equipment) ? 1 : 0.4);
     this.healLabel.setAlpha(this.healButton.alpha);
-    this.hint.setText(this.touchMode ? 'Mover à esquerda · segurar ATIRAR mira sozinho · toque no altar após a luta' : 'WASD: mover · segure clique: tiro automático · ESPAÇO: dash · E: habilidade · H: cura · ESC: pausa');
+    this.hint.setText(this.touchMode ? 'Mover à esquerda · ATIRAR mira sozinho · toque na recompensa após a luta' : 'WASD: mover · segure clique: tiro automático · ESPAÇO: dash · E: habilidade · H: cura · ESC: pausa');
     this.drawEnergy();
     this.drawMap();
   }
 
   private drawEnergy(): void {
     const ready = this.energy >= WEAPONS[this.weapon].energy;
-    this.energyText.setText(`ENERGIA ${Math.floor(this.energy)}/${MAX_ENERGY} · ${WEAPONS[this.weapon].energy}/tiro`);
+    this.energyText.setText(`ENERGIA ${Math.floor(this.energy)}/${maxEnergy(this.equipment)} · ${WEAPONS[this.weapon].energy}/tiro`);
     this.energyBar.clear();
     this.energyBar.fillStyle(0x160f0d); this.energyBar.fillRect(351, 44, 188, 15);
     this.energyBar.fillStyle(ready ? 0x77b6d0 : 0xb15b49);
-    this.energyBar.fillRect(354, 47, 182 * this.energy / MAX_ENERGY, 9);
+    this.energyBar.fillRect(354, 47, 182 * this.energy / maxEnergy(this.equipment), 9);
     this.fireBase.setAlpha(ready ? 1 : 0.4);
     this.fireLabel.setAlpha(ready ? 1 : 0.5);
   }
 
   private drawMap(): void {
     this.mapGraphics.clear();
+    const world = this.rooms[this.currentRoom]?.world;
     for (const room of this.rooms) {
-      if (!this.visited.has(room.id)) continue;
-      const x = 765 + room.x * 34, y = 19 + room.y * 24;
+      if (room.world !== world) continue;
+      const x = 765 + room.x * 34, y = 19;
       this.mapGraphics.lineStyle(2, 0xc49a5d, 0.75);
-      if (room.neighbors.east !== undefined && this.visited.has(room.neighbors.east)) this.mapGraphics.lineBetween(x + 8, y + 6, x + 34, y + 6);
-      if (room.neighbors.south !== undefined && this.visited.has(room.neighbors.south)) this.mapGraphics.lineBetween(x + 8, y + 6, x + 8, y + 30);
+      if (room.neighbors.east !== undefined) this.mapGraphics.lineBetween(x + 8, y + 6, x + 34, y + 6);
       this.mapGraphics.fillStyle(room.id === this.currentRoom ? 0xf0c76f : room.kind === 'boss' ? 0xb94b42
-        : room.biome === 'forge' ? 0xd99a50 : this.cleared.has(room.id) ? 0x9caa70 : 0x81705c);
+        : this.cleared.has(room.id) ? 0x9caa70 : 0x81705c);
       this.mapGraphics.fillRect(x, y, 16, 13);
     }
+  }
+
+  private finishWorld(): void {
+    const world = this.rooms[this.currentRoom].world;
+    this.state = 'interlude'; this.mouseDown = false; this.firePointer = null;
+    this.soundscape.play('win');
+    if (world < FIRST_CHECKPOINT_WORLD) {
+      this.showOverlay(`MUNDO ${world} CONCLUÍDO`, `O guardião caiu. Seus equipamentos e afinidades seguem com você.\nPróxima masmorra: mundo ${world + 1}, fase 1/5.`,
+        'PRÓXIMO MUNDO', () => this.advanceWorld(world + 1));
+      return;
+    }
+    this.showWorldChoice(world);
+  }
+
+  private showWorldChoice(world: number): void {
+    this.showOverlay(`MUNDO ${world} CONCLUÍDO`, `Você chegou ao marco da expedição.\nFragmentos: ${totalAffinity(this.affinities)} · Seed: ${this.seed}\nPode encerrar com vitória ou seguir para o mundo ${world + 1}.`,
+      'VOLTAR AO LOBBY', () => this.finish(true));
+    this.overlay.push(...this.addWoodButton(480, 444, 272, 'CONTINUAR', () => this.advanceWorld(world + 1)));
+  }
+
+  private advanceWorld(world: number): void {
+    this.clearOverlay();
+    if (world > this.rooms.length / STAGES_PER_WORLD) this.rooms = generateRun(this.seed, world);
+    this.state = 'playing';
+    this.enterRoom((world - 1) * STAGES_PER_WORLD);
+    this.cameras.main.flash(350, 49, 26, 51);
   }
 
   private finish(won: boolean): void {
@@ -703,7 +836,7 @@ export class ArenaScene extends Phaser.Scene {
     this.mouseDown = false; this.firePointer = null; this.movePointer = null;
     this.joyX = 0; this.joyY = 0; this.joyKnob.setPosition(153, 399);
     this.showOverlay(won ? 'GUARDIÃO DERROTADO!' : 'FIM DA TENTATIVA',
-      `${won ? 'Você concluiu a run.' : 'Os guardiões venceram desta vez.'}\nSalas: ${this.cleared.size}/6 · Tempo: ${Math.floor(this.elapsed)}s · Dano: ${this.damageTaken}\nMoedas: ${this.coins} · Seed: ${this.seed}`,
+      `${won ? 'Você encerrou a expedição.' : 'Os guardiões venceram desta vez.'}\nFases: ${this.cleared.size} · Tempo: ${Math.floor(this.elapsed)}s · Dano: ${this.damageTaken}\nMoedas: ${this.coins} · Seed: ${this.seed}`,
       'ESCOLHER HERÓI', () => this.showSelection());
   }
 
@@ -813,9 +946,9 @@ export class ArenaScene extends Phaser.Scene {
     if (pointer.y < 90 && pointer.x > 850) return;
     if (pointer.y < 70) return;
     if (this.state !== 'playing') return;
-    if (this.rooms[this.currentRoom].kind !== 'boss' && this.cleared.has(this.currentRoom)
-      && !this.claimedAltars.has(this.currentRoom) && Math.abs(pointer.x - 480) < 52 && Math.abs(pointer.y - 270) < 45) {
-      this.openAltar(); return;
+    if (this.cleared.has(this.currentRoom) && Math.abs(pointer.x - 480) < 52 && Math.abs(pointer.y - 270) < 53) {
+      if (this.rooms[this.currentRoom].reward === 'affinity' && !this.claimedAltars.has(this.currentRoom)) { this.openAltar(); return; }
+      if (this.rooms[this.currentRoom].reward === 'gear' && !this.claimedChests.has(this.currentRoom)) { this.openChest(); return; }
     }
     const isTouch = pointer.wasTouch || (pointer.event as PointerEvent).pointerType === 'touch';
     if (isTouch) {

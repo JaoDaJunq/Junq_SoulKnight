@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS } from '../src/core/weapons.ts';
-import { altarChoices, affinityDamageBonus, ELEMENTS, emptyAffinities, gainAffinity, hasPureMastery, totalAffinity } from '../src/core/affinities.ts';
+import { activeSynergy, altarChoices, affinityDamageBonus, ELEMENTS, emptyAffinities, gainAffinity, hasPureMastery, totalAffinity } from '../src/core/affinities.ts';
+import { emptyEquipment, energyRegen, gearChoices, maxEnergy, maxHealth, maxShield } from '../src/core/equipment.ts';
 import { closestTarget } from '../src/core/targeting.ts';
 
 test('altares oferecem três elementos distintos pela seed e mantêm um elemento já escolhido', () => {
@@ -19,6 +20,41 @@ test('altares oferecem três elementos distintos pela seed e mantêm um elemento
     assert.equal(totalAffinity(focused), 5);
     assert.ok(hasPureMastery(focused, first[0]));
   }
+});
+
+test('dois elementos escolhidos continuam disponíveis para fechar uma fusão 3 + 3', () => {
+  for (let seed = 0; seed < 100; seed++) {
+    let build = emptyAffinities();
+    build = gainAffinity(build, 'fire'); build = gainAffinity(build, 'lightning');
+    for (let room = 2; room < 6; room++) {
+      const choices = altarChoices(seed, room, build);
+      assert.ok(choices.includes('fire') && choices.includes('lightning'));
+      build = gainAffinity(build, room % 2 ? 'fire' : 'lightning');
+    }
+    assert.equal(activeSynergy(build), 'plasma');
+    assert.equal(totalAffinity(build), 6);
+    assert.equal(hasPureMastery(build, 'fire'), false);
+  }
+  let mud = emptyAffinities();
+  for (let i = 0; i < 3; i++) { mud = gainAffinity(mud, 'water'); mud = gainAffinity(mud, 'earth'); }
+  assert.equal(activeSynergy(mud), 'mud');
+  mud = gainAffinity(gainAffinity(mud, 'water'), 'water');
+  assert.equal(activeSynergy(mud), null, 'domínio puro substitui a fusão ativa');
+});
+
+test('reliquias do baú alteram vida, escudo e energia sem trocar a arma inicial', () => {
+  const empty = emptyEquipment();
+  for (let seed = 0; seed < 100; seed++) {
+    const choices = gearChoices(seed, 0, empty);
+    assert.equal(choices.length, 3);
+    assert.equal(new Set(choices).size, 3);
+    assert.deepEqual(gearChoices(seed, 0, empty), choices);
+  }
+  const equipped = { ring: 2, armor: 1, pendant: 1, rune: 2 };
+  assert.equal(maxHealth(equipped), 7);
+  assert.equal(maxShield(equipped), 1);
+  assert.equal(maxEnergy(equipped), 120);
+  assert.ok(restoreEnergy(0, 1, 0, maxEnergy(equipped), energyRegen(equipped)) > restoreEnergy(0, 1, 0));
 });
 
 test('híbrido 3 fogo + 2 raio causa dano acumulado sem domínio puro', () => {
@@ -64,4 +100,5 @@ test('equipamentos iniciais têm padrões e custos de tiro distintos', () => {
   assert.ok(fan[0].vy < 0 && fan[2].vy > 0);
   assert.ok(lance[0].damage > bolt[0].damage);
   assert.ok(WEAPONS.bolt.cadence < WEAPONS.lance.cadence);
+  assert.equal(WEAPONS.lance.name, 'CARTAS DO GUI');
 });

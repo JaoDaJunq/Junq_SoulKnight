@@ -1,5 +1,7 @@
 # 07 · Heróis e afinidades elementais
 
+> **Atualização de escopo:** a estrutura de cinco altares em seis salas descrita abaixo registra a primeira entrega histórica. A versão seguinte usa mundos de cinco fases, dois altares e dois baús por mundo, com chefe em 5/5. Gui passou de martelo para cartas. Ver [08 · Masmorras e relíquias](08-MASMORRAS-E-RELIQUIAS.md) para as regras atuais e as duas primeiras sinergias.
+
 ## Fantasia da run
 
 Jão, Alice e Gui entram com um equipamento próprio e **zero afinidade**. O equipamento não é trocado durante a run. Após vencer cada sala que não seja a do chefe, surge um **Altar de Fragmentos**. Tocar nele oferece três elementos gerados de modo reproduzível pela seed da run e pela sala. Uma escolha aumenta a afinidade correspondente em 1. São cinco altares antes do chefe numa run de seis salas; o jogador pode concentrar cinco pontos ou combiná-los.

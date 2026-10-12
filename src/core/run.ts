@@ -3,30 +3,22 @@ import type { BiomeId } from '../content/biomes';
 
 export type Direction = 'north' | 'east' | 'south' | 'west';
 export type RoomKind = 'start' | 'combat' | 'reward' | 'boss';
+export type RewardKind = 'gear' | 'affinity' | null;
 export type Room = {
   id: number;
+  world: number;
+  stage: number;
   x: number;
   y: number;
   neighbors: Partial<Record<Direction, number>>;
   obstacles: typeof OBSTACLES;
   kind: RoomKind;
+  reward: RewardKind;
   biome: BiomeId;
 };
 
-const DIRECTIONS: { direction: Direction; dx: number; dy: number; opposite: Direction }[] = [
-  { direction: 'north', dx: 0, dy: -1, opposite: 'south' },
-  { direction: 'east', dx: 1, dy: 0, opposite: 'west' },
-  { direction: 'south', dx: 0, dy: 1, opposite: 'north' },
-  { direction: 'west', dx: -1, dy: 0, opposite: 'east' },
-];
-
-function random(seed: number): () => number {
-  let value = seed >>> 0;
-  return () => {
-    value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
-    return value / 4294967296;
-  };
-}
+export const STAGES_PER_WORLD = 5;
+export const FIRST_CHECKPOINT_WORLD = 3;
 
 export function parseRunSeed(value: string | null): number | null {
   if (value === null || !/^(0|[1-9]\d*)$/.test(value)) return null;
@@ -34,52 +26,29 @@ export function parseRunSeed(value: string | null): number | null {
   return Number.isSafeInteger(seed) && seed <= 0xffffffff ? seed : null;
 }
 
-export function generateRun(seed: number): Room[] {
-  const rand = random(seed);
-  const rooms: Room[] = Array.from({ length: 6 }, (_, id) => ({
-    id, x: id % 3, y: Math.floor(id / 3), neighbors: {}, kind: id === 0 ? 'start' : 'combat', biome: 'atrium',
-    obstacles: id % 2 === 0
-      ? [{ x: 296, y: 206, w: 72, h: 68 }, { x: 610, y: 326, w: 72, h: 68 }]
-      : [{ x: 296, y: 326, w: 72, h: 68 }, { x: 610, y: 206, w: 72, h: 68 }],
-  }));
-  const visited = new Set([0]);
-  const stack = [0];
-  while (stack.length) {
-    const room = rooms[stack[stack.length - 1]];
-    const choices = DIRECTIONS.filter(({ dx, dy }) =>
-      rooms.some(candidate => candidate.x === room.x + dx && candidate.y === room.y + dy && !visited.has(candidate.id)));
-    if (!choices.length) { stack.pop(); continue; }
-    const edge = choices[Math.floor(rand() * choices.length)];
-    const next = rooms.find(candidate => candidate.x === room.x + edge.dx && candidate.y === room.y + edge.dy)!;
-    room.neighbors[edge.direction] = next.id;
-    next.neighbors[edge.opposite] = room.id;
-    visited.add(next.id);
-    stack.push(next.id);
-  }
-  const distances = Array<number>(rooms.length).fill(-1);
-  const parent = Array<number>(rooms.length).fill(-1);
-  distances[0] = 0;
-  const queue = [0];
-  while (queue.length) {
-    const id = queue.shift()!;
-    for (const next of Object.values(rooms[id].neighbors)) {
-      if (next === undefined || distances[next] !== -1) continue;
-      distances[next] = distances[id] + 1;
-      parent[next] = id;
-      queue.push(next);
+/** Five stages per world, with a boss at 5/5 and rewards alternating gear and affinity. */
+export function generateRun(seed: number, worlds = FIRST_CHECKPOINT_WORLD): Room[] {
+  const rooms: Room[] = [];
+  for (let world = 1; world <= worlds; world++) {
+    for (let stage = 1; stage <= STAGES_PER_WORLD; stage++) {
+      const id = (world - 1) * STAGES_PER_WORLD + stage - 1;
+      const value = (seed ^ Math.imul(id + 1, 0x9e3779b1)) >>> 0;
+      const flip = (value & 1) === 1;
+      const offset = (value >>> 8) % 25 - 12;
+      const obstacles = flip
+        ? [{ x: 296 + offset, y: 206, w: 72, h: 68 }, { x: 610 - offset, y: 326, w: 72, h: 68 }]
+        : [{ x: 296 + offset, y: 326, w: 72, h: 68 }, { x: 610 - offset, y: 206, w: 72, h: 68 }];
+      rooms.push({
+        id, world, stage, x: stage - 1, y: world - 1, obstacles,
+        neighbors: {
+          ...(stage > 1 ? { west: id - 1 } : {}),
+          ...(stage < STAGES_PER_WORLD ? { east: id + 1 } : {}),
+        },
+        kind: stage === 5 ? 'boss' : stage === 1 && world === 1 ? 'start' : stage % 2 ? 'reward' : 'combat',
+        reward: stage === 5 ? null : stage % 2 ? 'gear' : 'affinity',
+        biome: world % 3 === 1 ? 'atrium' : world % 3 === 2 ? 'forge' : 'crypt',
+      });
     }
   }
-  const boss = rooms.slice(1).sort((a, b) => distances[b.id] - distances[a.id] || b.id - a.id)[0];
-  boss.kind = 'boss';
-  // The end of the route changes region, while at least one room before the boss uses the new palette.
-  const forgeDepth = Math.max(1, distances[boss.id] - 1);
-  for (const room of rooms) if (distances[room.id] >= forgeDepth) room.biome = 'forge';
-  const rewardIds: number[] = [];
-  for (let id = parent[boss.id]; id > 0 && rewardIds.length < 2; id = parent[id]) rewardIds.push(id);
-  for (const room of rooms.slice(1).sort((a, b) => distances[a.id] - distances[b.id] || a.id - b.id)) {
-    if (rewardIds.length === 2) break;
-    if (room.id !== boss.id && !rewardIds.includes(room.id)) rewardIds.push(room.id);
-  }
-  for (const id of rewardIds) rooms[id].kind = 'reward';
   return rooms;
 }
