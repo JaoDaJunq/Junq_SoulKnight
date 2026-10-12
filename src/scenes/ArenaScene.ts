@@ -1,12 +1,12 @@
 import Phaser from 'phaser';
-import { blocked, normalizedMovement, OBSTACLES } from '../core/arena';
+import { blocked, moveAroundObstacle, normalizedMovement, OBSTACLES, type EscapeStep } from '../core/arena';
 import { generateRun, parseRunSeed, type Direction, type Room } from '../core/run';
 import { chestWeapon, createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS, type WeaponId } from '../core/weapons';
 import { closestTarget } from '../core/targeting';
 
 type State = 'menu' | 'playing' | 'chest' | 'paused' | 'dead' | 'cleared';
 type EnemyKind = 'chaser' | 'shooter' | 'brute' | 'boss';
-type Enemy = { view: Phaser.GameObjects.Container; kind: EnemyKind; x: number; y: number; hp: number; maxHp: number; speed: number; cooldown: number; windup: number };
+type Enemy = { view: Phaser.GameObjects.Container; kind: EnemyKind; x: number; y: number; hp: number; maxHp: number; speed: number; cooldown: number; windup: number; escape?: EscapeStep };
 type Bullet = { view: Phaser.GameObjects.Arc; vx: number; vy: number; life: number; damage: number };
 type Coin = { view: Phaser.GameObjects.Arc; x: number; y: number };
 
@@ -301,11 +301,10 @@ export class ArenaScene extends Phaser.Scene {
       const length = Math.max(1, Math.hypot(dx, dy));
       const preferred = enemy.kind === 'shooter' && length < 190 ? -0.65 : 1;
       const motion = enemy.kind === 'boss' && enemy.windup > 0 ? 0 : enemy.kind === 'shooter' && length < 260 && length >= 190 ? 0 : preferred;
-      const ex = enemy.x + dx / length * enemy.speed * dt * motion;
-      const ey = enemy.y + dy / length * enemy.speed * dt * motion;
       const radius = enemy.kind === 'boss' ? 30 : enemy.kind === 'brute' ? 20 : 15;
-      if (!blocked(ex, enemy.y, radius, obstacles)) enemy.x = ex;
-      if (!blocked(enemy.x, ey, radius, obstacles)) enemy.y = ey;
+      const moved = moveAroundObstacle(enemy.x, enemy.y, dx / length * motion, dy / length * motion,
+        enemy.speed * dt, radius, obstacles, enemy.escape);
+      enemy.x = moved.x; enemy.y = moved.y; enemy.escape = moved.escape;
       enemy.view.setPosition(enemy.x, enemy.y);
       enemy.cooldown = Math.max(0, enemy.cooldown - dt);
       if (enemy.kind === 'boss') {
