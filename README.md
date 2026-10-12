@@ -2,7 +2,7 @@
 
 Planejamento de um jogo autoral 2D de ação, roguelite e tiro com visão superior, inspirado no **ritmo de salas, escolhas e combates** de Soul Knight. Nome de trabalho; título, mundo e arte finais serão próprios. Primeiro destino: navegador e GitHub Pages. Depois: aplicativo Android e, se fizer sentido, iOS.
 
-> Estado em 12/10/2026: **protótipo web publicado** em [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). T001–T004 foram implementados e a sala inicial abriu no navegador desktop. T005 adiciona seis salas conectadas por seed, portas e minimapa. As verificações automáticas passaram; o teste da nova versão publicada e a experiência em Android ainda precisam de validação. Não há APK.
+> Estado em 12/10/2026: **protótipo web publicado** em [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). T001–T005 foram implementados e a sala inicial de seis salas conectadas por seed abriu no navegador desktop. As verificações automáticas passaram; a run completa e a experiência em Android ainda precisam de validação. Não há APK.
 
 ## O jogo em uma frase
 
