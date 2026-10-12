@@ -2,7 +2,7 @@
 
 Planejamento de um jogo autoral 2D de ação, roguelite e tiro com visão superior, inspirado no **ritmo de salas, escolhas e combates** de Soul Knight. Nome de trabalho; título, mundo e arte finais serão próprios. Primeiro destino: navegador e GitHub Pages. Depois: aplicativo Android e, se fizer sentido, iOS.
 
-> Estado em 11/10/2026: **protótipo P0 e combate T004 implementados**. O código compila e as checagens passaram. Pages está ativo, mas a fonte atual é a branch, que publica TypeScript sem build. Em `Settings → Pages → Build and deployment → Source`, selecionar **GitHub Actions**. A experiência visual e os controles em Android ainda não foram verificados; não há APK.
+> Estado em 12/10/2026: **protótipo web publicado** em [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). T001–T004 foram implementados e a sala inicial abriu no navegador desktop. T005 adiciona seis salas conectadas por seed, portas e minimapa. As verificações automáticas passaram; o teste da nova versão publicada e a experiência em Android ainda precisam de validação. Não há APK.
 
 ## O jogo em uma frase
 
@@ -23,13 +23,13 @@ O diferencial planejado é um elenco Junq de estilos de combate distintos e esco
 
 Uma run de um andar, 5 a 7 salas conectadas, um personagem provisório, ataque, desvio, habilidade, três famílias de inimigos, três famílias de equipamento, duas salas de recompensa, um chefe, tela de resultado e controles de teclado/mouse e toque. Arte provisória própria ou com licença verificada. Esse recorte é uma **proposta de produção**, não uma descrição do Soul Knight original.
 
-O primeiro marco já tem código: **uma sala manual** com jogador, movimento, tiro, dash, pulso de área, quatro inimigos de três tipos, dano, vitória/derrota, pausa e reinício. O suporte a teclado/mouse e toque está implementado e aguarda teste em dispositivo. Nada depende de conta, servidor ou banco de dados.
+O protótipo já tem código: **seis salas conectadas** com jogador, movimento, tiro, dash, pulso de área, quatro inimigos de três tipos por encontro, dano, portas, minimapa, vitória/derrota, pausa e reinício. O suporte a teclado/mouse e toque está implementado e aguarda teste em dispositivo. Nada depende de conta, servidor ou banco de dados. O chefe, recompensas e armas variadas são etapas seguintes.
 
 ## Stack proposta
 
 - **Phaser 3.90.0 + TypeScript 5.9.3 + Vite 8.3.4:** cliente web 2D com versões fixadas em `package-lock.json`.
 - **Dados em módulos/JSON tipados:** personagens, armas, inimigos, salas e progressão separados da lógica.
-- **GitHub Actions + Pages:** `npm ci`, checagens, build e deploy do diretório `dist/` após configurar Pages para GitHub Actions. Para este repositório, o `base` do Vite será `/Junq_SoulKnight/`.
+- **GitHub Actions + Pages:** `npm ci`, checagens, build e deploy do diretório `dist/`. Pages está configurado para GitHub Actions; `base` do Vite é `/Junq_SoulKnight/`.
 - **Save local versionado:** configurações e desbloqueios no navegador, com migração de esquema e opção de reset. Não prometer sincronização entre dispositivos.
 - **App depois da versão web:** avaliar Capacitor com o mesmo jogo web, validar desempenho e controles em Android; iOS exige uma etapa própria de compilação e testes. PWA pode anteceder o APK.
 
@@ -37,7 +37,7 @@ O primeiro marco já tem código: **uma sala manual** com jogador, movimento, ti
 
 ## Próximo passo
 
-Selecionar **GitHub Actions** como fonte de Pages, rodar novamente o workflow e testar no Android real. Depois de aceitar T001–T004, seguir para T005. Leia o [handoff atual](docs/HANDOFF.md) antes de trabalhar. O repositório de referência é **fonte de estudo**; não foi copiado nem incorporado.
+Jogar a run no [Pages](https://jaodajunq.github.io/Junq_SoulKnight/) e testar em Android real, especialmente movimento enquanto atira, transição por portas, escala horizontal e pausa. Depois iniciar T006: armas, drops, moedas e recompensas. Leia o [handoff atual](docs/HANDOFF.md) antes de trabalhar. O repositório de referência é **fonte de estudo**; não foi copiado nem incorporado.
 
 ## Fontes essenciais
 
