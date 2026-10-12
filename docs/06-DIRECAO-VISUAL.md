@@ -1,6 +1,6 @@
 # 06 · Direção visual · pixel art de aventura (v0.2)
 
-**Estado em 12/10/2026:** o MVP aprovou com entusiasmo esta direção. Os quatro mockups abaixo continuam sendo referências conceituais, não capturas da build. A primeira integração jogável produz assets próprios em `src/assets/`: abertura, taverna, sala de pedra e sprites estáticos do trio. Os inimigos são desenhos de pixels em código. O nome `Junq SoulKnight` permanece como nome de trabalho; `JUNQ: RUPTURA` foi descartado.
+**Estado em 12/10/2026:** o MVP aprovou com entusiasmo esta direção. Os quatro mockups abaixo continuam sendo referências conceituais, não capturas da build. A primeira integração jogável produz assets próprios em `src/assets/`: abertura, taverna, salas do Átrio e da Forja e sprites estáticos do trio. Os inimigos são desenhos de pixels em código. O nome `Junq SoulKnight` permanece como nome de trabalho; `JUNQ: RUPTURA` foi descartado.
 
 ## O que queremos sentir
 

@@ -2,7 +2,7 @@
 
 Planejamento de um jogo autoral 2D de ação, roguelite e tiro com visão superior, inspirado no **ritmo de salas, escolhas e combates** de Soul Knight. Nome de trabalho; título, mundo e arte finais serão próprios. Primeiro destino: navegador e GitHub Pages. Depois: aplicativo Android e, se fizer sentido, iOS.
 
-> Estado em 12/10/2026: **vertical slice web aprovado pelo MVP para avançar** no [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). Mira automática, energia e baús estão implementados. A arte e os sons originais de T009 foram publicados; o usuário fará os testes subjetivos depois. T010 começou com uma segunda região e novo encontro. A direção de pixel art foi aprovada e a primeira integração inclui abertura, seleção de Jão/Alice/Gui, sala de pedra, HUD quente e inimigos em grade. Os três compartilham o kit provisório; animações e kits próprios seguem em T010. Não há APK.
+> Estado em 12/10/2026: **vertical slice web aprovado pelo MVP para avançar** no [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). Mira automática, energia e baús estão implementados. A arte e os sons originais de T009 foram publicados; o usuário fará os testes subjetivos depois. T010 começou com uma segunda região e novo encontro. A direção de pixel art foi aprovada e a primeira integração inclui abertura, seleção de Jão/Alice/Gui, salas próprias do Átrio e da Forja, HUD quente e inimigos em grade. Os três compartilham o kit provisório; animações e kits próprios seguem em T010. Não há APK.
 
 ## O jogo em uma frase
 

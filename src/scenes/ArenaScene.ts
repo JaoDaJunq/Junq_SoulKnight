@@ -10,6 +10,7 @@ import { closestTarget } from '../core/targeting';
 import openingArt from '../assets/abertura.webp';
 import selectionArt from '../assets/selecao.webp';
 import roomArt from '../assets/sala-atrio.webp';
+import forgeArt from '../assets/sala-forja.webp';
 import jaoArt from '../assets/jao.png';
 import aliceArt from '../assets/alice.png';
 import guiArt from '../assets/gui.png';
@@ -98,6 +99,7 @@ export class ArenaScene extends Phaser.Scene {
     this.load.image('opening', openingArt);
     this.load.image('selection', selectionArt);
     this.load.image('room-atrium', roomArt);
+    this.load.image('room-forge', forgeArt);
     this.load.image('jao', jaoArt);
     this.load.image('alice', aliceArt);
     this.load.image('gui', guiArt);
@@ -168,8 +170,8 @@ export class ArenaScene extends Phaser.Scene {
     this.roomArt.forEach(item => item.destroy());
     const room = this.rooms[this.currentRoom];
     const palette = BIOMES[room?.biome ?? 'atrium'];
-    const backdrop = this.add.image(480, 270, 'room-atrium').setDisplaySize(W, H).setDepth(-2);
-    if (room?.biome === 'forge') backdrop.setTint(0xffae70);
+    const backdrop = this.add.image(480, 270, room?.biome === 'forge' ? 'room-forge' : 'room-atrium')
+      .setDisplaySize(W, H).setDepth(-2);
     const g = this.add.graphics();
     for (const o of room?.obstacles ?? OBSTACLES) {
       g.fillStyle(0x130b0b, 0.7); g.fillRect(o.x + 6, o.y + 9, o.w, o.h);
