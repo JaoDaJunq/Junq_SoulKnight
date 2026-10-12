@@ -4,9 +4,9 @@ export const OBSTACLES = [
   { x: 610, y: 326, w: 72, h: 68 },
 ];
 
-export function blocked(x: number, y: number, radius: number): boolean {
+export function blocked(x: number, y: number, radius: number, obstacles = OBSTACLES): boolean {
   if (x - radius < BOUNDS.left || x + radius > BOUNDS.right || y - radius < BOUNDS.top || y + radius > BOUNDS.bottom) return true;
-  return OBSTACLES.some(o => {
+  return obstacles.some(o => {
     const cx = Math.max(o.x, Math.min(x, o.x + o.w));
     const cy = Math.max(o.y, Math.min(y, o.y + o.h));
     return (x - cx) ** 2 + (y - cy) ** 2 < radius ** 2;
