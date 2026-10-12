@@ -7,8 +7,8 @@
 - T007: sala do chefe no ponto mais distante do início, aviso visual antes dos ataques, barra de vida, vitória e derrota com seed, tempo, dano, salas e moedas.
 - T008: CSS preenche a área visível em celular horizontal, aviso para girar no retrato, tentativa de tela cheia após toque, pausa ao girar/perder foco, controles de toque reposicionados e FPS opcional (`?debug=1`). Captura direta de teclado complementa o input do Phaser. Ao segurar tiro, a mira seleciona o inimigo visível mais próximo; o tiro gasta energia conforme a arma, 100 pontos no máximo, recarga de 12/s após 0,65s sem disparar. Sem alvo ou sem energia suficiente não há tiro. Tiro a curta distância acerta o inimigo sobreposto ao herói; inimigos dão um passo lateral persistente para sair da quina de obstáculos; `?seed=N` reproduz salas e baús. **MVP testou e aprovou seguir em 12/10/2026.** Aparelho, FPS e run completa não foram informados nesta sessão; anotar caso haja bugs no beta, sem reabrir o aceite como impedimento.
 - T009 implementada no web: cenário de ruínas com pisos gravados, portas e obstáculos redesenhados, silhuetas próprias para herói e inimigos, HUD e overlays revisados, efeitos Web Audio originais com mudo. `CREDITS.md` registra procedência; não há assets externos. O MVP adiou os testes de áudio/arte no aparelho e pediu para avançar em 12/10/2026.
-- T010 em execução: Forja de Âmbar no trecho final da run de seis salas, com paleta, gravações de piso e pilares próprios; sentinela imóvel avisa por 0,7s e dispara três projéteis alaranjados. Gerador garante sala da Forja com baú antes do chefe em todas as 100 seeds testadas. Ainda não há personagens Junq selecionáveis, segundo andar ou balanceamento em aparelho. T011–T015 pendentes. Save, PWA e APK não existem.
-- O MVP enviou oito capturas do Soul Knight e depois fotos de Jão, Alice e Gui em 12/10/2026. **Rejeitou a v0.1 futurista** (`JUNQ: RUPTURA`, anel e interface abstrata). `docs/06-DIRECAO-VISUAL.md` foi substituído pela v0.2: pixel art de aventura com pedra, madeira, tochas, retratos/sprites do trio e mockups de abertura, seleção e combate. Quatro WebP em `docs/visual/` são **conceitos pendentes de aprovação**, não assets da build; fotos originais não foram publicadas. A arte atual no Pages permanece a vetorial de T009. Não reintroduzir a direção rejeitada.
+- T010 em execução: Forja de Âmbar no trecho final da run de seis salas, com paleta, gravações de piso e pilares próprios; sentinela imóvel avisa por 0,7s e dispara três projéteis alaranjados. Gerador garante sala da Forja com baú antes do chefe em todas as 100 seeds testadas. Jão, Alice e Gui foram adicionados à seleção e ao avatar em jogo, com atributos e poderes provisórios iguais. Ainda não há animações, kits próprios, segundo andar ou balanceamento em aparelho. T011–T015 pendentes. Save, PWA e APK não existem.
+- O MVP enviou oito capturas do Soul Knight e depois fotos de Jão, Alice e Gui em 12/10/2026. **Rejeitou a v0.1 futurista** (`JUNQ: RUPTURA`, anel e interface abstrata). `docs/06-DIRECAO-VISUAL.md` foi substituído pela v0.2: pixel art de aventura com pedra, madeira, tochas, retratos/sprites do trio e mockups de abertura, seleção e combate. O MVP aprovou a v0.2 e pediu assets na build. Quatro WebP em `docs/visual/` permanecem conceitos; fotos originais não foram publicadas. A primeira implementação usa novos assets de produção em `src/assets/`, sem incluir os mockups na build. Não reintroduzir a direção rejeitada.
 
 ## Evidência e limites
 
@@ -24,10 +24,16 @@
 
 ## Próximo trabalho: continuar T010
 
-1. Validar/revisar os quatro conceitos da v0.2 em `docs/06-DIRECAO-VISUAL.md`, em especial semelhança dos retratos/sprites com Jão, Alice e Gui. Depois definir kits próprios deste jogo em `docs/personagens/`, produzir sprites editáveis e implementar seleção/diferenças jogáveis em incrementos pequenos, sem importar habilidades de Junq Bullet/Junqverse.
+1. Refinar a arte aprovada com sprites direcionais e animações de movimento/ataque; definir kits próprios em `docs/personagens/` e implementar diferenças jogáveis em incrementos pequenos, sem importar habilidades de Junq Bullet/Junqverse.
 2. Balancear encontros do Átrio e da Forja; manter a sentinela visível/atingível nos layouts. Registrar feedback de partidas quando o MVP testar.
 3. Recolher a validação adiada de áudio/arte/baú e Android no beta, sem bloquear a implementação agora.
 
 ## Como rodar
 
-Node 22.18+ ou 24; `npm ci`, `npm run dev`. Checagens: `npm run typecheck`, `npm test`, `npm run build`. Vite usa base `/Junq_SoulKnight/`. Gráficos e efeitos sonoros são gerados em código; não há assets de terceiros incorporados.
+Node 22.18+ ou 24; `npm ci`, `npm run dev`. Checagens: `npm run typecheck`, `npm test`, `npm run build`. Vite usa base `/Junq_SoulKnight/`. Cenários e personagens estão em `src/assets/`, UI/inimigos em código e efeitos sonoros em Web Audio; não há assets de terceiros incorporados.
+
+## Integração visual aprovada pelo MVP (12/10/2026)
+
+- Abertura ilustrada com botão JOGAR funcional; seleção de Jão, Alice e Gui com destaque e botão ENTRAR; sprite escolhido aparece no combate e no HUD. Todos compartilham o kit provisório. Sala de pedra, obstáculos, portas, inimigos em grade de pixels, HUD, pausa e baú seguem a paleta madeira/pedra/tocha. O piso da Forja ainda usa a mesma base com tonalidade âmbar, sem cenário exclusivo.
+- Fonte de imagem: geração original para este projeto a partir da direção v0.2 e fotos fornecidas pelo MVP; `CREDITS.md` registra. Nenhuma foto original ou arte de Soul Knight está no repositório.
+- Verificações locais: `npm run typecheck`, `npm test` (3 arquivos) e `npm run build` passaram. Build contém seis assets novos de imagem, total ~385 kB, e mantém aviso do chunk Phaser. Validação visual do Pages e Android será registrada após publicação; animações e kits próprios permanecem pendentes.

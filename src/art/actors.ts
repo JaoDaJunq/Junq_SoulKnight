@@ -2,65 +2,62 @@ import Phaser from 'phaser';
 
 export type ActorKind = 'hero' | 'chaser' | 'shooter' | 'sentry' | 'brute' | 'boss';
 
-/** Original vector silhouettes. No external sprite or font is loaded. */
-export function createActor(scene: Phaser.Scene, x: number, y: number, kind: ActorKind): Phaser.GameObjects.Container {
-  const g = scene.add.graphics();
-  const shadow = scene.add.ellipse(2, kind === 'boss' ? 26 : 17, kind === 'boss' ? 68 : 37, 12, 0x050b14, 0.64);
+// Silhuetas originais desenhadas em uma grade fixa, sem suavização.
+const PIXELS: Record<Exclude<ActorKind, 'hero'>, string[]> = {
+  chaser: [
+    '...a.......a...', '..aba.....aba..', '.abbba...abbba.', '.abbbba.abbbba.',
+    '..abbbbbbbbba..', '.abbbbbbbbbbba.', '.abbbweebwbbba.', '.abbbweebwbbba.',
+    '.abbbbbbbbbbba.', '..abbbrrbbbba..', '..abbbbbbbbba..', '...abbbbbba...',
+    '...aaabbb aaa..'.replace(/ /g, ''), '....aa..aa.....',
+  ],
+  shooter: [
+    '......a........', '.....aba.......', '....abbba......', '...abbbbba.....',
+    '..abbbbbbbba...', '.abbbbbbbbbba..', '.abbeeeebbbba..', '.abbewewbbbba..',
+    '.abbeeeebbbba..', '.abbbbbbbbbba..', '..abbbbbbbba...', '..abbbbbbbba...',
+    '...aaabbbaaa...', '....aa...aa....',
+  ],
+  sentry: [
+    '..a.........a..', '.aba.......aba.', '.abbaaaaaaabba.', '.abbbbbbbbbbbba.',
+    '.abbbbbbbbbbbba.', '.abbbaaaaabbba.', '.abbbaeeaabbba.', '.abbbaeeaabbba.',
+    '.abbbaaaaabbba.', '.abbbbbbbbbbbba.', '.abbbrrrrbbbba.', '.abbbbbbbbbbbba.',
+    '..aabbbbbbaa...', '...aa...aa.....',
+  ],
+  brute: [
+    '...aaa...aaa...', '..abbaa.aabba..', '.abbbbbbbbbbbba.', 'abbbbbbbbbbbbba',
+    'abbbbbbbbbbbbba', 'abbbbeeeebbbbba', 'abbbewwwebbbbba', 'abbbbeeeebbbbba',
+    'abbbbbbbbbbbbba', 'abbbrrrrrrbbbba', 'abbbbbbbbbbbbba', '.abbbbbbbbbbbba.',
+    '..aaabbbbbaaa..', '...aaa...aaa...',
+  ],
+  boss: [
+    '...aa.......aa...', '..abba.....abba..', '.abbba.....abbba.', 'abbbbba...abbbbba',
+    'abbbbbba.abbbbbba', 'abbbbbbbbbbbbbba', 'abbbbbbbbbbbbbba', 'abbbeeeeeeebbbba',
+    'abbewweeeewwebba', 'abbbeeeeeeebbbba', 'abbbbbbbbbbbbbba', 'abbbrrrrrrrbbbba',
+    'abbbbbbbbbbbbbba', '.abbbbbbbbbbbba.', '..aabbbbbbbbaa..', '...aaa...aaa...',
+  ],
+};
 
-  if (kind === 'hero') {
-    g.fillStyle(0x071c2d); g.fillTriangle(-13, 6, 13, 6, 0, 28);
-    g.fillStyle(0x17627e); g.fillTriangle(-9, 7, 9, 7, -5, 25);
-    g.lineStyle(2, 0x4dd7e6); g.lineBetween(-8, 14, -5, 23);
-    g.fillStyle(0x143951); g.fillRoundedRect(-15, -9, 30, 27, 9);
-    g.lineStyle(3, 0x87eaf1); g.strokeRoundedRect(-15, -9, 30, 27, 9);
-    g.fillStyle(0x092234); g.fillRoundedRect(-12, -18, 24, 20, 6);
-    g.lineStyle(2, 0x6bcddd); g.strokeRoundedRect(-12, -18, 24, 20, 6);
-    g.fillStyle(0xb8f9ec); g.fillRoundedRect(-8, -10, 16, 4, 2);
-    g.fillStyle(0xf1d79b); g.fillCircle(16, 8, 4);
-    g.lineStyle(2, 0x75e9ec); g.strokeCircle(16, 8, 7);
-  } else if (kind === 'chaser') {
-    g.fillStyle(0x4a1c35); g.fillTriangle(-18, -5, -24, -24, -5, -15);
-    g.fillTriangle(18, -5, 24, -24, 5, -15);
-    g.fillStyle(0x782b48); g.fillRoundedRect(-17, -16, 34, 34, 11);
-    g.lineStyle(3, 0xe78984); g.strokeRoundedRect(-17, -16, 34, 34, 11);
-    g.fillStyle(0xffd69c); g.fillTriangle(-10, -3, -2, 0, -9, 3);
-    g.fillTriangle(10, -3, 2, 0, 9, 3);
-    g.lineStyle(2, 0xf2aa88); g.lineBetween(-7, 12, 7, 12);
-  } else if (kind === 'shooter') {
-    g.fillStyle(0x341f55); g.fillTriangle(0, -27, 22, 8, 0, 25);
-    g.fillTriangle(0, -27, -22, 8, 0, 25);
-    g.lineStyle(3, 0xc7a9f6); g.strokeTriangle(0, -27, 22, 8, 0, 25);
-    g.strokeTriangle(0, -27, -22, 8, 0, 25);
-    g.fillStyle(0x7d63a6); g.fillCircle(0, -1, 10);
-    g.fillStyle(0xf5d6ff); g.fillCircle(0, -1, 4);
-  } else if (kind === 'sentry') {
-    g.fillStyle(0x63343d); g.fillTriangle(-23, 10, -25, -23, -6, -8);
-    g.fillTriangle(23, 10, 25, -23, 6, -8);
-    g.fillStyle(0x9e594b); g.fillRoundedRect(-17, -19, 34, 39, 8);
-    g.lineStyle(3, 0xffd594); g.strokeRoundedRect(-17, -19, 34, 39, 8);
-    g.fillStyle(0x3e2833); g.fillRoundedRect(-12, -11, 24, 23, 5);
-    g.fillStyle(0xffb572); g.fillCircle(0, 0, 7);
-    g.fillStyle(0xfff0b5); g.fillCircle(0, 0, 3);
-    g.lineStyle(2, 0xf7b97c); g.lineBetween(-12, 15, 12, 15);
-  } else if (kind === 'brute') {
-    g.fillStyle(0x513944); g.fillRoundedRect(-24, -19, 48, 41, 9);
-    g.fillStyle(0x977052); g.fillRoundedRect(-19, -15, 38, 33, 6);
-    g.lineStyle(3, 0xffd393); g.strokeRoundedRect(-19, -15, 38, 33, 6);
-    g.fillStyle(0x3c2938); g.fillRoundedRect(-14, -10, 28, 11, 3);
-    g.fillStyle(0xffe3ae); g.fillRect(-8, -7, 5, 3); g.fillRect(3, -7, 5, 3);
-    g.lineStyle(3, 0xd8a36e); g.lineBetween(-15, 11, 15, 11);
-    g.fillStyle(0xc99b72); g.fillRect(-27, 0, 7, 14); g.fillRect(20, 0, 7, 14);
-  } else {
-    g.fillStyle(0x3b1b3d); g.fillTriangle(-30, -12, -32, -38, -8, -24);
-    g.fillTriangle(30, -12, 32, -38, 8, -24);
-    g.fillStyle(0x692c4f); g.fillRoundedRect(-32, -22, 64, 52, 12);
-    g.lineStyle(4, 0xf29ba0); g.strokeRoundedRect(-32, -22, 64, 52, 12);
-    g.fillStyle(0x32172f); g.fillRoundedRect(-23, -13, 46, 21, 5);
-    g.fillStyle(0xffd3a3); g.fillTriangle(-16, -5, -3, -2, -15, 2);
-    g.fillTriangle(16, -5, 3, -2, 15, 2);
-    g.lineStyle(3, 0xf7b18b); g.lineBetween(-15, 18, 15, 18);
-    g.fillStyle(0xe9a17a); g.fillTriangle(-25, -27, -15, -40, -3, -25);
-    g.fillTriangle(25, -27, 15, -40, 3, -25);
+const PALETTES: Record<Exclude<ActorKind, 'hero'>, Record<string, number>> = {
+  chaser: { a: 0x2c1a22, b: 0x8e4338, e: 0xffca71, w: 0xffedb3, r: 0xd27555 },
+  shooter: { a: 0x281d29, b: 0x70516b, e: 0xc18b67, w: 0xf7d8a3, r: 0xc37a66 },
+  sentry: { a: 0x352323, b: 0x946047, e: 0xf9a745, w: 0xffdc85, r: 0xc8814c },
+  brute: { a: 0x312822, b: 0x957657, e: 0xc8a277, w: 0xf9df9d, r: 0xc4604a },
+  boss: { a: 0x231b22, b: 0x78404b, e: 0xc17e60, w: 0xffcb92, r: 0xe4765a },
+};
+
+export function createActor(scene: Phaser.Scene, x: number, y: number, kind: ActorKind): Phaser.GameObjects.Container {
+  const id = kind === 'hero' ? 'chaser' : kind;
+  const rows = PIXELS[id];
+  const palette = PALETTES[id];
+  const pixel = kind === 'boss' ? 4 : kind === 'brute' ? 3.3 : 2.7;
+  const g = scene.add.graphics();
+  for (let row = 0; row < rows.length; row++) {
+    for (let col = 0; col < rows[row].length; col++) {
+      const color = palette[rows[row][col]];
+      if (color === undefined) continue;
+      g.fillStyle(color);
+      g.fillRect(Math.floor((col - rows[row].length / 2) * pixel), Math.floor((row - rows.length / 2) * pixel), Math.ceil(pixel), Math.ceil(pixel));
+    }
   }
+  const shadow = scene.add.ellipse(2, kind === 'boss' ? 33 : 20, kind === 'boss' ? 70 : 40, 9, 0x0f0a09, 0.6);
   return scene.add.container(x, y, [shadow, g]);
 }

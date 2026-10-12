@@ -7,8 +7,20 @@ import { blocked, moveAroundObstacle, normalizedMovement, OBSTACLES, type Escape
 import { generateRun, parseRunSeed, type Direction, type Room } from '../core/run';
 import { chestWeapon, createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS, type WeaponId } from '../core/weapons';
 import { closestTarget } from '../core/targeting';
+import openingArt from '../assets/abertura.webp';
+import selectionArt from '../assets/selecao.webp';
+import roomArt from '../assets/sala-atrio.webp';
+import jaoArt from '../assets/jao.png';
+import aliceArt from '../assets/alice.png';
+import guiArt from '../assets/gui.png';
 
-type State = 'menu' | 'playing' | 'chest' | 'paused' | 'dead' | 'cleared';
+type State = 'menu' | 'selecting' | 'playing' | 'chest' | 'paused' | 'dead' | 'cleared';
+type HeroId = 'jao' | 'alice' | 'gui';
+const HEROES: { id: HeroId; name: string; description: string }[] = [
+  { id: 'jao', name: 'JÃO', description: 'O explorador de jaqueta vinho' },
+  { id: 'alice', name: 'ALICE', description: 'Coragem e olhar atento' },
+  { id: 'gui', name: 'GUI', description: 'O guardião de cabelos longos' },
+];
 type Enemy = { view: Phaser.GameObjects.Container; kind: EnemyKind; x: number; y: number; hp: number; maxHp: number; speed: number; cooldown: number; windup: number; escape?: EscapeStep };
 type Bullet = { view: Phaser.GameObjects.Arc; vx: number; vy: number; life: number; damage: number };
 type Coin = { view: Phaser.GameObjects.Arc; x: number; y: number };
@@ -18,6 +30,7 @@ const H = 540;
 
 export class ArenaScene extends Phaser.Scene {
   private state: State = 'menu';
+  private selectedHero: HeroId = 'jao';
   private hero!: Phaser.GameObjects.Container;
   private heroX = 480;
   private heroY = 385;
@@ -81,20 +94,29 @@ export class ArenaScene extends Phaser.Scene {
 
   constructor() { super('Arena'); }
 
+  preload(): void {
+    this.load.image('opening', openingArt);
+    this.load.image('selection', selectionArt);
+    this.load.image('room-atrium', roomArt);
+    this.load.image('jao', jaoArt);
+    this.load.image('alice', aliceArt);
+    this.load.image('gui', guiArt);
+  }
+
   create(): void {
     this.touchMode = navigator.maxTouchPoints > 0 || matchMedia('(pointer: coarse)').matches;
     this.drawRoom();
     this.createHero();
     const panels = this.add.graphics().setDepth(19);
-    panels.fillStyle(0x071520, 0.88); panels.fillRoundedRect(19, 10, 313, 57, 10);
-    panels.fillRoundedRect(334, 10, 208, 57, 10);
-    panels.fillRoundedRect(731, 9, 212, 75, 10);
-    panels.lineStyle(2, 0x50777d, 0.8);
-    panels.strokeRoundedRect(19, 10, 313, 57, 10);
-    panels.strokeRoundedRect(334, 10, 208, 57, 10);
-    panels.strokeRoundedRect(731, 9, 212, 75, 10);
-    this.hud = this.add.text(35, 19, '', { fontFamily: 'Trebuchet MS, system-ui', fontSize: '18px', color: '#effaf4', fontStyle: 'bold' }).setDepth(20);
-    this.energyText = this.add.text(345, 16, '', { fontFamily: 'system-ui', fontSize: '14px', color: '#acebff', fontStyle: 'bold' }).setDepth(20);
+    panels.fillStyle(0x241813, 0.93); panels.fillRect(16, 8, 322, 60);
+    panels.fillRect(342, 8, 209, 60);
+    panels.fillRect(731, 8, 217, 82);
+    panels.lineStyle(3, 0xa47642, 1);
+    panels.strokeRect(16, 8, 322, 60);
+    panels.strokeRect(342, 8, 209, 60);
+    panels.strokeRect(731, 8, 217, 82);
+    this.hud = this.add.text(35, 19, '', { fontFamily: 'Georgia, serif', fontSize: '17px', color: '#ffe5ae', fontStyle: 'bold' }).setDepth(20);
+    this.energyText = this.add.text(352, 16, '', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#cddded', fontStyle: 'bold' }).setDepth(20);
     this.energyBar = this.add.graphics().setDepth(20);
     if (new URLSearchParams(location.search).has('debug')) {
       this.debugFps = this.add.text(740, 77, '', { fontFamily: 'monospace', fontSize: '11px', color: '#93d8c7' }).setDepth(25);
@@ -102,24 +124,24 @@ export class ArenaScene extends Phaser.Scene {
     this.mapGraphics = this.add.graphics().setDepth(20);
     this.bossWarning = this.add.graphics().setDepth(8);
     this.bossBar = this.add.graphics().setDepth(20);
-    this.healButton = this.add.rectangle(647, 39, 105, 30, 0x367c80).setStrokeStyle(2, 0xa5e8cf).setDepth(20).setInteractive({ useHandCursor: true });
-    this.healLabel = this.add.text(647, 39, 'CURA ◈3', { fontFamily: 'system-ui', fontSize: '14px', color: '#e4fff8', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
+    this.healButton = this.add.rectangle(647, 39, 105, 30, 0x6b4a30).setStrokeStyle(2, 0xc69b5c).setDepth(20).setInteractive({ useHandCursor: true });
+    this.healLabel = this.add.text(647, 39, 'CURA ◈3', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#ffe0aa', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.healButton.on('pointerdown', () => this.buyHeal());
-    this.hint = this.add.text(480, 506, '', { fontFamily: 'system-ui', fontSize: '14px', color: '#91a5c8' }).setOrigin(0.5).setDepth(20);
+    this.hint = this.add.text(480, 516, '', { fontFamily: 'Georgia, serif', fontSize: '12px', color: '#ffe3aa', backgroundColor: '#241813' }).setOrigin(0.5).setDepth(20);
     this.add.text(900, 27, 'Ⅱ', { fontFamily: 'system-ui', fontSize: '26px', color: '#dbeaff' }).setOrigin(0.5).setDepth(20);
-    const soundButton = this.add.rectangle(895, 67, 82, 31, 0x1b4048).setStrokeStyle(1, 0x6aaea8)
+    const soundButton = this.add.rectangle(895, 67, 82, 31, 0x50341f).setStrokeStyle(1, 0xb5854e)
       .setDepth(23).setInteractive({ useHandCursor: true });
-    this.soundLabel = this.add.text(895, 67, 'SOM ●', { fontFamily: 'Trebuchet MS, system-ui', fontSize: '13px', color: '#9fe8d1', fontStyle: 'bold' })
+    this.soundLabel = this.add.text(895, 67, 'SOM ●', { fontFamily: 'Georgia, serif', fontSize: '13px', color: '#ffe0a0', fontStyle: 'bold' })
       .setOrigin(0.5).setDepth(24);
     soundButton.on('pointerdown', () => this.toggleSound());
 
-    this.joyBase = this.add.circle(153, 399, 61, 0x8cc5ff, 0.13).setStrokeStyle(2, 0xa5d4ff, 0.5).setDepth(20);
-    this.joyKnob = this.add.circle(153, 399, 25, 0x9ad7ff, 0.47).setDepth(21);
-    this.fireBase = this.add.circle(810, 399, 60, 0xff9f88, 0.28).setStrokeStyle(3, 0xffc0a4, 0.8).setDepth(20);
+    this.joyBase = this.add.circle(153, 399, 61, 0x503b29, 0.45).setStrokeStyle(3, 0xd3aa67, 0.75).setDepth(20);
+    this.joyKnob = this.add.circle(153, 399, 25, 0xc69454, 0.7).setDepth(21);
+    this.fireBase = this.add.circle(810, 399, 60, 0x8a3d29, 0.7).setStrokeStyle(3, 0xe8b267, 0.95).setDepth(20);
     this.fireLabel = this.add.text(810, 399, 'ATIRAR', { fontFamily: 'system-ui', fontSize: '15px', color: '#fff5ed', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
-    this.dashButton = this.add.circle(696, 437, 34, 0x8dc5f4, 0.25).setStrokeStyle(2, 0x9bd8ff, 0.8).setDepth(20);
+    this.dashButton = this.add.circle(696, 437, 34, 0x4e5c64, 0.7).setStrokeStyle(2, 0xb6c7c6, 0.8).setDepth(20);
     this.dashLabel = this.add.text(696, 437, 'DASH', { fontFamily: 'system-ui', fontSize: '12px', color: '#e9faff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
-    this.skillButton = this.add.circle(870, 281, 35, 0xc991ef, 0.28).setStrokeStyle(2, 0xe3bbff, 0.8).setDepth(20);
+    this.skillButton = this.add.circle(870, 281, 35, 0x75533f, 0.75).setStrokeStyle(2, 0xf6ca8c, 0.8).setDepth(20);
     this.skillLabel = this.add.text(870, 281, 'PULSO', { fontFamily: 'system-ui', fontSize: '11px', color: '#fbeaff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.setTouchVisibility();
 
@@ -138,7 +160,7 @@ export class ArenaScene extends Phaser.Scene {
       window.removeEventListener('keydown', this.onNativeKeyDown, true);
       window.removeEventListener('keyup', this.onNativeKeyUp, true);
     });
-    this.showOverlay('JUNQ · RUN', 'Mira automática, energia limitada e armas em baús.\nElimine os guardiões e encontre a saída.', 'COMEÇAR', () => this.startRun());
+    this.showMainMenu();
     this.refreshHud();
   }
 
@@ -146,60 +168,32 @@ export class ArenaScene extends Phaser.Scene {
     this.roomArt.forEach(item => item.destroy());
     const room = this.rooms[this.currentRoom];
     const palette = BIOMES[room?.biome ?? 'atrium'];
+    const backdrop = this.add.image(480, 270, 'room-atrium').setDisplaySize(W, H).setDepth(-2);
+    if (room?.biome === 'forge') backdrop.setTint(0xffae70);
     const g = this.add.graphics();
-    g.fillGradientStyle(palette.backdrop, palette.backdrop, 0x080f1b, 0x080f1b); g.fillRect(0, 0, W, H);
-    g.fillStyle(palette.rim); g.fillRoundedRect(37, 66, 886, 434, 18);
-    g.fillStyle(0x0c1826); g.fillRoundedRect(47, 76, 866, 414, 13);
-    g.fillStyle(palette.floor); g.fillRoundedRect(59, 86, 842, 394, 8);
-    // Offset slabs and small etched glyphs make the room feel hand built without an external tileset.
-    for (let row = 0; row < 10; row++) {
-      for (let col = 0; col < 20; col++) {
-        const x = 64 + col * 42 + (row % 2) * 20, y = 90 + row * 39;
-        if (x > 877) continue;
-        g.fillStyle((row + col) % 4 === 0 ? palette.tileA : palette.tileB, 0.65);
-        g.fillRoundedRect(x, y, 39, 36, 3);
-        if ((row * 7 + col * 11) % 17 === 0) {
-          g.lineStyle(1, palette.glyph, 0.5);
-          if (room?.biome === 'forge') {
-            g.lineBetween(x + 10, y + 7, x + 22, y + 19);
-            g.lineBetween(x + 22, y + 19, x + 15, y + 30);
-          } else {
-            g.strokeCircle(x + 19, y + 18, 9);
-            g.lineBetween(x + 19, y + 12, x + 19, y + 24);
-          }
-        }
-      }
-    }
-    g.lineStyle(4, palette.pillarTop); g.strokeRoundedRect(54, 81, 852, 403, 12);
-    g.lineStyle(2, palette.line, 0.6); g.strokeRoundedRect(62, 89, 836, 387, 8);
-    for (const [x, y] of [[85, 111], [875, 111], [85, 454], [875, 454]]) {
-      g.fillStyle(0x142a36); g.fillCircle(x, y, 15);
-      g.lineStyle(2, palette.accent); g.strokeCircle(x, y, 11);
-      g.fillStyle(0xd7b772); g.fillCircle(x, y, 4);
-    }
     for (const o of room?.obstacles ?? OBSTACLES) {
-      g.fillStyle(0x050d17, 0.65); g.fillRoundedRect(o.x + 7, o.y + 11, o.w, o.h, 7);
-      g.fillStyle(palette.pillar); g.fillRoundedRect(o.x, o.y, o.w, o.h, 6);
-      g.fillStyle(palette.pillarTop); g.fillRoundedRect(o.x + 5, o.y + 4, o.w - 10, o.h - 11, 4);
-      g.lineStyle(3, palette.pillarEdge); g.strokeRoundedRect(o.x, o.y, o.w, o.h, 6);
-      g.lineStyle(2, palette.line); g.lineBetween(o.x + 11, o.y + 12, o.x + o.w - 11, o.y + o.h - 15);
-      g.fillStyle(0xd6b774); g.fillCircle(o.x + o.w / 2, o.y + o.h / 2, 4);
+      g.fillStyle(0x130b0b, 0.7); g.fillRect(o.x + 6, o.y + 9, o.w, o.h);
+      g.fillStyle(palette.pillarEdge); g.fillRect(o.x, o.y, o.w, o.h);
+      g.fillStyle(palette.pillar); g.fillRect(o.x + 4, o.y + 4, o.w - 8, o.h - 8);
+      g.fillStyle(palette.pillarTop); g.fillRect(o.x + 7, o.y + 6, o.w - 14, o.h - 15);
+      g.lineStyle(2, 0x241816); g.strokeRect(o.x + 7, o.y + 6, o.w - 14, o.h - 15);
+      g.fillStyle(0xc58d48); g.fillRect(o.x + o.w / 2 - 3, o.y + o.h / 2 - 3, 6, 6);
     }
     if (room) {
       const open = this.cleared.has(room.id);
-      g.fillStyle(open ? 0x64d8b4 : 0xa25a68);
+      g.fillStyle(open ? 0xe3ad5a : 0x743e34);
       for (const direction of Object.keys(room.neighbors) as Direction[]) {
         if (direction === 'north') { g.fillRect(436, 81, 88, 12); g.fillStyle(0xd9f0cf); g.fillTriangle(480, 87, 470, 97, 490, 97); }
         if (direction === 'south') { g.fillRect(436, 473, 88, 12); g.fillStyle(0xd9f0cf); g.fillTriangle(480, 480, 470, 467, 490, 467); }
         if (direction === 'west') { g.fillRect(52, 251, 13, 68); g.fillStyle(0xd9f0cf); g.fillTriangle(57, 285, 70, 274, 70, 296); }
         if (direction === 'east') { g.fillRect(895, 251, 13, 68); g.fillStyle(0xd9f0cf); g.fillTriangle(902, 285, 890, 274, 890, 296); }
-        g.fillStyle(open ? 0x64d8b4 : 0xa25a68);
+        g.fillStyle(open ? 0xe3ad5a : 0x743e34);
       }
     }
     const roomName = room?.kind === 'boss' ? 'GUARDIÃO FINAL' : room?.kind === 'reward' ? 'BAÚ APÓS COMBATE' : 'COMBATE';
     const title = this.add.text(480, 110, room ? `${palette.name} · SALA ${String(room.id + 1).padStart(2, '0')} · ${this.cleared.has(room.id) ? 'PORTAS ABERTAS' : roomName}` : 'ÁTRIO · SALA 01',
-      { fontFamily: 'system-ui', fontSize: '13px', color: room?.biome === 'forge' ? '#ffd39b' : '#93bac1', letterSpacing: 2 }).setOrigin(0.5);
-    this.roomArt = [g, title];
+      { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#ffe0a2', letterSpacing: 2, backgroundColor: '#281814' }).setOrigin(0.5).setDepth(3);
+    this.roomArt = [backdrop, g, title];
     if (room?.kind === 'reward' && this.cleared.has(room.id) && !this.openedChests.has(room.id)) {
       const chest = this.add.graphics().setDepth(6);
       chest.fillStyle(0x251b23); chest.fillRoundedRect(439, 247, 82, 55, 7);
@@ -214,7 +208,15 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private createHero(): void {
-    this.hero = createActor(this, this.heroX, this.heroY, 'hero').setDepth(10);
+    this.hero = this.add.container(this.heroX, this.heroY).setDepth(10);
+    this.setHeroArt();
+  }
+
+  private setHeroArt(): void {
+    this.hero.removeAll(true);
+    const shadow = this.add.ellipse(0, 15, 40, 10, 0x100c0b, 0.7);
+    const sprite = this.add.image(0, -19, this.selectedHero).setDisplaySize(this.selectedHero === 'gui' ? 43 : 39, 67);
+    this.hero.add([shadow, sprite]);
   }
 
   private createEnemy(x: number, y: number, kind: EnemyKind): Enemy {
@@ -238,6 +240,7 @@ export class ArenaScene extends Phaser.Scene {
     this.soundscape.unlock(); this.soundscape.play('start');
     this.pressedCodes.clear();
     this.clearOverlay();
+    this.setHeroArt();
     this.seed = parseRunSeed(new URLSearchParams(location.search).get('seed')) ?? Math.floor(Math.random() * 0x100000000);
     this.rooms = generateRun(this.seed);
     this.currentRoom = 0;
@@ -249,6 +252,7 @@ export class ArenaScene extends Phaser.Scene {
     this.dashTimer = 0; this.dashCooldown = 0; this.skillCooldown = 0;
     this.heroX = 480; this.heroY = 385; this.hero.setPosition(this.heroX, this.heroY);
     this.enterRoom(0);
+    this.cameras.main.flash(300, 30, 15, 6);
     this.state = 'playing'; this.refreshHud();
   }
 
@@ -274,6 +278,7 @@ export class ArenaScene extends Phaser.Scene {
     if (entry === 'north') { this.heroX = 480; this.heroY = 447; }
     this.hero.setPosition(this.heroX, this.heroY);
     this.drawRoom();
+    if (entry) this.cameras.main.flash(180, 35, 21, 9);
     if (!this.cleared.has(id)) {
       this.enemies = encounterFor(this.rooms[id]).map(kind => this.createEnemy(SPAWNS[kind].x, SPAWNS[kind].y, kind));
     }
@@ -531,22 +536,22 @@ export class ArenaScene extends Phaser.Scene {
     this.state = 'chest';
     this.soundscape.play('chest');
     this.clearOverlay();
-    const shade = this.add.rectangle(480, 270, W, H, 0x06111c, 0.87).setDepth(40);
+    const shade = this.add.rectangle(480, 270, W, H, 0x1a110d, 0.85).setDepth(40);
     const card = this.add.graphics().setDepth(41);
-    card.fillStyle(0x122836, 0.98); card.fillRoundedRect(180, 112, 600, 330, 18);
-    card.lineStyle(3, 0xd5b878); card.strokeRoundedRect(180, 112, 600, 330, 18);
-    card.lineStyle(2, 0x7dc9bf); card.lineBetween(236, 156, 724, 156);
+    card.fillStyle(0x342119, 0.98); card.fillRect(180, 112, 600, 330);
+    card.lineStyle(5, 0xd5a35d); card.strokeRect(180, 112, 600, 330);
+    card.lineStyle(2, 0xc49b64); card.lineBetween(236, 156, 724, 156);
     card.lineBetween(236, 330, 724, 330);
     card.fillStyle(0xe8ca82); card.fillCircle(207, 138, 5); card.fillCircle(753, 138, 5);
     const rewardIds = this.rooms.filter(room => room.kind === 'reward').map(room => room.id);
     const found = chestWeapon(this.seed, this.currentRoom, rewardIds);
-    const heading = this.add.text(480, 196, 'BAÚ ABERTO!', { fontFamily: 'Trebuchet MS, system-ui', fontSize: '32px', color: '#ffe1a0', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
+    const heading = this.add.text(480, 196, 'BAÚ ABERTO!', { fontFamily: 'Georgia, serif', fontSize: '32px', color: '#ffe1a0', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
     const detail = this.add.text(480, 245, `${WEAPONS[found].name}\n${WEAPONS[found].description} · ${WEAPONS[found].energy} energia por tiro`,
-      { fontFamily: 'Trebuchet MS, system-ui', fontSize: '19px', color: '#e4f3e8', align: 'center', lineSpacing: 10 }).setOrigin(0.5).setDepth(42);
-    const equip = this.add.rectangle(365, 377, 205, 60, 0x58bfbd).setStrokeStyle(2, 0xb6f4e1).setInteractive({ useHandCursor: true }).setDepth(42);
-    const equipLabel = this.add.text(365, 377, 'EQUIPAR', { fontFamily: 'Trebuchet MS, system-ui', fontSize: '18px', color: '#0b2632', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
-    const keep = this.add.rectangle(595, 377, 205, 60, 0x2b4650).setStrokeStyle(2, 0x8ebbb6).setInteractive({ useHandCursor: true }).setDepth(42);
-    const keepLabel = this.add.text(595, 377, 'MANTER ATUAL', { fontFamily: 'Trebuchet MS, system-ui', fontSize: '16px', color: '#e3f1e9', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
+      { fontFamily: 'Georgia, serif', fontSize: '19px', color: '#f4ddb7', align: 'center', lineSpacing: 10 }).setOrigin(0.5).setDepth(42);
+    const equip = this.add.rectangle(365, 377, 205, 60, 0x8f572e).setStrokeStyle(3, 0xf1c275).setInteractive({ useHandCursor: true }).setDepth(42);
+    const equipLabel = this.add.text(365, 377, 'EQUIPAR', { fontFamily: 'Georgia, serif', fontSize: '18px', color: '#fff0c2', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
+    const keep = this.add.rectangle(595, 377, 205, 60, 0x5b4030).setStrokeStyle(3, 0xb89a72).setInteractive({ useHandCursor: true }).setDepth(42);
+    const keepLabel = this.add.text(595, 377, 'MANTER ATUAL', { fontFamily: 'Georgia, serif', fontSize: '16px', color: '#f4ddb7', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
     equip.on('pointerdown', () => this.closeChest(found));
     keep.on('pointerdown', () => this.closeChest());
     this.overlay = [shade, card, heading, detail, equip, equipLabel, keep, keepLabel];
@@ -561,7 +566,7 @@ export class ArenaScene extends Phaser.Scene {
 
   private refreshHud(): void {
     this.hud.setX(this.touchMode ? 78 : 35);
-    this.hud.setText(`❤ ${'♥'.repeat(this.heroHp)}${'♡'.repeat(5 - this.heroHp)}   Salas ${this.cleared.size}/6\n${WEAPONS[this.weapon].name}   ◈ ${this.coins} moedas`);
+    this.hud.setText(`${this.selectedHero.toUpperCase()}  ${'♥'.repeat(this.heroHp)}${'♡'.repeat(5 - this.heroHp)}  ${this.cleared.size}/6\n${WEAPONS[this.weapon].name}   ◈ ${this.coins} moedas`);
     this.healButton.setVisible(this.state === 'playing' && this.cleared.has(this.currentRoom));
     this.healLabel.setVisible(this.healButton.visible);
     this.healButton.setAlpha(this.coins >= 3 && this.heroHp < 5 ? 1 : 0.4);
@@ -575,9 +580,9 @@ export class ArenaScene extends Phaser.Scene {
     const ready = this.energy >= WEAPONS[this.weapon].energy;
     this.energyText.setText(`ENERGIA ${Math.floor(this.energy)}/${MAX_ENERGY} · ${WEAPONS[this.weapon].energy}/tiro`);
     this.energyBar.clear();
-    this.energyBar.fillStyle(0x213c54); this.energyBar.fillRoundedRect(345, 47, 185, 11, 4);
-    this.energyBar.fillStyle(ready ? 0x61cde9 : 0xff8c91);
-    this.energyBar.fillRoundedRect(347, 49, 181 * this.energy / MAX_ENERGY, 7, 3);
+    this.energyBar.fillStyle(0x160f0d); this.energyBar.fillRect(351, 44, 188, 15);
+    this.energyBar.fillStyle(ready ? 0x77b6d0 : 0xb15b49);
+    this.energyBar.fillRect(354, 47, 182 * this.energy / MAX_ENERGY, 9);
     this.fireBase.setAlpha(ready ? 1 : 0.4);
     this.fireLabel.setAlpha(ready ? 1 : 0.5);
   }
@@ -587,12 +592,12 @@ export class ArenaScene extends Phaser.Scene {
     for (const room of this.rooms) {
       if (!this.visited.has(room.id)) continue;
       const x = 765 + room.x * 34, y = 19 + room.y * 24;
-      this.mapGraphics.lineStyle(2, 0x9cc8df, 0.75);
+      this.mapGraphics.lineStyle(2, 0xc49a5d, 0.75);
       if (room.neighbors.east !== undefined && this.visited.has(room.neighbors.east)) this.mapGraphics.lineBetween(x + 8, y + 6, x + 34, y + 6);
       if (room.neighbors.south !== undefined && this.visited.has(room.neighbors.south)) this.mapGraphics.lineBetween(x + 8, y + 6, x + 8, y + 30);
-      this.mapGraphics.fillStyle(room.id === this.currentRoom ? 0x65e5ff : room.kind === 'boss' ? 0xff7896
-        : room.biome === 'forge' ? 0xf3ba78 : this.cleared.has(room.id) ? 0x79d9b4 : 0xa6c9cf);
-      this.mapGraphics.fillRoundedRect(x, y, 16, 13, 3);
+      this.mapGraphics.fillStyle(room.id === this.currentRoom ? 0xf0c76f : room.kind === 'boss' ? 0xb94b42
+        : room.biome === 'forge' ? 0xd99a50 : this.cleared.has(room.id) ? 0x9caa70 : 0x81705c);
+      this.mapGraphics.fillRect(x, y, 16, 13);
     }
   }
 
@@ -603,7 +608,7 @@ export class ArenaScene extends Phaser.Scene {
     this.joyX = 0; this.joyY = 0; this.joyKnob.setPosition(153, 399);
     this.showOverlay(won ? 'GUARDIÃO DERROTADO!' : 'FIM DA TENTATIVA',
       `${won ? 'Você concluiu a run.' : 'Os guardiões venceram desta vez.'}\nSalas: ${this.cleared.size}/6 · Tempo: ${Math.floor(this.elapsed)}s · Dano: ${this.damageTaken}\nMoedas: ${this.coins} · Seed: ${this.seed}`,
-      'JOGAR DE NOVO', () => this.startRun());
+      'ESCOLHER HERÓI', () => this.showSelection());
   }
 
   private togglePause(): void {
@@ -634,23 +639,64 @@ export class ArenaScene extends Phaser.Scene {
     if (this.touchMode && matchMedia('(orientation: portrait)').matches && this.state === 'playing') this.togglePause();
   }
 
+  private addWoodButton(x: number, y: number, width: number, label: string, action: () => void, depth = 44): Phaser.GameObjects.GameObject[] {
+    const plate = this.add.rectangle(x, y, width, 49, 0x714321).setStrokeStyle(4, 0xe5b76a)
+      .setDepth(depth).setInteractive({ useHandCursor: true });
+    const text = this.add.text(x, y, label, { fontFamily: 'Georgia, serif', fontSize: '23px', color: '#fff0c2', fontStyle: 'bold' })
+      .setOrigin(0.5).setDepth(depth + 1);
+    plate.on('pointerdown', action);
+    return [plate, text];
+  }
+
+  private showMainMenu(): void {
+    this.state = 'menu'; this.clearOverlay();
+    const background = this.add.image(480, 270, 'opening').setDisplaySize(W, H).setDepth(40);
+    const dark = this.add.rectangle(480, 84, 440, 140, 0x160f13, 0.42).setDepth(41);
+    const title = this.add.text(480, 72, 'JUNQ', { fontFamily: 'Georgia, serif', fontSize: '81px', color: '#f5d28c', fontStyle: 'bold', stroke: '#412415', strokeThickness: 11 })
+      .setOrigin(0.5).setDepth(42);
+    const subtitle = this.add.text(480, 127, 'A AVENTURA COMEÇA AQUI', { fontFamily: 'Georgia, serif', fontSize: '16px', color: '#ffe9bd', letterSpacing: 3 })
+      .setOrigin(0.5).setDepth(42);
+    this.overlay = [background, dark, title, subtitle, ...this.addWoodButton(480, 467, 236, 'JOGAR', () => this.showSelection())];
+  }
+
+  private showSelection(): void {
+    this.state = 'selecting'; this.clearOverlay();
+    const background = this.add.image(480, 270, 'selection').setDisplaySize(W, H).setDepth(40);
+    const panel = this.add.graphics().setDepth(41);
+    panel.fillStyle(0x241711, 0.91); panel.fillRect(18, 13, 924, 71);
+    panel.lineStyle(3, 0xb4894b); panel.strokeRect(18, 13, 924, 71);
+    const title = this.add.text(480, 47, 'ESCOLHA SEU HERÓI', { fontFamily: 'Georgia, serif', fontSize: '33px', color: '#ffe1a0', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
+    this.overlay = [background, panel, title];
+    for (const [index, hero] of HEROES.entries()) {
+      const x = 208 + index * 272;
+      const chosen = this.selectedHero === hero.id;
+      const frame = this.add.rectangle(x, 292, 227, 299, chosen ? 0x583620 : 0x281c17, 0.92)
+        .setStrokeStyle(chosen ? 5 : 3, chosen ? 0xffd47d : 0x8f6946).setDepth(42).setInteractive({ useHandCursor: true });
+      const sprite = this.add.image(x, 271, hero.id).setDisplaySize(hero.id === 'gui' ? 125 : 112, 189).setDepth(43);
+      const name = this.add.text(x, 397, hero.name, { fontFamily: 'Georgia, serif', fontSize: '23px', color: '#ffdf9a', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
+      const description = this.add.text(x, 427, hero.description, { fontFamily: 'Georgia, serif', fontSize: '12px', color: '#f1d2a1' }).setOrigin(0.5).setDepth(43);
+      frame.on('pointerdown', () => { this.selectedHero = hero.id; this.showSelection(); });
+      sprite.setInteractive({ useHandCursor: true }).on('pointerdown', () => { this.selectedHero = hero.id; this.showSelection(); });
+      this.overlay.push(frame, sprite, name, description);
+    }
+    this.overlay.push(...this.addWoodButton(355, 492, 213, 'VOLTAR', () => this.showMainMenu()));
+    this.overlay.push(...this.addWoodButton(605, 492, 213, 'ENTRAR', () => this.startRun()));
+  }
+
   private showOverlay(title: string, subtitle: string, button: string, action: () => void): void {
     this.clearOverlay();
-    const shade = this.add.rectangle(480, 270, W, H, 0x06111c, 0.82).setDepth(40);
+    const shade = this.add.rectangle(480, 270, W, H, 0x160e0b, 0.77).setDepth(40);
     const card = this.add.graphics().setDepth(41);
-    card.fillStyle(0x122836, 0.96); card.fillRoundedRect(191, 115, 578, 322, 18);
-    card.lineStyle(3, 0x77c9c6); card.strokeRoundedRect(191, 115, 578, 322, 18);
+    card.fillStyle(0x332119, 0.97); card.fillRect(191, 115, 578, 322);
+    card.lineStyle(5, 0xc29455); card.strokeRect(191, 115, 578, 322);
     card.lineStyle(2, 0xc5ad75, 0.8); card.lineBetween(240, 156, 720, 156);
     card.lineBetween(240, 350, 720, 350);
     for (const x of [216, 744]) {
       card.fillStyle(0xdec58b); card.fillCircle(x, 140, 4); card.fillCircle(x, 412, 4);
     }
-    const heading = this.add.text(480, 216, title, { fontFamily: 'Trebuchet MS, system-ui', fontSize: '42px', color: '#f2f3de', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
-    const detail = this.add.text(480, 284, subtitle, { fontFamily: 'Trebuchet MS, system-ui', fontSize: '18px', color: '#b7d8d5', align: 'center', lineSpacing: 10 }).setOrigin(0.5).setDepth(42);
-    const plate = this.add.rectangle(480, 391, 272, 58, 0x58bfbd).setStrokeStyle(2, 0xb6f4e1).setInteractive({ useHandCursor: true }).setDepth(42);
-    const label = this.add.text(480, 391, button, { fontFamily: 'Trebuchet MS, system-ui', fontSize: '19px', color: '#0b2632', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
-    plate.on('pointerdown', action);
-    this.overlay = [shade, card, heading, detail, plate, label];
+    const heading = this.add.text(480, 216, title, { fontFamily: 'Georgia, serif', fontSize: '38px', color: '#ffe4aa', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
+    const detail = this.add.text(480, 284, subtitle, { fontFamily: 'Georgia, serif', fontSize: '17px', color: '#f0d7b0', align: 'center', lineSpacing: 10 }).setOrigin(0.5).setDepth(42);
+    this.overlay = [shade, card, heading, detail, ...this.addWoodButton(480, 391, 272, button, action)];
   }
 
   private clearOverlay(): void { this.overlay.forEach(item => item.destroy()); this.overlay = []; }
@@ -658,7 +704,7 @@ export class ArenaScene extends Phaser.Scene {
   private toggleSound(): void {
     this.soundscape.setMuted(!this.soundscape.muted);
     this.soundLabel.setText(this.soundscape.muted ? 'SOM ○' : 'SOM ●');
-    this.soundLabel.setColor(this.soundscape.muted ? '#8b9cac' : '#9fe8d1');
+    this.soundLabel.setColor(this.soundscape.muted ? '#9a8670' : '#ffe0a0');
     if (!this.soundscape.muted) this.soundscape.play('coin');
   }
 

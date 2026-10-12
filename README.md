@@ -2,7 +2,7 @@
 
 Planejamento de um jogo autoral 2D de ação, roguelite e tiro com visão superior, inspirado no **ritmo de salas, escolhas e combates** de Soul Knight. Nome de trabalho; título, mundo e arte finais serão próprios. Primeiro destino: navegador e GitHub Pages. Depois: aplicativo Android e, se fizer sentido, iOS.
 
-> Estado em 12/10/2026: **vertical slice web aprovado pelo MVP para avançar** no [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). Mira automática, energia e baús estão implementados. A arte e os sons originais de T009 foram publicados; o usuário fará os testes subjetivos depois. T010 começou com uma segunda região e novo encontro. A direção visual foi refeita em conceitos de pixel art com Jão, Alice e Gui, ainda sem integração à build. Não há APK.
+> Estado em 12/10/2026: **vertical slice web aprovado pelo MVP para avançar** no [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). Mira automática, energia e baús estão implementados. A arte e os sons originais de T009 foram publicados; o usuário fará os testes subjetivos depois. T010 começou com uma segunda região e novo encontro. A direção de pixel art foi aprovada e a primeira integração inclui abertura, seleção de Jão/Alice/Gui, sala de pedra, HUD quente e inimigos em grade. Os três compartilham o kit provisório; animações e kits próprios seguem em T010. Não há APK.
 
 ## O jogo em uma frase
 
@@ -25,7 +25,7 @@ Uma run de um andar, 5 a 7 salas conectadas, um personagem provisório, ataque, 
 
 O vertical slice tem **seis salas conectadas**, dois baús após combate, ataque básico e duas armas extras com padrões diferentes, moedas derrubadas pelos inimigos, cura comprável, chefe com ataque sinalizado, resultado com seed, dano e tempo, pausa e reinício. O jogo ocupa a área visível do celular na horizontal e tenta entrar em tela cheia ao começar. No retrato, pede para girar o aparelho. Em navegadores que não permitem tela cheia, continua jogável na área visível. Não depende de conta, servidor ou banco de dados.
 
-Na primeira expansão de conteúdo, o caminho final da mesma run entra na **Forja de Âmbar**. A região muda pisos e obstáculos e substitui o atirador por uma sentinela fixa. Ela mostra uma linha e um círculo de aviso antes de lançar três projéteis alaranjados. Cada seed garante pelo menos uma sala da Forja antes do chefe e um baú nessa região. Ainda são seis salas ao todo; personagens adicionais virão em outra entrega de T010.
+Na primeira expansão de conteúdo, o caminho final da mesma run entra na **Forja de Âmbar**. A região muda pisos e obstáculos e substitui o atirador por uma sentinela fixa. Ela mostra uma linha e um círculo de aviso antes de lançar três projéteis alaranjados. Cada seed garante pelo menos uma sala da Forja antes do chefe e um baú nessa região. Ainda são seis salas ao todo; Jão, Alice e Gui são selecionáveis com kit compartilhado nesta primeira entrega visual.
 
 ## Controles desta versão
 
@@ -52,7 +52,7 @@ Para reproduzir a geração de salas e baús de uma tentativa, use `?seed=123456
 
 ## Próximo passo
 
-Revisar os [conceitos de pixel art](docs/06-DIRECAO-VISUAL.md) com o MVP; em seguida, criar kits de personagens Junq próprios deste jogo, sprites finais e balanceamento das duas regiões. O MVP adiou a validação no aparelho; quando testar, conferir leitura dos projéteis e do aviso da sentinela, conforto do HUD, áudio e mudo no celular horizontal. O aceite de avanço de T008 foi dado pelo MVP; aparelho, FPS e run completa não foram registrados nesta sessão e continuam como observação para o beta. Leia o [handoff atual](docs/HANDOFF.md). As bases abertas pesquisadas são fontes de estudo; não foram incorporadas.
+Aprimorar os [assets de pixel art](docs/06-DIRECAO-VISUAL.md) aprovados pelo MVP com animações e kits distintos para o trio; balancear as duas regiões. O MVP adiou a validação no aparelho; quando testar, conferir leitura dos projéteis e do aviso da sentinela, conforto do HUD, áudio e mudo no celular horizontal. O aceite de avanço de T008 foi dado pelo MVP; aparelho, FPS e run completa não foram registrados nesta sessão e continuam como observação para o beta. Leia o [handoff atual](docs/HANDOFF.md). As bases abertas pesquisadas são fontes de estudo; não foram incorporadas.
 
 ## Fontes essenciais
 

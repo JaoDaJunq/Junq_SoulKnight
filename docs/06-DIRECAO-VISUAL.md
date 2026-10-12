@@ -1,6 +1,6 @@
 # 06 · Direção visual · pixel art de aventura (v0.2)
 
-**Estado em 12/10/2026:** proposta visual revisada após o MVP rejeitar a v0.1 futurista. Os quatro mockups abaixo são conceitos para avaliar, **não capturas do jogo nem sprites prontos para animação**. O nome `Junq SoulKnight` permanece apenas como nome de trabalho do repositório; a proposta `JUNQ: RUPTURA` foi descartada. A build publicada ainda usa a arte vetorial anterior.
+**Estado em 12/10/2026:** o MVP aprovou com entusiasmo esta direção. Os quatro mockups abaixo continuam sendo referências conceituais, não capturas da build. A primeira integração jogável produz assets próprios em `src/assets/`: abertura, taverna, sala de pedra e sprites estáticos do trio. Os inimigos são desenhos de pixels em código. O nome `Junq SoulKnight` permanece como nome de trabalho; `JUNQ: RUPTURA` foi descartado.
 
 ## O que queremos sentir
 
@@ -64,9 +64,9 @@ Sala jogável no centro; vida, defesa se existir e energia no canto superior esq
 
 ## Próximas aprovações e implementação
 
-1. Validar se as **quatro imagens** têm o tom desejado e se os três personagens lembram as fotos. Corrigir cabelo, rosto, corpo e roupa antes de animar.
+1. **Aprovado pelo MVP:** tom de aventura, trio e direção em pixel art. Refinar semelhança, roupa e escala antes de animar.
 2. Definir kits e ataque básico próprios deste jogo. **Jão não ganha uma arma fixa no retrato**; armas de baú continuam parte da run. A aparência das armas em cada personagem será resolvida com o kit.
 3. Produzir separadamente sprites reais em escala de jogo, vistas e frames, tiles do Átrio/Forja, monstros e componentes de UI. O gerador de imagens serve ao conceito, não substitui pixel art editável validada frame a frame.
 4. Integrar abertura, seleção e HUD em lotes pequenos no Pages; testar jogo, controles e leitura visual no Android antes de fechar T009/T010.
 
-**Procedência:** conceitos gerados com a ferramenta de imagem do projeto usando quatro fotos enviadas pelo MVP como referência de identidade e as capturas de Soul Knight apenas como referência de gênero/hierarquia. As fotos originais não são publicadas no repositório. As imagens de conceito são originais deste projeto e ainda aguardam aprovação para uso visual. Não reutilizar sprites ou habilidades de Junq Bullet ou Junqverse automaticamente.
+**Procedência:** conceitos gerados com a ferramenta de imagem do projeto usando quatro fotos enviadas pelo MVP como referência de identidade e as capturas de Soul Knight apenas como referência de gênero/hierarquia. As fotos originais não são publicadas no repositório. As imagens de conceito foram aprovadas como direção. Assets de produção são derivados/recriados para uso no jogo, com botões e textos interativos desenhados por código. Não reutilizar sprites ou habilidades de Junq Bullet ou Junqverse automaticamente.
