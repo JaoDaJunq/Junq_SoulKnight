@@ -2,23 +2,25 @@
 
 ## Estado real
 
-- T001: scaffold Phaser 3.90.0, TypeScript 5.9.3, Vite 8.3.4, CI e Pages ativo com fonte **GitHub Actions**. O [workflow 38194600820](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38194600820) teve `verify` e `deploy` verdes. [Página jogável](https://jaodajunq.github.io/Junq_SoulKnight/) abriu no Chrome desktop, com bundle compilado. Android não verificado.
-- T002–T004: uma sala manual, colisões, vida, tiro, três tipos de inimigos, dash, pulso, derrota, pausa e reinício. Sala inicial e pausa observadas no browser desktop. Controle de teclado, toque, combate completo e reinício ainda precisam de playtest; entrada do canvas recebeu foco explícito para teclado na versão T005.
-- T005: seis salas em grade 3×2 com árvore de conexões gerada por seed, portas liberadas ao limpar cada sala, layout alternado, inimigos por sala, minimapa das salas visitadas e seed no resultado. **Publicado e sala inicial observada no Chrome desktop.** Transição por porta e run completa ainda pendentes de playtest. O mapa não inclui chefe nem sala de recompensa; são T006–T007.
-- T006–T015: não iniciados. Não há armas alternativas, drops, chefe, save ou APK.
+- T001–T005: Phaser 3/TypeScript/Vite, CI e Pages ativo, combate base e seis salas conectadas por seed. Os testes do gerador cobrem 100 seeds, portas pareadas, spawn e acesso ao chefe.
+- T006: três armas com cadência e padrão de tiro próprios, moedas de inimigos, cura por três moedas e escolhas entre duas armas alternativas ou melhoria de dano em duas salas. Moedas no chão persistem ao revisitar salas.
+- T007: sala do chefe no ponto mais distante do início, aviso visual antes dos ataques, barra de vida, vitória e derrota com seed, tempo, dano, salas e moedas.
+- T008: CSS preenche a área visível em celular horizontal, aviso para girar no retrato, tentativa de tela cheia após toque, pausa ao girar/perder foco, controles de toque reposicionados e FPS opcional (`?debug=1`). Captura direta de teclado complementa o input do Phaser. **Código implementado, aceite pendente:** run completa e teste Android físico, incluindo multitoque, escala, safe areas e desempenho.
+- T009–T015: pendentes. Arte e áudio finais, save, PWA e APK não existem.
 
-## Evidência
+## Evidência e limites
 
-- Local: `npm run typecheck`, `npm test` e `npm run build` passaram. O teste percorre 100 seeds, valida acesso às seis salas, portas pareadas, spawn livre e repetibilidade.
-- [GitHub Actions run 38195115760](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38195115760): `verify` e `deploy` success para commit `4218800`. Browser público: menu, sala 01, contador `Salas 0/6`, minimapa, porta bloqueada, inimigos, projéteis e perda de vida apareceram no desktop. O primeiro clique no canvas por automação às vezes só focou a área; as teclas não produziram deslocamento nessa sessão automatizada mesmo após o foco explícito. Reavaliar em uso humano real. Pausa por clique foi verificada antes de T005.
-- O bundle Phaser gera aviso de chunk acima de 500 kB (~1,2 MB JS, ~325 kB gzip). Não é falha de build, mas medir carregamento em celular antes do lançamento.
+- Commit `1f7ed0a` publicou a correção de teclado após o vertical slice `050377c`; [Actions 38196895602](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38196895602) terminou com sucesso. A documentação atual é um commit posterior.
+- Local: `npm run typecheck`, `npm test` e `npm run build` passaram. Testes de regras cobrem 100 seeds e escolhas/padrões de armas; não simulam combate visual ou input físico.
+- [Pages](https://jaodajunq.github.io/Junq_SoulKnight/) aberto no Chrome desktop: menu novo, sala inicial, HUD de arma/moedas, inimigos, minimapa e pausa por botão visíveis. A automação de teclado não comprovou deslocamento ou pausa; o primeiro clique no canvas às vezes apenas foca a área. Testar em navegador humano. Não se executou a run inteira nem teste em Android real.
+- Build gera aviso de chunk Phaser acima de 500 kB (~1,2 MB JS, ~327 kB gzip). Medir carregamento e FPS no celular antes de fechar T008.
 
-## Próximo trabalho
+## Próximo trabalho: concluir T008
 
-1. Testar teclado com foco, tiro, dash, pulso, morte/reinício, seis salas e portas em navegador humano. A automação observou renderização e tiro, mas não conseguiu validar a run completa.
-2. Validar Android real em horizontal, incluindo dois dedos simultâneos, safe areas, escala e desempenho. Corrigir falhas observadas antes de aceitar T001–T005.
-3. Iniciar T006: três famílias de armas, drops, moeda e escolhas de recompensa, preservando estado da run ao atravessar portas.
+1. Jogar do menu à vitória e à derrota no desktop. Conferir WASD/setas, clique para tiro, dash, pulso, H para cura, Esc, portas, escolha de recompensas, moedas persistidas e reinício. Registrar seed e bug encontrado.
+2. Repetir no Android real em horizontal: ocupação da tela, safe areas, dois dedos para mover/atirar, botões, rotação, retorno de foco, tela cheia permitida ou recusada e FPS com `?debug=1`. Registrar aparelho/navegador e corrigir os bloqueios observados.
+3. Só após esse aceite iniciar T009: arte, áudio e créditos auditados. Não marcar T008 concluído pela existência do código.
 
-## Como rodar localmente
+## Como rodar
 
-Node 22.18+ ou 24; `npm ci`, `npm run dev`. Checagens: `npm run typecheck`, `npm test`, `npm run build`. Vite usa base `/Junq_SoulKnight/` para Pages. Gráficos provisórios são formas criadas em código; não há material de terceiros incorporado.
+Node 22.18+ ou 24; `npm ci`, `npm run dev`. Checagens: `npm run typecheck`, `npm test`, `npm run build`. Vite usa base `/Junq_SoulKnight/`. Gráficos provisórios são formas criadas em código; não há assets de terceiros incorporados.

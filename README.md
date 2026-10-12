@@ -2,7 +2,7 @@
 
 Planejamento de um jogo autoral 2D de ação, roguelite e tiro com visão superior, inspirado no **ritmo de salas, escolhas e combates** de Soul Knight. Nome de trabalho; título, mundo e arte finais serão próprios. Primeiro destino: navegador e GitHub Pages. Depois: aplicativo Android e, se fizer sentido, iOS.
 
-> Estado em 12/10/2026: **protótipo web publicado** em [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). T001–T005 foram implementados e a sala inicial de seis salas conectadas por seed abriu no navegador desktop. As verificações automáticas passaram; a run completa e a experiência em Android ainda precisam de validação. Não há APK.
+> Estado em 12/10/2026: **vertical slice web em validação** no [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). T006 e T007 adicionam armas, moedas, recompensas e chefe. T008 inclui revisão de controles, tela horizontal preenchida e medidor de FPS opcional. Build e testes locais passaram; a run inteira e o Android real ainda exigem playtest. Não há APK.
 
 ## O jogo em uma frase
 
@@ -23,7 +23,16 @@ O diferencial planejado é um elenco Junq de estilos de combate distintos e esco
 
 Uma run de um andar, 5 a 7 salas conectadas, um personagem provisório, ataque, desvio, habilidade, três famílias de inimigos, três famílias de equipamento, duas salas de recompensa, um chefe, tela de resultado e controles de teclado/mouse e toque. Arte provisória própria ou com licença verificada. Esse recorte é uma **proposta de produção**, não uma descrição do Soul Knight original.
 
-O protótipo já tem código: **seis salas conectadas** com jogador, movimento, tiro, dash, pulso de área, quatro inimigos de três tipos por encontro, dano, portas, minimapa, vitória/derrota, pausa e reinício. O suporte a teclado/mouse e toque está implementado e aguarda teste em dispositivo. Nada depende de conta, servidor ou banco de dados. O chefe, recompensas e armas variadas são etapas seguintes.
+O vertical slice tem **seis salas conectadas**, duas recompensas após combate, três armas com padrões diferentes, moedas derrubadas pelos inimigos, cura comprável, chefe com ataque sinalizado, resultado com seed, dano e tempo, pausa e reinício. O jogo ocupa a área visível do celular na horizontal e tenta entrar em tela cheia ao começar. No retrato, pede para girar o aparelho. Em navegadores que não permitem tela cheia, continua jogável na área visível. Não depende de conta, servidor ou banco de dados.
+
+## Controles desta versão
+
+| Plataforma | Movimento | Ataque e ações |
+| --- | --- | --- |
+| Desktop | WASD ou setas | Segurar clique para atirar; Espaço desvia; E usa pulso; H compra cura por 3 moedas após limpar sala; Esc pausa. |
+| Celular horizontal | Joystick na parte inferior esquerda | Botões à direita para atirar, desviar e usar pulso; toque nos cartões de recompensa e na cura. |
+
+Recolha as moedas encostando nelas. As portas vermelhas abrem após limpar a sala; avance pela porta verde. Duas salas oferecem uma escolha entre duas armas diferentes da equipada e mais dano. O chefe fica na sala mais distante do início. Acrescente `?debug=1` à URL para ver o FPS durante um teste.
 
 ## Stack proposta
 
@@ -37,7 +46,7 @@ O protótipo já tem código: **seis salas conectadas** com jogador, movimento, 
 
 ## Próximo passo
 
-Jogar a run no [Pages](https://jaodajunq.github.io/Junq_SoulKnight/) e testar em Android real, especialmente movimento enquanto atira, transição por portas, escala horizontal e pausa. Depois iniciar T006: armas, drops, moedas e recompensas. Leia o [handoff atual](docs/HANDOFF.md) antes de trabalhar. O repositório de referência é **fonte de estudo**; não foi copiado nem incorporado.
+Jogar uma run inteira no [Pages](https://jaodajunq.github.io/Junq_SoulKnight/) e testar em Android real, especialmente movimento e tiro simultâneos, escolha de recompensa, transição por portas, tela cheia, chefe e FPS. Corrigir os bloqueios encontrados antes de aceitar T008 e iniciar a arte/áudio de T009. Leia o [handoff atual](docs/HANDOFF.md). As bases abertas pesquisadas são fontes de estudo; não foram incorporadas.
 
 ## Fontes essenciais
 
