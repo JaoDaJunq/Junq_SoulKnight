@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { blocked } from '../src/core/arena.ts';
-import { generateRun } from '../src/core/run.ts';
+import { generateRun, parseRunSeed } from '../src/core/run.ts';
+
+test('seed de URL aceita inteiros uint32 e rejeita entradas inválidas', () => {
+  assert.equal(parseRunSeed('0'), 0);
+  assert.equal(parseRunSeed('4294967295'), 4294967295);
+  for (const value of [null, '', '-1', '1.5', '01', '4294967296', 'abc', '1e3']) assert.equal(parseRunSeed(value), null);
+});
 
 test('100 seeds geram seis salas alcançáveis com portas pareadas e spawn livre', () => {
   const opposite = { north: 'south', east: 'west', south: 'north', west: 'east' };

@@ -26,6 +26,12 @@ function random(seed: number): () => number {
   };
 }
 
+export function parseRunSeed(value: string | null): number | null {
+  if (value === null || !/^(0|[1-9]\d*)$/.test(value)) return null;
+  const seed = Number(value);
+  return Number.isSafeInteger(seed) && seed <= 0xffffffff ? seed : null;
+}
+
 export function generateRun(seed: number): Room[] {
   const rand = random(seed);
   const rooms: Room[] = Array.from({ length: 6 }, (_, id) => ({

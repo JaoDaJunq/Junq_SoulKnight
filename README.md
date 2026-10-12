@@ -34,6 +34,8 @@ O vertical slice tem **seis salas conectadas**, dois baús após combate, ataque
 
 Cada disparo consome energia conforme a arma, de 4 a 14 pontos. A barra tem 100 pontos e volta após uma breve pausa nos disparos. Sem energia suficiente, a arma espera recarga. Sem inimigo visível, segurar o botão não gasta energia. Recolha as moedas encostando nelas. As portas vermelhas abrem após limpar a sala; avance pela porta verde. Em duas salas, toque no baú revelado depois do combate para encontrar uma arma e escolher entre equipar ou manter a atual. O chefe fica na sala mais distante do início. Acrescente `?debug=1` à URL para ver o FPS durante um teste.
 
+Para reproduzir a geração de salas e baús de uma tentativa, use `?seed=123456` na URL com a seed mostrada no resultado. A seed deve ser um inteiro de 0 a 4294967295; sem ela, cada tentativa gera uma nova. O tempo de ações e movimentos continua dependendo de como a run é jogada.
+
 ## Stack proposta
 
 - **Phaser 3.90.0 + TypeScript 5.9.3 + Vite 8.3.4:** cliente web 2D com versões fixadas em `package-lock.json`.

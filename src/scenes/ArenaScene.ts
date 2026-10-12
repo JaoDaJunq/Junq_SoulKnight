@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { blocked, normalizedMovement, OBSTACLES } from '../core/arena';
-import { generateRun, type Direction, type Room } from '../core/run';
+import { generateRun, parseRunSeed, type Direction, type Room } from '../core/run';
 import { chestWeapon, createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS, type WeaponId } from '../core/weapons';
 import { closestTarget } from '../core/targeting';
 
@@ -201,7 +201,7 @@ export class ArenaScene extends Phaser.Scene {
     this.requestMobileFullscreen();
     this.pressedCodes.clear();
     this.clearOverlay();
-    this.seed = Math.floor(Math.random() * 0xffffffff);
+    this.seed = parseRunSeed(new URLSearchParams(location.search).get('seed')) ?? Math.floor(Math.random() * 0x100000000);
     this.rooms = generateRun(this.seed);
     this.currentRoom = 0;
     this.cleared = new Set();

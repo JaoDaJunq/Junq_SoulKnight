@@ -11,7 +11,7 @@ Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atual
 | T005 | Grafo de 5 a 7 salas, portas, layouts, spawns e minimapa | T003 | 100 seeds conectadas; nenhuma porta ou jogador bloqueado; limpar abre saídas. |
 | T006 | Três famílias de armas, drops, moeda e recompensas | T004, T005 | Disparo básico e armas extras em baús, com custos de energia distintos; run continua entre salas. Ajuste de mira/energia/baús em 12/10/2026. |
 | T007 | Chefe com ataques sinalizados e encerramento da run | T006 | Vitória e derrota completas; relatório com seed e tempo. **Vertical slice P1.** |
-| T008 | Playtest P1 e revisão de desempenho/controles | T007 | Testes no Android e desktop; bugs de bloqueio e mortes sem feedback corrigidos. **Em validação: faltam run completa e Android real.** |
+| T008 | Playtest P1 e revisão de desempenho/controles | T007 | Testes no Android e desktop; bugs de bloqueio e mortes sem feedback corrigidos. **Em validação:** derrota e disparo vistos no Pages; correção de contato próximo e replay por seed implementados; faltam run completa e Android real. |
 | T009 | Direção de arte autoral, UI final, áudio licenciado e créditos | T008 | Origem/licença rastreável para cada asset; leitura do combate preservada. |
 | T010 | Personagens Junq adicionais, segundo bioma e novos encontros | T008, T009 | Kits diferentes com balanceamento; conteúdo atravessa run completa. |
 | T011 | Hub, desbloqueios, save com migração, opções e onboarding | T008 | Persistência após fechar/reabrir; reset e recuperação de save inválido. |
