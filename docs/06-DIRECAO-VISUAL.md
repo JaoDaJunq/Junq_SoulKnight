@@ -2,6 +2,8 @@
 
 **Estado em 12/10/2026:** o MVP aprovou com entusiasmo esta direção. Os quatro mockups abaixo continuam sendo referências conceituais, não capturas da build. A primeira integração jogável produz assets próprios em `src/assets/`: abertura, taverna, salas do Átrio e da Forja e sprites estáticos do trio. Os inimigos são desenhos de pixels em código. O nome `Junq SoulKnight` permanece como nome de trabalho; `JUNQ: RUPTURA` foi descartado.
 
+**Armas integradas, revisão aprovada:** as três [pranchas do Jão](visual/jao-arma-aprovada.webp), [Alice](visual/alice-arma-aprovada.webp) e [Gui](visual/gui-arma-aprovada.webp) foram aprovadas pelo MVP após rejeitar as armas flutuando sobre os sprites. A arma agora faz parte da pose e do figurino: Jão empunha espada e leva bainha nas costas, Alice segura arco e carrega aljava, Gui segura cartas pequenas e usa estojo de couro. As folhas de origem ficam em `art/sheets/`; os PNGs reduzidos são gerados por `scripts/build_approved_sprites.py`. Os efeitos de ataque existentes foram preservados.
+
 ## O que queremos sentir
 
 Três pessoas reais, Jão, Alice e Gui, entram numa masmorra fantástica e enfrentam salas curtas cheias de inimigos, altares e decisões de afinidade. O visual deve ser **pixel art nítida, expressiva e acolhedora**, com paredes de pedra, madeira, tochas, tapetes, baús e monstros inventados para este jogo. Os momentos de perigo continuam claros em uma tela de celular na horizontal.

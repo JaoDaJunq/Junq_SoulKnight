@@ -13,34 +13,11 @@ import openingArt from '../assets/abertura.webp';
 import selectionArt from '../assets/selecao.webp';
 import roomArt from '../assets/sala-atrio.webp';
 import forgeArt from '../assets/sala-forja.webp';
-import jaoArt from '../assets/jao.png';
-import aliceArt from '../assets/alice.png';
-import guiArt from '../assets/gui.png';
-import jaoBack from '../assets/jao-back.png';
-import aliceBack from '../assets/alice-back.png';
-import guiBack from '../assets/gui-back.png';
-import jaoWalk1 from '../assets/jao-walk1.png';
-import aliceWalk1 from '../assets/alice-walk1.png';
-import guiWalk1 from '../assets/gui-walk1.png';
-import jaoWalk2 from '../assets/jao-walk2.png';
-import aliceWalk2 from '../assets/alice-walk2.png';
-import guiWalk2 from '../assets/gui-walk2.png';
-import jaoFire from '../assets/jao-fire.png';
-import jaoFireBack from '../assets/jao-back-fire.png';
-import jaoFireWalk1 from '../assets/jao-walk1-fire.png';
-import jaoFireWalk2 from '../assets/jao-walk2-fire.png';
-import jaoPlasma from '../assets/jao-plasma.png';
-import jaoPlasmaBack from '../assets/jao-back-plasma.png';
-import jaoPlasmaWalk1 from '../assets/jao-walk1-plasma.png';
-import jaoPlasmaWalk2 from '../assets/jao-walk2-plasma.png';
 import chaserArt from '../assets/enemy-chaser.png';
 import shooterArt from '../assets/enemy-shooter.png';
 import sentryArt from '../assets/enemy-sentry.png';
 import bruteArt from '../assets/enemy-brute.png';
 import bossArt from '../assets/enemy-boss.png';
-import swordArt from '../assets/weapon-sword.png';
-import bowArt from '../assets/weapon-bow.png';
-import cardsArt from '../assets/weapon-cards.png';
 import arrowArt from '../assets/projectile-arrow.png';
 import cardOne from '../assets/projectile-card-1.png';
 import cardTwo from '../assets/projectile-card-2.png';
@@ -65,7 +42,7 @@ export class ArenaScene extends Phaser.Scene {
   private selectedHero: HeroId = 'jao';
   private hero!: Phaser.GameObjects.Container;
   private heroSprite!: Phaser.GameObjects.Image;
-  private heldWeapon!: Phaser.GameObjects.Image;
+  private attackPose = 0;
   private facing: 'north' | 'south' | 'east' | 'west' = 'south';
   private heroX = 480;
   private heroY = 385;
@@ -142,21 +119,16 @@ export class ArenaScene extends Phaser.Scene {
     this.load.image('selection', selectionArt);
     this.load.image('room-atrium', roomArt);
     this.load.image('room-forge', forgeArt);
-    this.load.image('jao', jaoArt);
-    this.load.image('alice', aliceArt);
-    this.load.image('gui', guiArt);
     for (const [key, url] of Object.entries({
-      'jao-back': jaoBack, 'alice-back': aliceBack, 'gui-back': guiBack,
-      'jao-walk1': jaoWalk1, 'alice-walk1': aliceWalk1, 'gui-walk1': guiWalk1,
-      'jao-walk2': jaoWalk2, 'alice-walk2': aliceWalk2, 'gui-walk2': guiWalk2,
-      'jao-fire': jaoFire, 'jao-back-fire': jaoFireBack, 'jao-walk1-fire': jaoFireWalk1, 'jao-walk2-fire': jaoFireWalk2,
-      'jao-plasma': jaoPlasma, 'jao-back-plasma': jaoPlasmaBack, 'jao-walk1-plasma': jaoPlasmaWalk1, 'jao-walk2-plasma': jaoPlasmaWalk2,
       'enemy-chaser': chaserArt, 'enemy-shooter': shooterArt, 'enemy-sentry': sentryArt,
       'enemy-brute': bruteArt, 'enemy-boss': bossArt,
-      'weapon-sword': swordArt, 'weapon-bow': bowArt, 'weapon-cards': cardsArt,
       'projectile-arrow': arrowArt, 'projectile-card-1': cardOne,
       'projectile-card-2': cardTwo, 'projectile-card-3': cardThree,
     })) this.load.image(key, url);
+    for (const [path, url] of Object.entries(import.meta.glob('../assets/*-{armed,attack,select}*.png',
+      { eager: true, query: '?url', import: 'default' }))) {
+      this.load.image(path.split('/').pop()!.replace('.png', ''), url as string);
+    }
   }
 
   create(): void {
@@ -285,34 +257,32 @@ export class ArenaScene extends Phaser.Scene {
   private setHeroArt(): void {
     this.hero.removeAll(true);
     const shadow = this.add.ellipse(0, 15, 40, 10, 0x100c0b, 0.7);
-    this.heroSprite = this.add.image(0, -19, this.selectedHero).setDisplaySize(this.selectedHero === 'gui' ? 43 : 39, 67);
-    const weaponKey = this.selectedHero === 'jao' ? 'weapon-sword' : this.selectedHero === 'alice' ? 'weapon-bow' : 'weapon-cards';
-    this.heldWeapon = this.add.image(20, -15, weaponKey).setDisplaySize(this.selectedHero === 'gui' ? 25 : 34, this.selectedHero === 'gui' ? 25 : 34);
+    this.heroSprite = this.add.image(0, -19, `${this.selectedHero}-armed`).setDisplaySize(109.2, 78).setOrigin(80 / 224, 0.5);
     this.facing = 'south';
-    this.hero.add([shadow, this.heroSprite, this.heldWeapon]);
+    this.attackPose = 0;
+    this.hero.add([shadow, this.heroSprite]);
     this.skillLabel?.setText(this.selectedHero === 'jao' ? 'CORTE' : this.selectedHero === 'alice' ? 'FOCO' : 'IMPACTO');
   }
 
   private animateHero(mx: number, my: number): void {
     const moving = Math.hypot(mx, my) > 0.15;
-    if (moving) this.facing = Math.abs(mx) > Math.abs(my) ? mx > 0 ? 'east' : 'west' : my < 0 ? 'north' : 'south';
+    if (moving && this.attackPose <= 0) this.facing = Math.abs(mx) > Math.abs(my) ? mx > 0 ? 'east' : 'west' : my < 0 ? 'north' : 'south';
     const baseKey = !moving || this.facing === 'south' ? this.selectedHero
       : this.facing === 'north' ? `${this.selectedHero}-back`
       : `${this.selectedHero}-walk${Math.floor(this.elapsed * 8) % 2 + 1}`;
     const form = this.selectedHero === 'jao' && activeSynergy(this.affinities) === 'plasma' ? '-plasma'
       : this.selectedHero === 'jao' && hasPureMastery(this.affinities, 'fire') ? '-fire' : '';
-    const key = baseKey + form;
+    const key = this.attackPose > 0 && (this.facing === 'east' || this.facing === 'west')
+      ? `${this.selectedHero}-attack${form}` : `${baseKey}${form}-armed`;
     if (this.heroSprite.texture.key !== key) {
       this.heroSprite.setTexture(key);
       const frame = this.textures.get(key).get();
-      this.heroSprite.setDisplaySize(frame.width / frame.height * 67, 67);
+      this.heroSprite.setDisplaySize(frame.width / frame.height * 78, 78);
     }
     this.heroSprite.setFlipX(this.facing === 'west');
+    this.heroSprite.setOrigin(this.facing === 'west' ? 144 / 224 : 80 / 224, 0.5);
     this.heroSprite.y = -19 + (moving ? Math.sin(this.elapsed * 16) * 2 : 0);
     this.heroSprite.angle = moving ? Math.sin(this.elapsed * 8) * 1.5 : 0;
-    this.heldWeapon.x = this.facing === 'west' ? -20 : 20;
-    this.heldWeapon.y = -15 + (moving ? Math.sin(this.elapsed * 16) * 2 : 0);
-    this.heldWeapon.setFlipX(this.facing === 'west');
   }
 
   private createEnemy(x: number, y: number, kind: EnemyKind): Enemy {
@@ -405,6 +375,7 @@ export class ArenaScene extends Phaser.Scene {
     this.elapsed += dt;
     this.hurtTimer = Math.max(0, this.hurtTimer - dt);
     this.fireTimer -= dt;
+    this.attackPose = Math.max(0, this.attackPose - dt);
     this.energyCooldown = Math.max(0, this.energyCooldown - dt);
     this.energy = restoreEnergy(this.energy, dt, this.energyCooldown, maxEnergy(this.equipment), energyRegen(this.equipment));
     this.drawEnergy();
@@ -590,10 +561,10 @@ export class ArenaScene extends Phaser.Scene {
     this.fireTimer = WEAPONS[this.weapon].cadence;
     this.drawEnergy();
     this.soundscape.play('shot');
-    this.tweens.killTweensOf(this.heldWeapon);
-    const side = this.facing === 'west' ? -1 : 1;
-    this.heldWeapon.angle = side * (this.weapon === 'bolt' ? -38 : -14);
-    this.tweens.add({ targets: this.heldWeapon, angle: side * (this.weapon === 'bolt' ? 42 : 13), duration: 115, yoyo: true });
+    this.attackPose = 0.18;
+    this.facing = this.weapon === 'bolt' && Math.abs(dy) > Math.abs(dx) * 1.7
+      ? dy < 0 ? 'north' : 'south' : dx < 0 ? 'west' : 'east';
+    this.animateHero(0, 0);
     if (this.weapon === 'bolt') {
       const angle = Math.atan2(dy, dx);
       const slash = this.add.graphics().setDepth(12);
@@ -939,15 +910,12 @@ export class ArenaScene extends Phaser.Scene {
       const chosen = this.selectedHero === hero.id;
       const frame = this.add.rectangle(x, 292, 227, 299, chosen ? 0x583620 : 0x281c17, 0.92)
         .setStrokeStyle(chosen ? 5 : 3, chosen ? 0xffd47d : 0x8f6946).setDepth(42).setInteractive({ useHandCursor: true });
-      const sprite = this.add.image(x, 271, hero.id).setDisplaySize(hero.id === 'gui' ? 125 : 112, 189).setDepth(43);
-      const weaponKey = hero.id === 'jao' ? 'weapon-sword' : hero.id === 'alice' ? 'weapon-bow' : 'weapon-cards';
-      const held = this.add.image(x + 56, 282, weaponKey).setDisplaySize(hero.id === 'gui' ? 72 : 96, hero.id === 'gui' ? 72 : 96).setDepth(44);
+      const sprite = this.add.image(x, 271, `${hero.id}-select`).setDisplaySize(214, 214).setDepth(43);
       const name = this.add.text(x, 397, hero.name, { fontFamily: 'Georgia, serif', fontSize: '23px', color: '#ffdf9a', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
       const description = this.add.text(x, 427, hero.description, { fontFamily: 'Georgia, serif', fontSize: '12px', color: '#f1d2a1' }).setOrigin(0.5).setDepth(43);
       frame.on('pointerdown', () => { this.selectedHero = hero.id; this.showSelection(); });
       sprite.setInteractive({ useHandCursor: true }).on('pointerdown', () => { this.selectedHero = hero.id; this.showSelection(); });
-      held.setInteractive({ useHandCursor: true }).on('pointerdown', () => { this.selectedHero = hero.id; this.showSelection(); });
-      this.overlay.push(frame, sprite, held, name, description);
+      this.overlay.push(frame, sprite, name, description);
     }
     this.overlay.push(...this.addWoodButton(355, 492, 213, 'VOLTAR', () => this.showMainMenu()));
     this.overlay.push(...this.addWoodButton(605, 492, 213, 'ENTRAR', () => this.startRun()));

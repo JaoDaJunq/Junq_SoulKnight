@@ -6,6 +6,8 @@ Planejamento de um jogo autoral 2D de ação, roguelite e tiro com visão superi
 
 **Nova estrutura em validação:** masmorras de cinco fases com chefe em 5/5; dois baús de relíquias e dois altares de afinidade por mundo. Jão empunha espada e corta em arco de perto, Alice dispara flecha única com seu arco e Gui arremessa cartas ilustradas. O mundo 3 termina com opção de encerrar ou continuar. Fogo 5 muda o visual e a habilidade do Jão; Plasma e Lodo são as duas primeiras fusões com efeitos próprios. Ver [regras da etapa](docs/08-MASMORRAS-E-RELIQUIAS.md). As descrições antigas de seis salas e cinco altares abaixo são o histórico do vertical slice anterior, não o fluxo desta build.
 
+**Arte dos heróis:** as [três pranchas aprovadas](docs/06-DIRECAO-VISUAL.md) orientam sprites novos de seleção, caminhada e ataque com as armas desenhadas junto ao corpo. A espada, o arco e as cartas não dependem mais de uma camada solta sobre o personagem. Os projéteis e a lógica de combate continuam os mesmos.
+
 ## O jogo em uma frase
 
 Escolha um herói Junq, atravesse salas conectadas, desvie de projéteis, use ataque e habilidade, escolha recompensas e derrote o chefe para concluir uma run curta. Ao morrer, a run termina e o jogador volta ao hub com apenas os desbloqueios permanentes previstos.
