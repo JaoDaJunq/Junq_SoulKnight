@@ -47,7 +47,7 @@ Separar **estado/regras** da renderização sempre que útil, sem montar infraes
 4. Configurar **Settings → Pages → Source: GitHub Actions**. O workflow não prova que essa configuração já está ativa.
 5. `vite.config.ts` usa `base: '/Junq_SoulKnight/'`; validar URL final `https://jaodajunq.github.io/Junq_SoulKnight/` no browser, incluindo recarga, áudio, assets e Android.
 
-Não há site publicado nesta fase de documentação. Não confundir link esperado com deploy verificado.
+Pages foi configurado para GitHub Actions em 12/10/2026. O workflow `38194600820` publicou o protótipo e a página abriu no navegador desktop com o bundle compilado. A versão com T005 requer nova validação após o deploy; Android segue pendente.
 
 ## Migração posterior para app
 
