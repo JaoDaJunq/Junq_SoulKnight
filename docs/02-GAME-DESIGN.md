@@ -13,7 +13,7 @@ Durante `MAPA/COMBATE`, `PAUSA` suspende simulação e áudio. Derrota vai a `RE
 | Marco | Conteúdo | Critério de partida |
 | --- | --- | --- |
 | Protótipo P0 | Uma sala, herói provisório, tiro, inimigo perseguidor, dano, reinício. | Jogável no Pages em Android e desktop. |
-| Vertical slice P1 | 5 a 7 salas, 3 inimigos (perseguidor, atirador, resistente), 3 armas (rápida, espalhada, alcance/ritmo diferente), habilidade, desvio, 2 recompensas, um chefe. | Terminar e perder uma run inteira sem bloqueio. |
+| Vertical slice P1 | 5 a 7 salas, 3 inimigos (perseguidor, atirador, resistente), 3 armas (rápida, espalhada, alcance/ritmo diferente), habilidade, desvio, 5 altares, um chefe. | Terminar e perder uma run inteira sem bloqueio. |
 | Beta P2 | 3 heróis de kits diferentes, 2 biomas, variedade de encontros, balanceamento, som, acessibilidade, onboarding, save local. | Jogadores novos entendem e completam uma run sem instrução externa. |
 | Lançamento web P3 | Arte e áudio coerentes, opções, conteúdo revisado, correções de dispositivo, créditos. | Build e Pages verdes; sem bloqueador conhecido. |
 
@@ -21,10 +21,10 @@ As quantidades são metas iniciais, ajustáveis após teste. Não começar pela 
 
 ## Estrutura de uma run P1
 
-- Um andar gerado de salas pré-montadas por seed: início, combates, 2 salas com baús e 1 chefe; variar ordem e bifurcações quando possível.
+- Um andar gerado de salas pré-montadas por seed: início, combates, 5 altares e 1 chefe; variar ordem e bifurcações quando possível.
 - Cada sala tem ID, portas compatíveis, tipo, layout, pontos de spawn, obstáculos e tabela de encontro. Gerar grafo alcançável e depois associar layouts.
 - Ao entrar na sala hostil, iniciar encontro; bloquear saídas; onda pequena e finita. Ao vencer, abrir portas e exibir recompensa quando prevista.
-- Personagem começa com disparo básico, HP, energia e habilidade; armas extras vêm somente dos baús após limpar salas de recompensa. Coleta moeda da run; recompensas não dependem de anúncio ou servidor.
+- Cada personagem começa com equipamento próprio, HP, energia e habilidade; afinidades vêm dos altares após limpar salas não chefe. Coleta moeda da run; recompensas não dependem de anúncio ou servidor.
 - Chefe sinaliza fases/ataques; após derrotá-lo, concluir o andar e mostrar escolhas, duração, dano tomado e seed para reproduzir problemas.
 
 ## Regras para implementar e calibrar
@@ -38,12 +38,12 @@ As quantidades são metas iniciais, ajustáveis após teste. Não começar pela 
 | Habilidade | Identidade do herói, custo/recarga com feedback e sem disparo acidental na pausa. |
 | Dano | Vida, invulnerabilidade curta após acerto, feedback visual/sonoro; mortes e cura verificáveis. |
 | Inimigos | Estados de entrada, aproximação/mira/ataque, dano, morte; limites para evitar excesso de entidades. |
-| Recompensa | Baú aparece após limpar cada sala de recompensa; revela uma arma extra definida pela seed, com escolha entre equipar ou manter a atual. |
+| Recompensa | Altar aparece após limpar cada sala não chefe; oferece três afinidades pela seed, com uma escolha que aumenta 1 ponto, até cinco escolhas na run. |
 | Persistência | Som, controles, acessibilidade e desbloqueios em save versionado; resultado da run salvo apenas se fizer sentido. |
 
 ## Identidade Junq
 
-Jão, Alice e Gui são **candidatos** a kits após P1; seus poderes e imagens não devem ser importados automaticamente de outro jogo. Conceito a validar: Jão ataca à distância com energia saindo da mão, sem arma empunhada; Alice pode variar seu kit por forma de esmalte; Gui precisa de ficha específica deste jogo. Assets existentes só entram após inventário de origem, licença e aprovação visual. A fantasia e a arte do novo projeto serão documentadas em `docs/personagens/` quando a direção for definida.
+Jão, Alice e Gui foram aprovados visualmente pelo MVP e têm equipamentos iniciais e habilidades distintas. A progressão elementar está em [`07-AFINIDADES-E-PERSONAGENS.md`](07-AFINIDADES-E-PERSONAGENS.md). Os efeitos exclusivos de cada elemento ainda exigem balanceamento, assim como mais frames de ataque e dano.
 
 ## Interface e controles
 

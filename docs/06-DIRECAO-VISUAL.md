@@ -4,7 +4,7 @@
 
 ## O que queremos sentir
 
-Três pessoas reais, Jão, Alice e Gui, entram numa masmorra fantástica e enfrentam salas curtas cheias de inimigos, baús e decisões de equipamento. O visual deve ser **pixel art nítida, expressiva e acolhedora**, com paredes de pedra, madeira, tochas, tapetes, baús e monstros inventados para este jogo. Os momentos de perigo continuam claros em uma tela de celular na horizontal.
+Três pessoas reais, Jão, Alice e Gui, entram numa masmorra fantástica e enfrentam salas curtas cheias de inimigos, altares e decisões de afinidade. O visual deve ser **pixel art nítida, expressiva e acolhedora**, com paredes de pedra, madeira, tochas, tapetes, baús e monstros inventados para este jogo. Os momentos de perigo continuam claros em uma tela de celular na horizontal.
 
 As oito capturas de Soul Knight enviadas pelo MVP orientam o **ritmo visual**: abertura marcante, seleção que dá destaque a um personagem, HUD nos cantos, botões grandes sob os polegares e passagem espacial entre salas. A [descrição oficial da ChillyRoom](https://play.google.com/store/apps/details?id=com.ChillyRoom.DungeonShooter) também aponta pixel art, heróis distintos, masmorras e mira automática. Nenhuma captura, sprite, logo, tile, ícone, fonte ou interface do jogo de referência foi incorporado.
 
@@ -34,7 +34,7 @@ O trio aparece junto no salão; tocar numa miniatura muda o herói destacado, se
 
 ![Proposta de combate pixel art com Jão desviando de três projéteis numa sala](visual/v2-combate.webp)
 
-Sala jogável no centro; vida, defesa se existir e energia no canto superior esquerdo; moeda, pausa e minimapa à direita; joystick deslocado para dentro da quina inferior esquerda; tiro grande, desvio e habilidade sob o polegar direito. O mockup mostra uma arma/ícone ilustrativo e números fictícios: **não define equipamento, vida, moedas nem o ataque do Jão**. A mira é automática ao segurar o botão de tiro, e o disparo continua consumindo energia. Armas extras continuam saindo de baús após combate.
+Sala jogável no centro; vida, defesa se existir e energia no canto superior esquerdo; moeda, pausa e minimapa à direita; joystick deslocado para dentro da quina inferior esquerda; tiro grande, desvio e habilidade sob o polegar direito. O mockup mostra uma arma/ícone ilustrativo e números fictícios: **não define equipamento, vida, moedas nem o ataque do Jão**. A mira é automática ao segurar o botão de tiro, e o disparo continua consumindo energia. O MVP substituiu os baús de armas por altares de afinidade após combate; cada herói começa com equipamento próprio.
 
 ## Regras de arte para produção
 
@@ -56,7 +56,7 @@ Sala jogável no centro; vida, defesa se existir e energia no canto superior esq
 1. **Abertura:** JOGAR leva à seleção; opções e som ficam discretos.
 2. **Seleção:** três personagens visíveis. Ficha mostra papel e habilidade real quando o kit existir; a opção escolhida inicia a run.
 3. **Átrio:** primeira sala ensina movimento, mira automática e consumo de energia sem tutorial longo.
-4. **Combate e baú:** portas fecham no encontro, abrem quando limpa; baú mostra arma encontrada e escolha `EQUIPAR` / `MANTER`.
+4. **Combate e altar:** portas fecham no encontro, abrem quando limpa; altar mostra três elementos e seus níveis seguintes.
 5. **Corredor:** atravessar uma saída conecta as salas e a câmera acompanha por um instante; novo bioma é apresentado por mudança de material, cor e som, sem tela de carregamento longa.
 6. **Forja e chefe:** inimigos e padrões de tiro sobem em complexidade; chefe tem barra e avisos visuais; resultado mostra seed, tempo e progresso.
 
@@ -65,7 +65,7 @@ Sala jogável no centro; vida, defesa se existir e energia no canto superior esq
 ## Próximas aprovações e implementação
 
 1. **Aprovado pelo MVP:** tom de aventura, trio e direção em pixel art. Refinar semelhança, roupa e escala antes de animar.
-2. Definir kits e ataque básico próprios deste jogo. **Jão não ganha uma arma fixa no retrato**; armas de baú continuam parte da run. A aparência das armas em cada personagem será resolvida com o kit.
+2. Definir kits e ataque básico próprios deste jogo. Cada herói tem equipamento inicial próprio; recompensas da run são afinidades elementais no altar.
 3. Produzir separadamente sprites reais em escala de jogo, vistas e frames, tiles do Átrio/Forja, monstros e componentes de UI. O gerador de imagens serve ao conceito, não substitui pixel art editável validada frame a frame.
 4. Integrar abertura, seleção e HUD em lotes pequenos no Pages; testar jogo, controles e leitura visual no Android antes de fechar T009/T010.
 

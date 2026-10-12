@@ -1,15 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chestWeapon, createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS } from '../src/core/weapons.ts';
+import { createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS } from '../src/core/weapons.ts';
+import { altarChoices, affinityDamageBonus, ELEMENTS, emptyAffinities, gainAffinity, hasPureMastery, totalAffinity } from '../src/core/affinities.ts';
 import { closestTarget } from '../src/core/targeting.ts';
 
-test('baús oferecem as duas armas extras na run e são reproduzíveis pela seed', () => {
+test('altares oferecem três elementos distintos pela seed e mantêm um elemento já escolhido', () => {
   for (let seed = 0; seed < 100; seed++) {
-    const contents = [chestWeapon(seed, 2, [2, 4]), chestWeapon(seed, 4, [2, 4])];
-    assert.deepEqual(new Set(contents), new Set(['fan', 'lance']));
-    assert.equal(chestWeapon(seed, 2, [2, 4]), contents[0]);
+    const empty = emptyAffinities();
+    const first = altarChoices(seed, 0, empty);
+    assert.equal(first.length, 3);
+    assert.equal(new Set(first).size, 3);
+    assert.deepEqual(altarChoices(seed, 0, empty), first);
+    let focused = gainAffinity(empty, first[0]);
+    for (let room = 1; room < 5; room++) {
+      assert.ok(altarChoices(seed, room, focused).includes(first[0]));
+      focused = gainAffinity(focused, first[0]);
+    }
+    assert.equal(totalAffinity(focused), 5);
+    assert.ok(hasPureMastery(focused, first[0]));
   }
-  assert.throws(() => chestWeapon(0, 1, [2, 4]));
+});
+
+test('híbrido 3 fogo + 2 raio causa dano acumulado sem domínio puro', () => {
+  let build = emptyAffinities();
+  for (let i = 0; i < 3; i++) build = gainAffinity(build, 'fire');
+  for (let i = 0; i < 2; i++) build = gainAffinity(build, 'lightning');
+  assert.equal(totalAffinity(build), 5);
+  assert.equal(affinityDamageBonus(build), 2);
+  assert.equal(hasPureMastery(build, 'lightning'), false);
+  assert.equal(ELEMENTS.length, 7);
 });
 
 test('segurar o disparo esgota a energia, pausa e restaura sem ultrapassar o máximo', () => {
@@ -36,7 +55,7 @@ test('mira escolhe o inimigo visível mais próximo e ignora obstáculos', () =>
   assert.equal(closestTarget(hero, [], []), undefined);
 });
 
-test('armas mudam o padrão de tiro', () => {
+test('equipamentos iniciais têm padrões e custos de tiro distintos', () => {
   const bolt = createShots('bolt', 1, 0);
   const fan = createShots('fan', 1, 0);
   const lance = createShots('lance', 1, 0);

@@ -6,16 +6,10 @@ export const ENERGY_REGEN = 12;
 export const ENERGY_DELAY = 0.65;
 
 export const WEAPONS: Record<WeaponId, { name: string; cadence: number; energy: number; description: string }> = {
-  bolt: { name: 'FAÍSCA', cadence: 0.19, energy: 4, description: 'Tiro básico rápido e preciso' },
-  fan: { name: 'LEQUE', cadence: 0.48, energy: 10, description: 'Três projéteis abertos' },
-  lance: { name: 'LANÇA', cadence: 0.66, energy: 14, description: 'Impacto forte e alcance maior' },
+  bolt: { name: 'ESPADA DO JÃO', cadence: 0.23, energy: 5, description: 'Corte de energia lançado' },
+  fan: { name: 'ARCO DA ALICE', cadence: 0.43, energy: 9, description: 'Três flechas em leque' },
+  lance: { name: 'MARTELO DO GUI', cadence: 0.65, energy: 13, description: 'Impacto pesado à distância' },
 };
-
-export function chestWeapon(seed: number, roomId: number, rewardRoomIds: number[]): WeaponId {
-  const position = rewardRoomIds.indexOf(roomId);
-  if (position < 0) throw new Error('Baú fora de uma sala de recompensa');
-  return ((seed & 1) + position) % 2 === 0 ? 'fan' : 'lance';
-}
 
 export function spendEnergy(current: number, id: WeaponId): number | null {
   return current >= WEAPONS[id].energy ? current - WEAPONS[id].energy : null;
@@ -34,7 +28,7 @@ export function createShots(id: WeaponId, aimX: number, aimY: number, power = 0)
     vy: Math.sin(angle + offset) * speed,
     damage: (id === 'lance' ? 3 : 1) + power,
     life: id === 'lance' ? 1.4 : id === 'fan' ? 0.9 : 1.5,
-    color: id === 'lance' ? 0xffd48c : id === 'fan' ? 0x9af6c7 : 0x7beaff,
+    color: id === 'lance' ? 0xd9a36c : id === 'fan' ? 0xf2d39a : 0xe9c48a,
     radius: id === 'lance' ? 8 : 6,
   }));
 }

@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
-import { createActor } from '../art/actors';
 import { Soundscape } from '../audio/Soundscape';
 import { BIOMES } from '../content/biomes';
 import { encounterFor, SPAWNS, type EnemyKind } from '../content/encounters';
 import { blocked, moveAroundObstacle, normalizedMovement, OBSTACLES, type EscapeStep } from '../core/arena';
 import { generateRun, parseRunSeed, type Direction, type Room } from '../core/run';
-import { chestWeapon, createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS, type WeaponId } from '../core/weapons';
+import { createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS, type WeaponId } from '../core/weapons';
 import { closestTarget } from '../core/targeting';
+import { altarChoices, affinityDamageBonus, ELEMENT, ELEMENTS, emptyAffinities, gainAffinity, hasPureMastery, primaryElement, totalAffinity,
+  type Affinities, type ElementId } from '../core/affinities';
 import openingArt from '../assets/abertura.webp';
 import selectionArt from '../assets/selecao.webp';
 import roomArt from '../assets/sala-atrio.webp';
@@ -14,8 +15,22 @@ import forgeArt from '../assets/sala-forja.webp';
 import jaoArt from '../assets/jao.png';
 import aliceArt from '../assets/alice.png';
 import guiArt from '../assets/gui.png';
+import jaoBack from '../assets/jao-back.png';
+import aliceBack from '../assets/alice-back.png';
+import guiBack from '../assets/gui-back.png';
+import jaoWalk1 from '../assets/jao-walk1.png';
+import aliceWalk1 from '../assets/alice-walk1.png';
+import guiWalk1 from '../assets/gui-walk1.png';
+import jaoWalk2 from '../assets/jao-walk2.png';
+import aliceWalk2 from '../assets/alice-walk2.png';
+import guiWalk2 from '../assets/gui-walk2.png';
+import chaserArt from '../assets/enemy-chaser.png';
+import shooterArt from '../assets/enemy-shooter.png';
+import sentryArt from '../assets/enemy-sentry.png';
+import bruteArt from '../assets/enemy-brute.png';
+import bossArt from '../assets/enemy-boss.png';
 
-type State = 'menu' | 'selecting' | 'playing' | 'chest' | 'paused' | 'dead' | 'cleared';
+type State = 'menu' | 'selecting' | 'playing' | 'altar' | 'paused' | 'dead' | 'cleared';
 type HeroId = 'jao' | 'alice' | 'gui';
 const HEROES: { id: HeroId; name: string; description: string }[] = [
   { id: 'jao', name: 'JÃO', description: 'O explorador de jaqueta vinho' },
@@ -33,6 +48,8 @@ export class ArenaScene extends Phaser.Scene {
   private state: State = 'menu';
   private selectedHero: HeroId = 'jao';
   private hero!: Phaser.GameObjects.Container;
+  private heroSprite!: Phaser.GameObjects.Image;
+  private facing: 'north' | 'south' | 'east' | 'west' = 'south';
   private heroX = 480;
   private heroY = 385;
   private heroHp = 5;
@@ -59,7 +76,9 @@ export class ArenaScene extends Phaser.Scene {
   private storedCoins = new Map<number, { x: number; y: number }[]>();
   private coins = 0;
   private weapon: WeaponId = 'bolt';
-  private openedChests = new Set<number>();
+  private claimedAltars = new Set<number>();
+  private affinities: Affinities = emptyAffinities();
+  private attackCount = 0;
   private damageTaken = 0;
   private bossWarning!: Phaser.GameObjects.Graphics;
   private bossBar!: Phaser.GameObjects.Graphics;
@@ -77,6 +96,7 @@ export class ArenaScene extends Phaser.Scene {
   private joyY = 0;
   private touchMode = false;
   private hud!: Phaser.GameObjects.Text;
+  private affinityHud: Phaser.GameObjects.Text[] = [];
   private energyText!: Phaser.GameObjects.Text;
   private energyBar!: Phaser.GameObjects.Graphics;
   private hint!: Phaser.GameObjects.Text;
@@ -103,6 +123,13 @@ export class ArenaScene extends Phaser.Scene {
     this.load.image('jao', jaoArt);
     this.load.image('alice', aliceArt);
     this.load.image('gui', guiArt);
+    for (const [key, url] of Object.entries({
+      'jao-back': jaoBack, 'alice-back': aliceBack, 'gui-back': guiBack,
+      'jao-walk1': jaoWalk1, 'alice-walk1': aliceWalk1, 'gui-walk1': guiWalk1,
+      'jao-walk2': jaoWalk2, 'alice-walk2': aliceWalk2, 'gui-walk2': guiWalk2,
+      'enemy-chaser': chaserArt, 'enemy-shooter': shooterArt, 'enemy-sentry': sentryArt,
+      'enemy-brute': bruteArt, 'enemy-boss': bossArt,
+    })) this.load.image(key, url);
   }
 
   create(): void {
@@ -110,14 +137,16 @@ export class ArenaScene extends Phaser.Scene {
     this.drawRoom();
     this.createHero();
     const panels = this.add.graphics().setDepth(19);
-    panels.fillStyle(0x241813, 0.93); panels.fillRect(16, 8, 322, 60);
+    panels.fillStyle(0x241813, 0.93); panels.fillRect(16, 8, 322, 89);
     panels.fillRect(342, 8, 209, 60);
     panels.fillRect(731, 8, 217, 82);
     panels.lineStyle(3, 0xa47642, 1);
-    panels.strokeRect(16, 8, 322, 60);
+    panels.strokeRect(16, 8, 322, 89);
     panels.strokeRect(342, 8, 209, 60);
     panels.strokeRect(731, 8, 217, 82);
     this.hud = this.add.text(35, 19, '', { fontFamily: 'Georgia, serif', fontSize: '17px', color: '#ffe5ae', fontStyle: 'bold' }).setDepth(20);
+    this.affinityHud = ELEMENTS.map((id, index) => this.add.text(27 + index * 44, 72, `${ELEMENT[id].glyph}0`,
+      { fontFamily: 'Georgia, serif', fontSize: '17px', color: '#80715f', fontStyle: 'bold' }).setDepth(20));
     this.energyText = this.add.text(352, 16, '', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#cddded', fontStyle: 'bold' }).setDepth(20);
     this.energyBar = this.add.graphics().setDepth(20);
     if (new URLSearchParams(location.search).has('debug')) {
@@ -144,7 +173,7 @@ export class ArenaScene extends Phaser.Scene {
     this.dashButton = this.add.circle(696, 437, 34, 0x4e5c64, 0.7).setStrokeStyle(2, 0xb6c7c6, 0.8).setDepth(20);
     this.dashLabel = this.add.text(696, 437, 'DASH', { fontFamily: 'system-ui', fontSize: '12px', color: '#e9faff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.skillButton = this.add.circle(870, 281, 35, 0x75533f, 0.75).setStrokeStyle(2, 0xf6ca8c, 0.8).setDepth(20);
-    this.skillLabel = this.add.text(870, 281, 'PULSO', { fontFamily: 'system-ui', fontSize: '11px', color: '#fbeaff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
+    this.skillLabel = this.add.text(870, 281, 'CORTE', { fontFamily: 'system-ui', fontSize: '11px', color: '#fbeaff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.setTouchVisibility();
 
     this.keys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,ESC,SPACE,E,H') as Record<string, Phaser.Input.Keyboard.Key>;
@@ -192,20 +221,20 @@ export class ArenaScene extends Phaser.Scene {
         g.fillStyle(open ? 0xe3ad5a : 0x743e34);
       }
     }
-    const roomName = room?.kind === 'boss' ? 'GUARDIÃO FINAL' : room?.kind === 'reward' ? 'BAÚ APÓS COMBATE' : 'COMBATE';
+    const roomName = room?.kind === 'boss' ? 'GUARDIÃO FINAL' : 'COMBATE';
     const title = this.add.text(480, 110, room ? `${palette.name} · SALA ${String(room.id + 1).padStart(2, '0')} · ${this.cleared.has(room.id) ? 'PORTAS ABERTAS' : roomName}` : 'ÁTRIO · SALA 01',
       { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#ffe0a2', letterSpacing: 2, backgroundColor: '#281814' }).setOrigin(0.5).setDepth(3);
     this.roomArt = [backdrop, g, title];
-    if (room?.kind === 'reward' && this.cleared.has(room.id) && !this.openedChests.has(room.id)) {
-      const chest = this.add.graphics().setDepth(6);
-      chest.fillStyle(0x251b23); chest.fillRoundedRect(439, 247, 82, 55, 7);
-      chest.fillStyle(0x925b3f); chest.fillRoundedRect(445, 242, 70, 49, 6);
-      chest.lineStyle(3, 0xffd58b); chest.strokeRoundedRect(445, 242, 70, 49, 6);
-      chest.fillStyle(0xe7b963); chest.fillRect(476, 243, 9, 47);
-      chest.fillStyle(0x2b3e43); chest.fillCircle(480, 265, 7);
-      chest.fillStyle(0xf7e6a4); chest.fillCircle(480, 265, 3);
-      const prompt = this.add.text(480, 310, 'TOQUE NO BAÚ', { fontFamily: 'system-ui', fontSize: '14px', color: '#ffe2a0', fontStyle: 'bold' }).setOrigin(0.5).setDepth(6);
-      this.roomArt.push(chest, prompt);
+    if (room && room.kind !== 'boss' && this.cleared.has(room.id) && !this.claimedAltars.has(room.id)) {
+      const altar = this.add.graphics().setDepth(6);
+      altar.fillStyle(0x201713); altar.fillRect(439, 261, 82, 37);
+      altar.fillStyle(0x725339); altar.fillRect(445, 254, 70, 37);
+      altar.lineStyle(3, 0xe0ad69); altar.strokeRect(445, 254, 70, 37);
+      altar.fillStyle(0xf7d188); altar.fillCircle(480, 269, 17);
+      altar.fillStyle(0x452c30); altar.fillCircle(480, 269, 11);
+      altar.fillStyle(0xf7d188); altar.fillTriangle(480, 259, 472, 275, 488, 275);
+      const prompt = this.add.text(480, 314, 'TOQUE NO ALTAR', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#ffe2a0', fontStyle: 'bold', backgroundColor: '#281814' }).setOrigin(0.5).setDepth(6);
+      this.roomArt.push(altar, prompt);
     }
   }
 
@@ -217,12 +246,34 @@ export class ArenaScene extends Phaser.Scene {
   private setHeroArt(): void {
     this.hero.removeAll(true);
     const shadow = this.add.ellipse(0, 15, 40, 10, 0x100c0b, 0.7);
-    const sprite = this.add.image(0, -19, this.selectedHero).setDisplaySize(this.selectedHero === 'gui' ? 43 : 39, 67);
-    this.hero.add([shadow, sprite]);
+    this.heroSprite = this.add.image(0, -19, this.selectedHero).setDisplaySize(this.selectedHero === 'gui' ? 43 : 39, 67);
+    this.facing = 'south';
+    this.hero.add([shadow, this.heroSprite]);
+    this.skillLabel?.setText(this.selectedHero === 'jao' ? 'CORTE' : this.selectedHero === 'alice' ? 'FOCO' : 'IMPACTO');
+  }
+
+  private animateHero(mx: number, my: number): void {
+    const moving = Math.hypot(mx, my) > 0.15;
+    if (moving) this.facing = Math.abs(mx) > Math.abs(my) ? mx > 0 ? 'east' : 'west' : my < 0 ? 'north' : 'south';
+    const key = !moving || this.facing === 'south' ? this.selectedHero
+      : this.facing === 'north' ? `${this.selectedHero}-back`
+      : `${this.selectedHero}-walk${Math.floor(this.elapsed * 8) % 2 + 1}`;
+    if (this.heroSprite.texture.key !== key) {
+      this.heroSprite.setTexture(key);
+      const frame = this.textures.get(key).get();
+      this.heroSprite.setDisplaySize(frame.width / frame.height * 67, 67);
+    }
+    this.heroSprite.setFlipX(this.facing === 'west');
+    this.heroSprite.y = -19 + (moving ? Math.sin(this.elapsed * 16) * 2 : 0);
+    this.heroSprite.angle = moving ? Math.sin(this.elapsed * 8) * 1.5 : 0;
   }
 
   private createEnemy(x: number, y: number, kind: EnemyKind): Enemy {
-    const view = createActor(this, x, y, kind).setDepth(9);
+    const height = kind === 'boss' ? 92 : kind === 'brute' ? 69 : kind === 'sentry' ? 60 : kind === 'shooter' ? 52 : 49;
+    const shadow = this.add.ellipse(0, kind === 'boss' ? 32 : 18, kind === 'boss' ? 70 : 42, 10, 0x100b09, 0.65);
+    const sprite = this.add.image(0, kind === 'boss' ? -18 : -9, `enemy-${kind}`);
+    sprite.setDisplaySize(sprite.width / sprite.height * height, height);
+    const view = this.add.container(x, y, [shadow, sprite]).setDepth(9);
     const hp = kind === 'boss' ? 32 : kind === 'brute' ? 6 : kind === 'sentry' ? 4 : 3;
     return { view, kind, x, y, hp, maxHp: hp,
       speed: kind === 'sentry' ? 0 : kind === 'boss' ? 55 : kind === 'brute' ? 48 : kind === 'shooter' ? 58 : 84,
@@ -248,7 +299,9 @@ export class ArenaScene extends Phaser.Scene {
     this.currentRoom = 0;
     this.cleared = new Set();
     this.visited = new Set([0]);
-    this.storedCoins.clear(); this.coins = 0; this.weapon = 'bolt'; this.openedChests.clear(); this.damageTaken = 0;
+    this.storedCoins.clear(); this.coins = 0;
+    this.weapon = this.selectedHero === 'jao' ? 'bolt' : this.selectedHero === 'alice' ? 'fan' : 'lance';
+    this.affinities = emptyAffinities(); this.attackCount = 0; this.claimedAltars.clear(); this.damageTaken = 0;
     this.groundCoins.forEach(coin => coin.view.destroy()); this.groundCoins = [];
     this.heroHp = 5; this.hurtTimer = 0; this.fireTimer = 0; this.energy = MAX_ENERGY; this.energyCooldown = 0; this.elapsed = 0;
     this.dashTimer = 0; this.dashCooldown = 0; this.skillCooldown = 0;
@@ -331,6 +384,7 @@ export class ArenaScene extends Phaser.Scene {
     if (!blocked(nextX, this.heroY, 15, obstacles)) this.heroX = nextX;
     if (!blocked(this.heroX, nextY, 15, obstacles)) this.heroY = nextY;
     this.hero.setPosition(this.heroX, this.heroY);
+    this.animateHero(mx, my);
     for (const coin of [...this.groundCoins]) {
       if (Math.hypot(this.heroX - coin.x, this.heroY - coin.y) >= 29) continue;
       coin.view.destroy(); this.groundCoins.splice(this.groundCoins.indexOf(coin), 1);
@@ -350,6 +404,9 @@ export class ArenaScene extends Phaser.Scene {
         enemy.speed * dt, radius, obstacles, enemy.escape);
       enemy.x = moved.x; enemy.y = moved.y; enemy.escape = moved.escape;
       enemy.view.setPosition(enemy.x, enemy.y);
+      const sprite = enemy.view.list[1] as Phaser.GameObjects.Image;
+      if (enemy.speed > 0) sprite.setFlipX(dx < 0);
+      sprite.y = (enemy.kind === 'boss' ? -18 : -9) + (enemy.speed > 0 ? Math.sin(this.elapsed * 7 + enemy.x) * 1.5 : 0);
       enemy.cooldown = Math.max(0, enemy.cooldown - dt);
       if (enemy.kind === 'boss') {
         this.bossBar.fillStyle(0x381e33); this.bossBar.fillRoundedRect(340, 67, 280, 12, 5);
@@ -455,7 +512,7 @@ export class ArenaScene extends Phaser.Scene {
     this.drawRoom();
     this.refreshHud();
     if (this.rooms[this.currentRoom].kind === 'boss') { this.finish(true); return; }
-    // Salas de recompensa revelam o baú depois do combate. Ele permanece até ser aberto.
+    // Toda sala não chefe revela um altar após o combate. Ele permanece até a escolha.
   }
 
   private fire(): void {
@@ -465,7 +522,10 @@ export class ArenaScene extends Phaser.Scene {
     const remaining = spendEnergy(this.energy, this.weapon);
     if (remaining === null) { this.drawEnergy(); return; }
     const dx = target.x - this.heroX, dy = target.y - this.heroY;
-    const shots = createShots(this.weapon, dx, dy);
+    const shots = createShots(this.weapon, dx, dy, affinityDamageBonus(this.affinities));
+    const weave = ELEMENTS.flatMap(id => Array<ElementId>(this.affinities[id]).fill(id));
+    const infused = weave.length ? weave[this.attackCount++ % weave.length] : null;
+    if (infused) for (const shot of shots) shot.color = ELEMENT[infused].color;
     this.energy = remaining;
     this.energyCooldown = ENERGY_DELAY;
     this.fireTimer = WEAPONS[this.weapon].cadence;
@@ -516,13 +576,39 @@ export class ArenaScene extends Phaser.Scene {
 
   private pulse(): void {
     if (this.state !== 'playing' || this.skillCooldown > 0) return;
+    const bonus = affinityDamageBonus(this.affinities);
+    const infusion = primaryElement(this.affinities);
+    if (this.selectedHero === 'jao') {
+      const target = closestTarget({ x: this.heroX, y: this.heroY }, this.enemies, this.rooms[this.currentRoom].obstacles);
+      if (!target) return;
+      this.skillCooldown = 6; this.soundscape.play('pulse');
+      const oldX = this.heroX, oldY = this.heroY;
+      const dx = target.x - oldX, dy = target.y - oldY, length = Math.max(1, Math.hypot(dx, dy));
+      const mastered = hasPureMastery(this.affinities, 'lightning');
+      const slash = this.add.graphics().setDepth(12);
+      slash.lineStyle(mastered ? 8 : 5, mastered ? ELEMENT.lightning.color : infusion ? ELEMENT[infusion].color : 0xffd4a0, 0.9);
+      slash.lineBetween(oldX, oldY, mastered ? target.x + dx / length * 43 : target.x, mastered ? target.y + dy / length * 43 : target.y);
+      this.tweens.add({ targets: slash, alpha: 0, duration: 260, onComplete: () => slash.destroy() });
+      if (mastered) {
+        const behindX = target.x + dx / length * 43, behindY = target.y + dy / length * 43;
+        if (!blocked(behindX, behindY, 15, this.rooms[this.currentRoom].obstacles)) {
+          this.heroX = behindX; this.heroY = behindY; this.hero.setPosition(behindX, behindY);
+          this.dashTimer = 0.22;
+        }
+      }
+      this.damageEnemy(target, (mastered ? 5 : 2) + bonus);
+      this.refreshHud();
+      return;
+    }
     this.skillCooldown = 6;
     this.soundscape.play('pulse');
-    const wave = this.add.circle(this.heroX, this.heroY, 15, 0x7e97fa, 0.09).setStrokeStyle(4, 0x9dceff).setDepth(7);
-    this.tweens.add({ targets: wave, radius: 135, alpha: 0, duration: 320, onComplete: () => wave.destroy() });
+    const color = infusion ? ELEMENT[infusion].color : this.selectedHero === 'alice' ? 0xd9c191 : 0xc5a17b;
+    const radius = this.selectedHero === 'alice' ? 170 : 135;
+    const wave = this.add.circle(this.heroX, this.heroY, 15, color, 0.09).setStrokeStyle(4, color).setDepth(7);
+    this.tweens.add({ targets: wave, radius, alpha: 0, duration: 320, onComplete: () => wave.destroy() });
     for (const enemy of [...this.enemies]) {
-      if (Math.hypot(enemy.x - this.heroX, enemy.y - this.heroY) > 135) continue;
-      this.damageEnemy(enemy, 2);
+      if (Math.hypot(enemy.x - this.heroX, enemy.y - this.heroY) > radius) continue;
+      this.damageEnemy(enemy, (this.selectedHero === 'alice' ? 1 : 2) + bonus);
     }
     this.refreshHud();
   }
@@ -532,48 +618,56 @@ export class ArenaScene extends Phaser.Scene {
     this.coins -= 3; this.heroHp++; this.refreshHud();
   }
 
-  private openChest(): void {
-    if (this.state !== 'playing' || !this.cleared.has(this.currentRoom) || this.rooms[this.currentRoom].kind !== 'reward'
-      || this.openedChests.has(this.currentRoom)) return;
-    this.state = 'chest';
+  private openAltar(): void {
+    if (this.state !== 'playing' || !this.cleared.has(this.currentRoom) || this.rooms[this.currentRoom].kind === 'boss'
+      || this.claimedAltars.has(this.currentRoom)) return;
+    this.state = 'altar';
     this.soundscape.play('chest');
     this.clearOverlay();
-    const shade = this.add.rectangle(480, 270, W, H, 0x1a110d, 0.85).setDepth(40);
+    const shade = this.add.rectangle(480, 270, W, H, 0x1a110d, 0.9).setDepth(40);
     const card = this.add.graphics().setDepth(41);
-    card.fillStyle(0x342119, 0.98); card.fillRect(180, 112, 600, 330);
-    card.lineStyle(5, 0xd5a35d); card.strokeRect(180, 112, 600, 330);
-    card.lineStyle(2, 0xc49b64); card.lineBetween(236, 156, 724, 156);
-    card.lineBetween(236, 330, 724, 330);
-    card.fillStyle(0xe8ca82); card.fillCircle(207, 138, 5); card.fillCircle(753, 138, 5);
-    const rewardIds = this.rooms.filter(room => room.kind === 'reward').map(room => room.id);
-    const found = chestWeapon(this.seed, this.currentRoom, rewardIds);
-    const heading = this.add.text(480, 196, 'BAÚ ABERTO!', { fontFamily: 'Georgia, serif', fontSize: '32px', color: '#ffe1a0', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
-    const detail = this.add.text(480, 245, `${WEAPONS[found].name}\n${WEAPONS[found].description} · ${WEAPONS[found].energy} energia por tiro`,
-      { fontFamily: 'Georgia, serif', fontSize: '19px', color: '#f4ddb7', align: 'center', lineSpacing: 10 }).setOrigin(0.5).setDepth(42);
-    const equip = this.add.rectangle(365, 377, 205, 60, 0x8f572e).setStrokeStyle(3, 0xf1c275).setInteractive({ useHandCursor: true }).setDepth(42);
-    const equipLabel = this.add.text(365, 377, 'EQUIPAR', { fontFamily: 'Georgia, serif', fontSize: '18px', color: '#fff0c2', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
-    const keep = this.add.rectangle(595, 377, 205, 60, 0x5b4030).setStrokeStyle(3, 0xb89a72).setInteractive({ useHandCursor: true }).setDepth(42);
-    const keepLabel = this.add.text(595, 377, 'MANTER ATUAL', { fontFamily: 'Georgia, serif', fontSize: '16px', color: '#f4ddb7', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
-    equip.on('pointerdown', () => this.closeChest(found));
-    keep.on('pointerdown', () => this.closeChest());
-    this.overlay = [shade, card, heading, detail, equip, equipLabel, keep, keepLabel];
+    card.fillStyle(0x342119, 0.98); card.fillRect(143, 81, 674, 385);
+    card.lineStyle(5, 0xd5a35d); card.strokeRect(143, 81, 674, 385);
+    card.lineStyle(2, 0xc49b64); card.lineBetween(200, 147, 760, 147);
+    const heading = this.add.text(480, 119, 'ALTAR DAS AFINIDADES', { fontFamily: 'Georgia, serif', fontSize: '30px', color: '#ffe1a0', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
+    const detail = this.add.text(480, 184, `Escolha um elemento · ${totalAffinity(this.affinities)}/5 fragmentos nesta run`,
+      { fontFamily: 'Georgia, serif', fontSize: '17px', color: '#f4ddb7' }).setOrigin(0.5).setDepth(42);
+    this.overlay = [shade, card, heading, detail];
+    for (const [index, element] of altarChoices(this.seed, this.currentRoom, this.affinities).entries()) {
+      const x = 279 + index * 201;
+      const plate = this.add.rectangle(x, 304, 177, 187, 0x4b3125).setStrokeStyle(3, ELEMENT[element].color)
+        .setDepth(42).setInteractive({ useHandCursor: true });
+      const glyph = this.add.text(x, 259, ELEMENT[element].glyph, { fontFamily: 'Georgia, serif', fontSize: '50px', color: ELEMENT[element].css }).setOrigin(0.5).setDepth(43);
+      const name = this.add.text(x, 312, ELEMENT[element].name, { fontFamily: 'Georgia, serif', fontSize: '18px', color: '#fff0c9', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
+      const level = this.add.text(x, 351, `${this.affinities[element]} → ${this.affinities[element] + 1}`, { fontFamily: 'Georgia, serif', fontSize: '19px', color: ELEMENT[element].css }).setOrigin(0.5).setDepth(43);
+      plate.on('pointerdown', () => this.chooseAffinity(element));
+      this.overlay.push(plate, glyph, name, level);
+    }
+    const hint = this.add.text(480, 428, 'Cada escolha fortalece o ataque. Domínio puro exige 5 no mesmo elemento.',
+      { fontFamily: 'Georgia, serif', fontSize: '15px', color: '#ddc396' }).setOrigin(0.5).setDepth(43);
+    this.overlay.push(hint);
   }
 
-  private closeChest(equip?: WeaponId): void {
-    if (this.state !== 'chest') return;
-    if (equip) this.weapon = equip;
-    this.openedChests.add(this.currentRoom);
+  private chooseAffinity(element: ElementId): void {
+    if (this.state !== 'altar') return;
+    this.affinities = gainAffinity(this.affinities, element);
+    this.claimedAltars.add(this.currentRoom);
     this.clearOverlay(); this.state = 'playing'; this.drawRoom(); this.refreshHud();
   }
 
   private refreshHud(): void {
     this.hud.setX(this.touchMode ? 78 : 35);
     this.hud.setText(`${this.selectedHero.toUpperCase()}  ${'♥'.repeat(this.heroHp)}${'♡'.repeat(5 - this.heroHp)}  ${this.cleared.size}/6\n${WEAPONS[this.weapon].name}   ◈ ${this.coins} moedas`);
+    for (const [index, id] of ELEMENTS.entries()) {
+      this.affinityHud[index].setText(`${ELEMENT[id].glyph}${this.affinities[id]}`);
+      this.affinityHud[index].setColor(this.affinities[id] ? ELEMENT[id].css : '#8a7764');
+    }
+    this.skillLabel.setText(this.selectedHero === 'jao' ? 'CORTE' : this.selectedHero === 'alice' ? 'FOCO' : 'IMPACTO');
     this.healButton.setVisible(this.state === 'playing' && this.cleared.has(this.currentRoom));
     this.healLabel.setVisible(this.healButton.visible);
     this.healButton.setAlpha(this.coins >= 3 && this.heroHp < 5 ? 1 : 0.4);
     this.healLabel.setAlpha(this.healButton.alpha);
-    this.hint.setText(this.touchMode ? 'Mover à esquerda · segurar ATIRAR mira sozinho · abra baús para novas armas' : 'WASD: mover · segure clique: tiro automático · ESPAÇO: dash · E: pulso · H: cura · ESC: pausa');
+    this.hint.setText(this.touchMode ? 'Mover à esquerda · segurar ATIRAR mira sozinho · toque no altar após a luta' : 'WASD: mover · segure clique: tiro automático · ESPAÇO: dash · E: habilidade · H: cura · ESC: pausa');
     this.drawEnergy();
     this.drawMap();
   }
@@ -719,9 +813,9 @@ export class ArenaScene extends Phaser.Scene {
     if (pointer.y < 90 && pointer.x > 850) return;
     if (pointer.y < 70) return;
     if (this.state !== 'playing') return;
-    if (this.rooms[this.currentRoom].kind === 'reward' && this.cleared.has(this.currentRoom)
-      && !this.openedChests.has(this.currentRoom) && Math.abs(pointer.x - 480) < 52 && Math.abs(pointer.y - 270) < 45) {
-      this.openChest(); return;
+    if (this.rooms[this.currentRoom].kind !== 'boss' && this.cleared.has(this.currentRoom)
+      && !this.claimedAltars.has(this.currentRoom) && Math.abs(pointer.x - 480) < 52 && Math.abs(pointer.y - 270) < 45) {
+      this.openAltar(); return;
     }
     const isTouch = pointer.wasTouch || (pointer.event as PointerEvent).pointerType === 'touch';
     if (isTouch) {
