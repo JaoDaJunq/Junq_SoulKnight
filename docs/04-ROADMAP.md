@@ -1,6 +1,6 @@
 # 04 · Etapas para concluir o jogo
 
-Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atualização deste documento e `docs/HANDOFF.md` contendo estado, decisões, evidência e próximo passo. Estimativas são de ordem e dependência, não promessa de datas. **T001–T005: código implementado e checagens verdes; Pages publicado e sala inicial observada no desktop. Teste da versão T005 e Android pendentes.** T006–T015: pendentes.
+Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atualização deste documento e `docs/HANDOFF.md` contendo estado, decisões, evidência e próximo passo. Estimativas são de ordem e dependência, não promessa de datas. **T001–T005: código implementado e checagens verdes; Pages publicado e sala inicial T005 observada no desktop. Run completa e Android pendentes.** T006–T015: pendentes.
 
 | ID | Entrega | Dependência | Aceite observável |
 | --- | --- | --- | --- |
