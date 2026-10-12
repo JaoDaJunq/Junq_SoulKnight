@@ -96,8 +96,10 @@ test('equipamentos iniciais têm padrões e custos de tiro distintos', () => {
   const fan = createShots('fan', 1, 0);
   const lance = createShots('lance', 1, 0);
   assert.equal(bolt.length, 1);
-  assert.equal(fan.length, 3);
-  assert.ok(fan[0].vy < 0 && fan[2].vy > 0);
+  assert.equal(fan.length, 1);
+  assert.equal(fan[0].vy, 0);
+  assert.ok(fan[0].vx > lance[0].vx);
+  assert.equal(bolt[0].vx, 0, 'espada não cria projétil');
   assert.ok(lance[0].damage > bolt[0].damage);
   assert.ok(WEAPONS.bolt.cadence < WEAPONS.lance.cadence);
   assert.equal(WEAPONS.lance.name, 'CARTAS DO GUI');

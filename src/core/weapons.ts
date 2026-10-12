@@ -6,8 +6,8 @@ export const ENERGY_REGEN = 12;
 export const ENERGY_DELAY = 0.65;
 
 export const WEAPONS: Record<WeaponId, { name: string; cadence: number; energy: number; description: string }> = {
-  bolt: { name: 'ESPADA DO JÃO', cadence: 0.23, energy: 5, description: 'Arco curto lançado pela espada' },
-  fan: { name: 'ARCO DA ALICE', cadence: 0.43, energy: 9, description: 'Três flechas em leque' },
+  bolt: { name: 'ESPADA DO JÃO', cadence: 0.32, energy: 5, description: 'Corte próximo em arco' },
+  fan: { name: 'ARCO DA ALICE', cadence: 0.43, energy: 7, description: 'Flecha precisa de longo alcance' },
   lance: { name: 'CARTAS DO GUI', cadence: 0.53, energy: 8, description: 'Carta arcana arremessada' },
 };
 
@@ -21,13 +21,13 @@ export function restoreEnergy(current: number, dt: number, cooldown: number, max
 
 export function createShots(id: WeaponId, aimX: number, aimY: number, power = 0): Shot[] {
   const angle = Math.atan2(aimY, aimX);
-  const spread = id === 'fan' ? [-0.24, 0, 0.24] : [0];
-  const speed = id === 'lance' ? 620 : id === 'fan' ? 460 : 520;
+  const spread = [0];
+  const speed = id === 'lance' ? 620 : id === 'fan' ? 670 : 0;
   return spread.map(offset => ({
     vx: Math.cos(angle + offset) * speed,
     vy: Math.sin(angle + offset) * speed,
-    damage: (id === 'lance' ? 2 : 1) + power,
-    life: id === 'lance' ? 1.2 : id === 'fan' ? 0.9 : 0.6,
+    damage: (id === 'lance' || id === 'fan' ? 2 : 1) + power,
+    life: id === 'lance' ? 1.2 : id === 'fan' ? 1.1 : 0,
     color: id === 'lance' ? 0xb793d5 : id === 'fan' ? 0xf2d39a : 0xe9c48a,
     radius: id === 'lance' ? 7 : 6,
   }));

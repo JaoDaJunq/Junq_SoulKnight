@@ -38,6 +38,13 @@ import shooterArt from '../assets/enemy-shooter.png';
 import sentryArt from '../assets/enemy-sentry.png';
 import bruteArt from '../assets/enemy-brute.png';
 import bossArt from '../assets/enemy-boss.png';
+import swordArt from '../assets/weapon-sword.png';
+import bowArt from '../assets/weapon-bow.png';
+import cardsArt from '../assets/weapon-cards.png';
+import arrowArt from '../assets/projectile-arrow.png';
+import cardOne from '../assets/projectile-card-1.png';
+import cardTwo from '../assets/projectile-card-2.png';
+import cardThree from '../assets/projectile-card-3.png';
 
 type State = 'menu' | 'selecting' | 'playing' | 'altar' | 'chest' | 'interlude' | 'paused' | 'dead' | 'cleared';
 type HeroId = 'jao' | 'alice' | 'gui';
@@ -47,7 +54,7 @@ const HEROES: { id: HeroId; name: string; description: string }[] = [
   { id: 'gui', name: 'GUI', description: 'O guardião de cabelos longos' },
 ];
 type Enemy = { view: Phaser.GameObjects.Container; kind: EnemyKind; x: number; y: number; hp: number; maxHp: number; speed: number; cooldown: number; windup: number; slowTimer: number; escape?: EscapeStep };
-type Bullet = { view: Phaser.GameObjects.Arc | Phaser.GameObjects.Rectangle; vx: number; vy: number; life: number; damage: number; synergy?: 'plasma' | 'mud' };
+type Bullet = { view: Phaser.GameObjects.Arc | Phaser.GameObjects.Image; vx: number; vy: number; life: number; damage: number; synergy?: 'plasma' | 'mud' };
 type Coin = { view: Phaser.GameObjects.Arc; x: number; y: number };
 
 const W = 960;
@@ -58,6 +65,7 @@ export class ArenaScene extends Phaser.Scene {
   private selectedHero: HeroId = 'jao';
   private hero!: Phaser.GameObjects.Container;
   private heroSprite!: Phaser.GameObjects.Image;
+  private heldWeapon!: Phaser.GameObjects.Image;
   private facing: 'north' | 'south' | 'east' | 'west' = 'south';
   private heroX = 480;
   private heroY = 385;
@@ -145,6 +153,9 @@ export class ArenaScene extends Phaser.Scene {
       'jao-plasma': jaoPlasma, 'jao-back-plasma': jaoPlasmaBack, 'jao-walk1-plasma': jaoPlasmaWalk1, 'jao-walk2-plasma': jaoPlasmaWalk2,
       'enemy-chaser': chaserArt, 'enemy-shooter': shooterArt, 'enemy-sentry': sentryArt,
       'enemy-brute': bruteArt, 'enemy-boss': bossArt,
+      'weapon-sword': swordArt, 'weapon-bow': bowArt, 'weapon-cards': cardsArt,
+      'projectile-arrow': arrowArt, 'projectile-card-1': cardOne,
+      'projectile-card-2': cardTwo, 'projectile-card-3': cardThree,
     })) this.load.image(key, url);
   }
 
@@ -275,8 +286,10 @@ export class ArenaScene extends Phaser.Scene {
     this.hero.removeAll(true);
     const shadow = this.add.ellipse(0, 15, 40, 10, 0x100c0b, 0.7);
     this.heroSprite = this.add.image(0, -19, this.selectedHero).setDisplaySize(this.selectedHero === 'gui' ? 43 : 39, 67);
+    const weaponKey = this.selectedHero === 'jao' ? 'weapon-sword' : this.selectedHero === 'alice' ? 'weapon-bow' : 'weapon-cards';
+    this.heldWeapon = this.add.image(20, -15, weaponKey).setDisplaySize(this.selectedHero === 'gui' ? 25 : 34, this.selectedHero === 'gui' ? 25 : 34);
     this.facing = 'south';
-    this.hero.add([shadow, this.heroSprite]);
+    this.hero.add([shadow, this.heroSprite, this.heldWeapon]);
     this.skillLabel?.setText(this.selectedHero === 'jao' ? 'CORTE' : this.selectedHero === 'alice' ? 'FOCO' : 'IMPACTO');
   }
 
@@ -297,6 +310,9 @@ export class ArenaScene extends Phaser.Scene {
     this.heroSprite.setFlipX(this.facing === 'west');
     this.heroSprite.y = -19 + (moving ? Math.sin(this.elapsed * 16) * 2 : 0);
     this.heroSprite.angle = moving ? Math.sin(this.elapsed * 8) * 1.5 : 0;
+    this.heldWeapon.x = this.facing === 'west' ? -20 : 20;
+    this.heldWeapon.y = -15 + (moving ? Math.sin(this.elapsed * 16) * 2 : 0);
+    this.heldWeapon.setFlipX(this.facing === 'west');
   }
 
   private createEnemy(x: number, y: number, kind: EnemyKind): Enemy {
@@ -554,10 +570,10 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private fire(): void {
-    if (this.fireTimer > 0 || this.bullets.length >= 32) return;
+    if (this.fireTimer > 0 || (this.weapon !== 'bolt' && this.bullets.length >= 32)) return;
     const target = closestTarget({ x: this.heroX, y: this.heroY }, this.enemies, this.rooms[this.currentRoom].obstacles);
     if (!target) return;
-    if (this.weapon === 'bolt' && Math.hypot(target.x - this.heroX, target.y - this.heroY) > 310) return;
+    if (this.weapon === 'bolt' && Math.hypot(target.x - this.heroX, target.y - this.heroY) > 120) return;
     const remaining = spendEnergy(this.energy, this.weapon);
     if (remaining === null) { this.drawEnergy(); return; }
     const dx = target.x - this.heroX, dy = target.y - this.heroY;
@@ -566,28 +582,50 @@ export class ArenaScene extends Phaser.Scene {
     if (synergy === 'plasma') for (const shot of shots) { shot.color = 0xffa3e5; shot.damage += 2; shot.vx *= 1.25; shot.vy *= 1.25; }
     if (synergy === 'mud') for (const shot of shots) { shot.color = 0x87aa63; shot.damage += 1; }
     const weave = ELEMENTS.flatMap(id => Array<ElementId>(this.affinities[id]).fill(id));
-    const infused = weave.length ? weave[this.attackCount++ % weave.length] : null;
+    const volley = this.attackCount++;
+    const infused = weave.length ? weave[volley % weave.length] : null;
     if (infused && !synergy) for (const shot of shots) shot.color = ELEMENT[infused].color;
     this.energy = remaining;
     this.energyCooldown = ENERGY_DELAY;
     this.fireTimer = WEAPONS[this.weapon].cadence;
     this.drawEnergy();
     this.soundscape.play('shot');
-    if (Math.hypot(dx, dy) < 32) {
-      const impact = this.add.circle(target.x, target.y, 20, shots[0].color, 0.65).setDepth(8);
-      this.tweens.add({ targets: impact, alpha: 0, scale: 1.5, duration: 140, onComplete: () => impact.destroy() });
-      if (synergy === 'mud') target.slowTimer = 2.2;
-      this.damageEnemy(target, shots.reduce((damage, shot) => damage + shot.damage, 0));
+    this.tweens.killTweensOf(this.heldWeapon);
+    const side = this.facing === 'west' ? -1 : 1;
+    this.heldWeapon.angle = side * (this.weapon === 'bolt' ? -38 : -14);
+    this.tweens.add({ targets: this.heldWeapon, angle: side * (this.weapon === 'bolt' ? 42 : 13), duration: 115, yoyo: true });
+    if (this.weapon === 'bolt') {
+      const angle = Math.atan2(dy, dx);
+      const slash = this.add.graphics().setDepth(12);
+      slash.lineStyle(13, 0x342733, 0.9);
+      slash.beginPath(); slash.arc(this.heroX, this.heroY - 8, 78, angle - 0.73, angle + 0.73); slash.strokePath();
+      slash.lineStyle(8, shots[0].color, 1);
+      slash.beginPath(); slash.arc(this.heroX, this.heroY - 8, 78, angle - 0.73, angle + 0.73); slash.strokePath();
+      slash.lineStyle(3, 0xfff4d4, 0.95);
+      slash.beginPath(); slash.arc(this.heroX, this.heroY - 8, 83, angle - 0.62, angle + 0.62); slash.strokePath();
+      this.tweens.add({ targets: slash, alpha: 0, scale: 1.12, duration: 170, onComplete: () => slash.destroy() });
+      for (const enemy of [...this.enemies]) {
+        const reach = Math.hypot(enemy.x - this.heroX, enemy.y - this.heroY);
+        const deviation = Math.atan2(Math.sin(Math.atan2(enemy.y - this.heroY, enemy.x - this.heroX) - angle),
+          Math.cos(Math.atan2(enemy.y - this.heroY, enemy.x - this.heroX) - angle));
+        if (reach > 120 || Math.abs(deviation) > 0.78) continue;
+        if (synergy === 'mud') enemy.slowTimer = 2.2;
+        this.damageEnemy(enemy, shots[0].damage + 1);
+      }
       return;
     }
     for (const shot of shots) {
       if (this.bullets.length >= 32) break;
-      const x = this.heroX + shot.vx / Math.hypot(shot.vx, shot.vy) * 20;
-      const y = this.heroY + shot.vy / Math.hypot(shot.vx, shot.vy) * 20;
+      const angle = Math.atan2(shot.vy, shot.vx);
+      const x = this.heroX + Math.cos(angle) * 24;
+      const y = this.heroY + Math.sin(angle) * 24 - 10;
       const view = this.weapon === 'lance'
-        ? this.add.rectangle(x, y, 12, 17, shot.color).setAngle(Math.atan2(shot.vy, shot.vx) * 180 / Math.PI + 90).setStrokeStyle(2, 0xf5e1b7).setDepth(8)
-        : this.add.rectangle(x, y, this.weapon === 'fan' ? 21 : 16, this.weapon === 'fan' ? 4 : 7, shot.color)
-          .setAngle(Math.atan2(shot.vy, shot.vx) * 180 / Math.PI).setStrokeStyle(2, 0xf3ffff).setDepth(8);
+        ? this.add.image(x, y, `projectile-card-${volley % 3 + 1}`).setDisplaySize(17, 24).setAngle(angle * 180 / Math.PI + 90).setDepth(8)
+        : this.add.image(x, y, 'projectile-arrow').setDisplaySize(42, 14).setAngle(angle * 180 / Math.PI).setDepth(8);
+      if (infused || synergy) {
+        const glint = this.add.circle(x, y, 11, shot.color, 0.5).setDepth(7);
+        this.tweens.add({ targets: glint, alpha: 0, scale: 1.7, duration: 190, onComplete: () => glint.destroy() });
+      }
       this.bullets.push({ view, ...shot, synergy: synergy ?? undefined });
     }
   }

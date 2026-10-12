@@ -11,6 +11,7 @@
 | Abertura, taverna, salas do Átrio e da Forja, sprites de Jão/Alice/Gui e poses de caminhada em `src/assets/` | Gerados para este projeto a partir da direção visual aprovada e das fotos fornecidas pelo MVP. Recortados e otimizados para uso na build; fotos originais não publicadas. | Assets originais deste projeto, sem imagem de Soul Knight incorporada. |
 | Diabrete de Brasa, Acólito do Véu, Olho da Forja, Guardião de Musgo e Vigia do Sino em `src/assets/` | Criaturas geradas para este jogo, recortadas e otimizadas; comportamento implementado no código. | Assets originais deste projeto, sem imagem de Soul Knight incorporada. |
 | Jão Fogo e Plasma, oito poses em `src/assets/` | Derivadas dos sprites aprovados do Jão por troca de paleta da roupa, ombreiras e insígnia com `scripts/make_jao_forms.py`. Nenhuma foto adicional foi publicada. | Derivação original deste projeto. |
+| Espada, arco, leque de cartas, flecha e três cartas de projétil em `src/assets/` | Pixel art desenhada por primitivas no script reproduzível `scripts/make_weapon_art.py` para esta build. | Conteúdo original deste projeto. |
 | Engine e build | Phaser 3, TypeScript e Vite | Dependências sob suas licenças próprias no lockfile e pacotes. |
 
 Soul Knight é referência de ritmo e mecânicas. Não são usados seus personagens, sprites, músicas, logotipo ou mapas. Os repositórios e pacotes listados em `docs/05-PESQUISA-BASES.md` foram estudados, sem código ou assets copiados para este jogo.
