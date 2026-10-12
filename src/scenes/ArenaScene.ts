@@ -48,6 +48,8 @@ export class ArenaScene extends Phaser.Scene {
   private healButton!: Phaser.GameObjects.Rectangle;
   private healLabel!: Phaser.GameObjects.Text;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
+  private heldCodes = new Set<string>();
+  private pressedCodes = new Set<string>();
   private mouseDown = false;
   private movePointer: number | null = null;
   private firePointer: number | null = null;
@@ -99,6 +101,8 @@ export class ArenaScene extends Phaser.Scene {
     this.setTouchVisibility();
 
     this.keys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,ESC,SPACE,E,H') as Record<string, Phaser.Input.Keyboard.Key>;
+    window.addEventListener('keydown', this.onNativeKeyDown, true);
+    window.addEventListener('keyup', this.onNativeKeyUp, true);
     this.input.on('pointerdown', this.onDown, this);
     this.input.on('pointermove', this.onMove, this);
     this.input.on('pointerup', this.onUp, this);
@@ -107,6 +111,10 @@ export class ArenaScene extends Phaser.Scene {
     this.scale.on(Phaser.Scale.Events.RESIZE, this.pauseOnPortrait, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off(Phaser.Core.Events.BLUR, this.pauseOnBlur, this));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.pauseOnPortrait, this));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      window.removeEventListener('keydown', this.onNativeKeyDown, true);
+      window.removeEventListener('keyup', this.onNativeKeyUp, true);
+    });
     this.showOverlay('JUNQ · RUN', 'Seis salas, escolhas de arma e um chefe.\nElimine os guardiões e encontre a saída.', 'COMEÇAR', () => this.startRun());
     this.refreshHud();
   }
@@ -177,6 +185,7 @@ export class ArenaScene extends Phaser.Scene {
 
   private startRun(): void {
     this.requestMobileFullscreen();
+    this.pressedCodes.clear();
     this.clearOverlay();
     this.seed = Math.floor(Math.random() * 0xffffffff);
     this.rooms = generateRun(this.seed);
@@ -230,8 +239,9 @@ export class ArenaScene extends Phaser.Scene {
       this.debugFps.setText(`FPS ${Math.round(this.game.loop.actualFps)}`);
       this.fpsTimer = 500;
     }
-    if (Phaser.Input.Keyboard.JustDown(this.keys.ESC)) this.togglePause();
-    if (this.state !== 'playing') return;
+    const escape = this.consumeKey('Escape');
+    if (Phaser.Input.Keyboard.JustDown(this.keys.ESC) || escape) this.togglePause();
+    if (this.state !== 'playing') { this.pressedCodes.clear(); return; }
     const dt = Math.min(delta, 50) / 1000;
     this.elapsed += dt;
     this.hurtTimer = Math.max(0, this.hurtTimer - dt);
@@ -239,14 +249,17 @@ export class ArenaScene extends Phaser.Scene {
     this.dashTimer = Math.max(0, this.dashTimer - dt);
     this.dashCooldown = Math.max(0, this.dashCooldown - dt);
     this.skillCooldown = Math.max(0, this.skillCooldown - dt);
-    if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.dash();
-    if (Phaser.Input.Keyboard.JustDown(this.keys.E)) this.pulse();
-    if (Phaser.Input.Keyboard.JustDown(this.keys.H)) this.buyHeal();
+    const space = this.consumeKey('Space'), pulseKey = this.consumeKey('KeyE'), healKey = this.consumeKey('KeyH');
+    if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || space) this.dash();
+    if (Phaser.Input.Keyboard.JustDown(this.keys.E) || pulseKey) this.pulse();
+    if (Phaser.Input.Keyboard.JustDown(this.keys.H) || healKey) this.buyHeal();
     if (this.state !== 'playing') return;
     this.hero.setAlpha(this.hurtTimer > 0 && Math.floor(this.hurtTimer * 12) % 2 === 0 ? 0.45 : 1);
 
-    let mx = Number(this.keys.D.isDown || this.keys.RIGHT.isDown) - Number(this.keys.A.isDown || this.keys.LEFT.isDown) + this.joyX;
-    let my = Number(this.keys.S.isDown || this.keys.DOWN.isDown) - Number(this.keys.W.isDown || this.keys.UP.isDown) + this.joyY;
+    let mx = Number(this.keys.D.isDown || this.keys.RIGHT.isDown || this.heldCodes.has('KeyD') || this.heldCodes.has('ArrowRight'))
+      - Number(this.keys.A.isDown || this.keys.LEFT.isDown || this.heldCodes.has('KeyA') || this.heldCodes.has('ArrowLeft')) + this.joyX;
+    let my = Number(this.keys.S.isDown || this.keys.DOWN.isDown || this.heldCodes.has('KeyS') || this.heldCodes.has('ArrowDown'))
+      - Number(this.keys.W.isDown || this.keys.UP.isDown || this.heldCodes.has('KeyW') || this.heldCodes.has('ArrowUp')) + this.joyY;
     ({ x: mx, y: my } = normalizedMovement(mx, my));
     if (Math.hypot(mx, my) > 0.15) { this.lastMoveX = mx; this.lastMoveY = my; }
     if (this.dashTimer > 0) { mx = this.lastMoveX; my = this.lastMoveY; }
@@ -495,6 +508,7 @@ export class ArenaScene extends Phaser.Scene {
 
   private togglePause(): void {
     if (this.state === 'playing') {
+      this.heldCodes.clear(); this.pressedCodes.clear();
       this.state = 'paused'; this.mouseDown = false; this.firePointer = null;
       this.movePointer = null; this.joyX = 0; this.joyY = 0; this.joyKnob.setPosition(153, 399);
       this.showOverlay('PAUSA', 'Respira, MVP. A sala espera.', 'CONTINUAR', () => { this.clearOverlay(); this.state = 'playing'; });
@@ -502,6 +516,19 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private pauseOnBlur(): void { if (this.state === 'playing') this.togglePause(); }
+
+  private onNativeKeyDown = (event: KeyboardEvent): void => {
+    if (!event.repeat) this.pressedCodes.add(event.code);
+    this.heldCodes.add(event.code);
+  };
+
+  private onNativeKeyUp = (event: KeyboardEvent): void => { this.heldCodes.delete(event.code); };
+
+  private consumeKey(code: string): boolean {
+    const wasPressed = this.pressedCodes.has(code);
+    this.pressedCodes.delete(code);
+    return wasPressed;
+  }
 
   private pauseOnPortrait(): void {
     if (this.touchMode && matchMedia('(orientation: portrait)').matches && this.state === 'playing') this.togglePause();
