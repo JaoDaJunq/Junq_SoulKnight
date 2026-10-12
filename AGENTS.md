@@ -15,4 +15,4 @@ Antes de qualquer alteração, ler `README.md` e `docs/01-REFERENCIA.md` a `docs
 
 ## Próxima tarefa
 
-T009: finalizar e validar direção de arte autoral, interface, áudio e créditos. O MVP informou em 12/10/2026 que testou o vertical slice e aprovou seguir; não reabrir T008 como bloqueio sem novo relato de bug. A primeira entrega de T009 usa desenhos e sons gerados pelo próprio código. Conferir legibilidade, volume, mudo e toque no Pages; registrar aparelho e FPS quando houver evidência. Em seguida, T010. Run completa e Android físico permanecem como riscos de validação para o beta, sem invalidar o aceite dado pelo usuário.
+T010: ampliar o conteúdo da run. O MVP adiou os testes subjetivos da arte/áudio e do Android e pediu para seguir em 12/10/2026; não bloquear a implementação por isso. Primeiro, segunda região visual e um inimigo novo com ataque sinalizado; depois, kits próprios para personagens Junq e balanceamento. Não importar sprites ou poderes de outros projetos automaticamente. Registrar as verificações possíveis em desktop/CI, preservar uma seed reproduzível e manter as validações de aparelho para o beta.

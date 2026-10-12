@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { blocked } from '../src/core/arena.ts';
 import { generateRun, parseRunSeed } from '../src/core/run.ts';
+import { encounterFor } from '../src/content/encounters.ts';
 
 test('seed de URL aceita inteiros uint32 e rejeita entradas inválidas', () => {
   assert.equal(parseRunSeed('0'), 0);
@@ -18,6 +19,9 @@ test('100 seeds geram seis salas alcançáveis com portas pareadas e spawn livre
     assert.equal(rooms.filter(room => room.kind === 'boss').length, 1);
     assert.equal(rooms.filter(room => room.kind === 'reward').length, 2);
     assert.equal(rooms[0].kind, 'start');
+    assert.equal(rooms[0].biome, 'atrium');
+    assert.ok(rooms.some(room => room.biome === 'forge' && room.kind !== 'boss'), `seed ${seed}: sem encontro na forja`);
+    assert.ok(rooms.some(room => room.biome === 'forge' && room.kind === 'reward'), `seed ${seed}: sem baú na forja`);
     const reached = new Set([0]);
     const pending = [0];
     while (pending.length) {
@@ -34,6 +38,13 @@ test('100 seeds geram seis salas alcançáveis com portas pareadas e spawn livre
     assert.equal(reached.size, 6, `seed ${seed}`);
     const boss = rooms.find(room => room.kind === 'boss');
     assert.ok(reached.has(boss.id));
+    assert.equal(boss.biome, 'forge');
+    for (const room of rooms) {
+      const encounter = encounterFor(room);
+      if (room.kind === 'boss') assert.deepEqual(encounter, ['boss']);
+      else if (room.biome === 'forge') assert.ok(encounter.includes('sentry') && !encounter.includes('shooter'));
+      else assert.ok(encounter.includes('shooter') && !encounter.includes('sentry'));
+    }
     const parent = new Map([[0, null]]);
     const search = [0];
     while (search.length) {

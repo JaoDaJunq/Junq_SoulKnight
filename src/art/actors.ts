@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-export type ActorKind = 'hero' | 'chaser' | 'shooter' | 'brute' | 'boss';
+export type ActorKind = 'hero' | 'chaser' | 'shooter' | 'sentry' | 'brute' | 'boss';
 
 /** Original vector silhouettes. No external sprite or font is loaded. */
 export function createActor(scene: Phaser.Scene, x: number, y: number, kind: ActorKind): Phaser.GameObjects.Container {
@@ -33,6 +33,15 @@ export function createActor(scene: Phaser.Scene, x: number, y: number, kind: Act
     g.strokeTriangle(0, -27, -22, 8, 0, 25);
     g.fillStyle(0x7d63a6); g.fillCircle(0, -1, 10);
     g.fillStyle(0xf5d6ff); g.fillCircle(0, -1, 4);
+  } else if (kind === 'sentry') {
+    g.fillStyle(0x63343d); g.fillTriangle(-23, 10, -25, -23, -6, -8);
+    g.fillTriangle(23, 10, 25, -23, 6, -8);
+    g.fillStyle(0x9e594b); g.fillRoundedRect(-17, -19, 34, 39, 8);
+    g.lineStyle(3, 0xffd594); g.strokeRoundedRect(-17, -19, 34, 39, 8);
+    g.fillStyle(0x3e2833); g.fillRoundedRect(-12, -11, 24, 23, 5);
+    g.fillStyle(0xffb572); g.fillCircle(0, 0, 7);
+    g.fillStyle(0xfff0b5); g.fillCircle(0, 0, 3);
+    g.lineStyle(2, 0xf7b97c); g.lineBetween(-12, 15, 12, 15);
   } else if (kind === 'brute') {
     g.fillStyle(0x513944); g.fillRoundedRect(-24, -19, 48, 41, 9);
     g.fillStyle(0x977052); g.fillRoundedRect(-19, -15, 38, 33, 6);

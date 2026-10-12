@@ -1,6 +1,6 @@
 # 04 · Etapas para concluir o jogo
 
-Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atualização deste documento e `docs/HANDOFF.md` contendo estado, decisões, evidência e próximo passo. Estimativas são de ordem e dependência, não promessa de datas. **T001–T008: aceitos para seguir pelo MVP em 12/10/2026. T009: em execução.** O teste anterior em navegador desktop observou derrota, limpeza da sala inicial e passagem pela porta. O usuário confirmou que testou e aprovou a continuidade; aparelho e FPS não foram informados. T010–T015: pendentes.
+Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atualização deste documento e `docs/HANDOFF.md` contendo estado, decisões, evidência e próximo passo. Estimativas são de ordem e dependência, não promessa de datas. **T001–T008: aceitos para seguir pelo MVP. T009: implementação publicada; validação em aparelho adiada pelo MVP em 12/10/2026. T010: em execução.** T011–T015: pendentes.
 
 | ID | Entrega | Dependência | Aceite observável |
 | --- | --- | --- | --- |
@@ -13,7 +13,7 @@ Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atual
 | T007 | Chefe com ataques sinalizados e encerramento da run | T006 | Vitória e derrota completas; relatório com seed e tempo. **Vertical slice P1.** |
 | T008 | Playtest P1 e revisão de desempenho/controles | T007 | Testes no Android e desktop; bugs de bloqueio e mortes sem feedback corrigidos. **Aceite do MVP para seguir em 12/10/2026.** Não há registro de aparelho, FPS ou run completa, então esses casos permanecem em observação para o beta. |
 | T009 | Direção de arte autoral, UI final, áudio licenciado e créditos | T008 | Origem/licença rastreável para cada asset; leitura do combate preservada. **Em andamento:** cenário, silhuetas, HUD e recompensa redesenhados em código; sons Web Audio originais com mudo imediato e limite de repetição; créditos registrados. Desktop visual no Pages; falta ouvir em aparelho e conferir baú em partida. |
-| T010 | Personagens Junq adicionais, segundo bioma e novos encontros | T008, T009 | Kits diferentes com balanceamento; conteúdo atravessa run completa. |
+| T010 | Personagens Junq adicionais, segundo bioma e novos encontros | T008, T009 | Kits diferentes com balanceamento; conteúdo atravessa run completa. **Primeira entrega:** duas regiões garantidas em toda seed, identidade visual distinta, sentinela com ataque sinalizado nos encontros da segunda região, sem alterar as escolhas de arma em baú. Personagens adicionais e balanceamento ficam para entregas seguintes de T010. |
 | T011 | Hub, desbloqueios, save com migração, opções e onboarding | T008 | Persistência após fechar/reabrir; reset e recuperação de save inválido. |
 | T012 | Beta fechado e polimento | T009–T011 | Jogadores novos concluem tentativa; erros de console, input e save monitorados. |
 | T013 | Lançamento web | T012 | CI e Pages verdes, créditos, instruções, changelog e teste final em dispositivos. |

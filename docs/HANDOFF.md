@@ -6,7 +6,8 @@
 - T006 revisado: ataque básico FAÍSCA e duas armas extras com cadência, padrão e custo de energia próprios; moedas de inimigos e cura por três moedas. Duas salas de recompensa revelam baús depois do combate. Cada baú contém uma arma extra determinada pela seed; o jogador decide equipar ou manter a atual. Não há escolha de arma fora de baús. Moedas no chão persistem ao revisitar salas.
 - T007: sala do chefe no ponto mais distante do início, aviso visual antes dos ataques, barra de vida, vitória e derrota com seed, tempo, dano, salas e moedas.
 - T008: CSS preenche a área visível em celular horizontal, aviso para girar no retrato, tentativa de tela cheia após toque, pausa ao girar/perder foco, controles de toque reposicionados e FPS opcional (`?debug=1`). Captura direta de teclado complementa o input do Phaser. Ao segurar tiro, a mira seleciona o inimigo visível mais próximo; o tiro gasta energia conforme a arma, 100 pontos no máximo, recarga de 12/s após 0,65s sem disparar. Sem alvo ou sem energia suficiente não há tiro. Tiro a curta distância acerta o inimigo sobreposto ao herói; inimigos dão um passo lateral persistente para sair da quina de obstáculos; `?seed=N` reproduz salas e baús. **MVP testou e aprovou seguir em 12/10/2026.** Aparelho, FPS e run completa não foram informados nesta sessão; anotar caso haja bugs no beta, sem reabrir o aceite como impedimento.
-- T009 em execução: cenário de ruínas com pisos gravados, portas e obstáculos redesenhados, silhuetas próprias para herói e quatro inimigos, HUD e overlays revisados, efeitos Web Audio originais com mudo. `CREDITS.md` registra procedência; não há assets externos. Falta validar leitura e som no jogo publicado e fechar refinamento visual. T010–T015 pendentes. Save, PWA e APK não existem.
+- T009 implementada no web: cenário de ruínas com pisos gravados, portas e obstáculos redesenhados, silhuetas próprias para herói e inimigos, HUD e overlays revisados, efeitos Web Audio originais com mudo. `CREDITS.md` registra procedência; não há assets externos. O MVP adiou os testes de áudio/arte no aparelho e pediu para avançar em 12/10/2026.
+- T010 em execução: Forja de Âmbar no trecho final da run de seis salas, com paleta, gravações de piso e pilares próprios; sentinela imóvel avisa por 0,7s e dispara três projéteis alaranjados. Gerador garante sala da Forja com baú antes do chefe em todas as 100 seeds testadas. Ainda não há personagens Junq selecionáveis, segundo andar ou balanceamento em aparelho. T011–T015 pendentes. Save, PWA e APK não existem.
 
 ## Evidência e limites
 
@@ -18,11 +19,11 @@
 - O ajuste [`2408260`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/240826000be739db963f3b381dbc45273b63188a) alinhou o diálogo do baú; [Actions 38256587499](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38256587499) publicou com sucesso e o Pages carregou `assets/index-BG7WxFvC.js`. No Chrome desktop, a seed 3 permitiu limpar a sala inicial e passar pela porta leste para a sala 02. O personagem morreu no encontro seguinte antes de chegar ao baú; portanto, a tela do baú ainda não foi vista em partida. O áudio desta revisão limita repetições de tiro/impacto, reduz o volume geral e corta o som imediatamente no mudo. A automação não permite escuta confiável; validar em aparelho. O fluxo anterior foi aceito pelo MVP e o teste automatizado lento não reabre T008.
 - O commit [`a27e2ed`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/a27e2edbbeee9daba14363136653a26034b71630) publicou o refinamento do áudio e esta documentação; [Actions 38258973010](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38258973010) passou. Typecheck, três arquivos de testes e build passaram localmente. O Pages serviu `assets/index-CK550oXF.js` no Chrome desktop; jogo iniciou e o controle SOM respondeu, sem erro de console originado pelo jogo. Escuta subjetiva e baú na partida seguem sem verificação nesta automação.
 
-## Próximo trabalho: concluir T009
+## Próximo trabalho: continuar T010
 
-1. Revisar no Pages em desktop e Android horizontal a leitura de cada silhueta, portas, tiros, HUD, overlay de baú e chefe. Ajustar o que atrapalhar o combate e registrar aparelho/FPS se houver.
-2. Ouvir os efeitos em navegador com áudio desbloqueado, conferir mudo e pausas; corrigir volume ou fadiga. Não há trilha externa nesta passagem.
-3. Fechar T009 após aceite visual/sonoro e avançar para T010 (personagens e segundo bioma). Run completa e Android físico continuam como observação de beta caso surjam relatos.
+1. Definir kits próprios deste jogo para Jão, Alice e Gui em `docs/personagens/`, sem importar sprites ou habilidades de Junq Bullet/Junqverse. Implementar seleção e diferenças jogáveis em incrementos pequenos.
+2. Balancear encontros do Átrio e da Forja; manter a sentinela visível/atingível nos layouts. Registrar feedback de partidas quando o MVP testar.
+3. Recolher a validação adiada de áudio/arte/baú e Android no beta, sem bloquear a implementação agora.
 
 ## Como rodar
 

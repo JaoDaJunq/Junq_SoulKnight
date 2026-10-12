@@ -1,4 +1,5 @@
 import type { OBSTACLES } from './arena';
+import type { BiomeId } from '../content/biomes';
 
 export type Direction = 'north' | 'east' | 'south' | 'west';
 export type RoomKind = 'start' | 'combat' | 'reward' | 'boss';
@@ -9,6 +10,7 @@ export type Room = {
   neighbors: Partial<Record<Direction, number>>;
   obstacles: typeof OBSTACLES;
   kind: RoomKind;
+  biome: BiomeId;
 };
 
 const DIRECTIONS: { direction: Direction; dx: number; dy: number; opposite: Direction }[] = [
@@ -35,7 +37,7 @@ export function parseRunSeed(value: string | null): number | null {
 export function generateRun(seed: number): Room[] {
   const rand = random(seed);
   const rooms: Room[] = Array.from({ length: 6 }, (_, id) => ({
-    id, x: id % 3, y: Math.floor(id / 3), neighbors: {}, kind: id === 0 ? 'start' : 'combat',
+    id, x: id % 3, y: Math.floor(id / 3), neighbors: {}, kind: id === 0 ? 'start' : 'combat', biome: 'atrium',
     obstacles: id % 2 === 0
       ? [{ x: 296, y: 206, w: 72, h: 68 }, { x: 610, y: 326, w: 72, h: 68 }]
       : [{ x: 296, y: 326, w: 72, h: 68 }, { x: 610, y: 206, w: 72, h: 68 }],
@@ -69,6 +71,9 @@ export function generateRun(seed: number): Room[] {
   }
   const boss = rooms.slice(1).sort((a, b) => distances[b.id] - distances[a.id] || b.id - a.id)[0];
   boss.kind = 'boss';
+  // The end of the route changes region, while at least one room before the boss uses the new palette.
+  const forgeDepth = Math.max(1, distances[boss.id] - 1);
+  for (const room of rooms) if (distances[room.id] >= forgeDepth) room.biome = 'forge';
   const rewardIds: number[] = [];
   for (let id = parent[boss.id]; id > 0 && rewardIds.length < 2; id = parent[id]) rewardIds.push(id);
   for (const room of rooms.slice(1).sort((a, b) => distances[a.id] - distances[b.id] || a.id - b.id)) {

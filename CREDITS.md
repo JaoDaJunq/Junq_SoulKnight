@@ -4,7 +4,7 @@
 
 | Item | Origem | Licença / condição |
 | --- | --- | --- |
-| Cenário, pisos, obstáculos, portas, baú e silhuetas dos personagens | Desenhados em código neste repositório (`src/scenes/ArenaScene.ts`, `src/art/actors.ts`) para Junq SoulKnight | Conteúdo original deste projeto; sem asset externo incorporado. |
+| Cenários do Átrio e da Forja, pisos, obstáculos, portas, baú e silhuetas dos personagens e da sentinela | Desenhados em código neste repositório (`src/scenes/ArenaScene.ts`, `src/art/actors.ts`, `src/content/biomes.ts`) para Junq SoulKnight | Conteúdo original deste projeto; sem asset externo incorporado. |
 | Efeitos sonoros | Osciladores Web Audio com envelopes próprios (`src/audio/Soundscape.ts`); nenhum arquivo de áudio externo | Conteúdo original deste projeto. |
 | Tipografia | Fontes do sistema do aparelho (`Trebuchet MS`, `system-ui`) | Nenhum arquivo de fonte distribuído. |
 | Engine e build | Phaser 3, TypeScript e Vite | Dependências sob suas licenças próprias no lockfile e pacotes. |

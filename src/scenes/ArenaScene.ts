@@ -1,13 +1,14 @@
 import Phaser from 'phaser';
 import { createActor } from '../art/actors';
 import { Soundscape } from '../audio/Soundscape';
+import { BIOMES } from '../content/biomes';
+import { encounterFor, SPAWNS, type EnemyKind } from '../content/encounters';
 import { blocked, moveAroundObstacle, normalizedMovement, OBSTACLES, type EscapeStep } from '../core/arena';
 import { generateRun, parseRunSeed, type Direction, type Room } from '../core/run';
 import { chestWeapon, createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS, type WeaponId } from '../core/weapons';
 import { closestTarget } from '../core/targeting';
 
 type State = 'menu' | 'playing' | 'chest' | 'paused' | 'dead' | 'cleared';
-type EnemyKind = 'chaser' | 'shooter' | 'brute' | 'boss';
 type Enemy = { view: Phaser.GameObjects.Container; kind: EnemyKind; x: number; y: number; hp: number; maxHp: number; speed: number; cooldown: number; windup: number; escape?: EscapeStep };
 type Bullet = { view: Phaser.GameObjects.Arc; vx: number; vy: number; life: number; damage: number };
 type Coin = { view: Phaser.GameObjects.Arc; x: number; y: number };
@@ -144,37 +145,44 @@ export class ArenaScene extends Phaser.Scene {
   private drawRoom(): void {
     this.roomArt.forEach(item => item.destroy());
     const room = this.rooms[this.currentRoom];
+    const palette = BIOMES[room?.biome ?? 'atrium'];
     const g = this.add.graphics();
-    g.fillGradientStyle(0x101d2b, 0x101d2b, 0x080f1b, 0x080f1b); g.fillRect(0, 0, W, H);
-    g.fillStyle(0x202d3c); g.fillRoundedRect(37, 66, 886, 434, 18);
+    g.fillGradientStyle(palette.backdrop, palette.backdrop, 0x080f1b, 0x080f1b); g.fillRect(0, 0, W, H);
+    g.fillStyle(palette.rim); g.fillRoundedRect(37, 66, 886, 434, 18);
     g.fillStyle(0x0c1826); g.fillRoundedRect(47, 76, 866, 414, 13);
-    g.fillStyle(0x152538); g.fillRoundedRect(59, 86, 842, 394, 8);
+    g.fillStyle(palette.floor); g.fillRoundedRect(59, 86, 842, 394, 8);
     // Offset slabs and small etched glyphs make the room feel hand built without an external tileset.
     for (let row = 0; row < 10; row++) {
       for (let col = 0; col < 20; col++) {
         const x = 64 + col * 42 + (row % 2) * 20, y = 90 + row * 39;
         if (x > 877) continue;
-        g.fillStyle((row + col) % 4 === 0 ? 0x1c3140 : 0x1a2a3b, 0.55);
+        g.fillStyle((row + col) % 4 === 0 ? palette.tileA : palette.tileB, 0.65);
         g.fillRoundedRect(x, y, 39, 36, 3);
         if ((row * 7 + col * 11) % 17 === 0) {
-          g.lineStyle(1, 0x508b95, 0.35); g.strokeCircle(x + 19, y + 18, 9);
-          g.lineBetween(x + 19, y + 12, x + 19, y + 24);
+          g.lineStyle(1, palette.glyph, 0.5);
+          if (room?.biome === 'forge') {
+            g.lineBetween(x + 10, y + 7, x + 22, y + 19);
+            g.lineBetween(x + 22, y + 19, x + 15, y + 30);
+          } else {
+            g.strokeCircle(x + 19, y + 18, 9);
+            g.lineBetween(x + 19, y + 12, x + 19, y + 24);
+          }
         }
       }
     }
-    g.lineStyle(4, 0x547486); g.strokeRoundedRect(54, 81, 852, 403, 12);
-    g.lineStyle(2, 0x80b5b7, 0.5); g.strokeRoundedRect(62, 89, 836, 387, 8);
+    g.lineStyle(4, palette.pillarTop); g.strokeRoundedRect(54, 81, 852, 403, 12);
+    g.lineStyle(2, palette.line, 0.6); g.strokeRoundedRect(62, 89, 836, 387, 8);
     for (const [x, y] of [[85, 111], [875, 111], [85, 454], [875, 454]]) {
       g.fillStyle(0x142a36); g.fillCircle(x, y, 15);
-      g.lineStyle(2, 0x77c2b8); g.strokeCircle(x, y, 11);
+      g.lineStyle(2, palette.accent); g.strokeCircle(x, y, 11);
       g.fillStyle(0xd7b772); g.fillCircle(x, y, 4);
     }
     for (const o of room?.obstacles ?? OBSTACLES) {
       g.fillStyle(0x050d17, 0.65); g.fillRoundedRect(o.x + 7, o.y + 11, o.w, o.h, 7);
-      g.fillStyle(0x243f4b); g.fillRoundedRect(o.x, o.y, o.w, o.h, 6);
-      g.fillStyle(0x385865); g.fillRoundedRect(o.x + 5, o.y + 4, o.w - 10, o.h - 11, 4);
-      g.lineStyle(3, 0x9bc4b8); g.strokeRoundedRect(o.x, o.y, o.w, o.h, 6);
-      g.lineStyle(2, 0x64939a); g.lineBetween(o.x + 11, o.y + 12, o.x + o.w - 11, o.y + o.h - 15);
+      g.fillStyle(palette.pillar); g.fillRoundedRect(o.x, o.y, o.w, o.h, 6);
+      g.fillStyle(palette.pillarTop); g.fillRoundedRect(o.x + 5, o.y + 4, o.w - 10, o.h - 11, 4);
+      g.lineStyle(3, palette.pillarEdge); g.strokeRoundedRect(o.x, o.y, o.w, o.h, 6);
+      g.lineStyle(2, palette.line); g.lineBetween(o.x + 11, o.y + 12, o.x + o.w - 11, o.y + o.h - 15);
       g.fillStyle(0xd6b774); g.fillCircle(o.x + o.w / 2, o.y + o.h / 2, 4);
     }
     if (room) {
@@ -189,8 +197,8 @@ export class ArenaScene extends Phaser.Scene {
       }
     }
     const roomName = room?.kind === 'boss' ? 'GUARDIÃO FINAL' : room?.kind === 'reward' ? 'BAÚ APÓS COMBATE' : 'COMBATE';
-    const title = this.add.text(480, 110, room ? `SALA ${String(room.id + 1).padStart(2, '0')} · ${this.cleared.has(room.id) ? 'PORTAS ABERTAS' : roomName}` : 'SALA 01 · CÂMARA DE TESTE',
-      { fontFamily: 'system-ui', fontSize: '13px', color: '#7398bd', letterSpacing: 3 }).setOrigin(0.5);
+    const title = this.add.text(480, 110, room ? `${palette.name} · SALA ${String(room.id + 1).padStart(2, '0')} · ${this.cleared.has(room.id) ? 'PORTAS ABERTAS' : roomName}` : 'ÁTRIO · SALA 01',
+      { fontFamily: 'system-ui', fontSize: '13px', color: room?.biome === 'forge' ? '#ffd39b' : '#93bac1', letterSpacing: 2 }).setOrigin(0.5);
     this.roomArt = [g, title];
     if (room?.kind === 'reward' && this.cleared.has(room.id) && !this.openedChests.has(room.id)) {
       const chest = this.add.graphics().setDepth(6);
@@ -211,10 +219,10 @@ export class ArenaScene extends Phaser.Scene {
 
   private createEnemy(x: number, y: number, kind: EnemyKind): Enemy {
     const view = createActor(this, x, y, kind).setDepth(9);
-    const hp = kind === 'boss' ? 32 : kind === 'brute' ? 6 : 3;
+    const hp = kind === 'boss' ? 32 : kind === 'brute' ? 6 : kind === 'sentry' ? 4 : 3;
     return { view, kind, x, y, hp, maxHp: hp,
-      speed: kind === 'boss' ? 55 : kind === 'brute' ? 48 : kind === 'shooter' ? 58 : 84,
-      cooldown: kind === 'boss' ? 1.8 : kind === 'shooter' ? 1 : 0, windup: 0 };
+      speed: kind === 'sentry' ? 0 : kind === 'boss' ? 55 : kind === 'brute' ? 48 : kind === 'shooter' ? 58 : 84,
+      cooldown: kind === 'boss' ? 1.8 : kind === 'sentry' ? 1.4 : kind === 'shooter' ? 1 : 0, windup: 0 };
   }
 
   private requestMobileFullscreen(): void {
@@ -267,9 +275,7 @@ export class ArenaScene extends Phaser.Scene {
     this.hero.setPosition(this.heroX, this.heroY);
     this.drawRoom();
     if (!this.cleared.has(id)) {
-      if (this.rooms[id].kind === 'boss') this.enemies = [this.createEnemy(760, 260, 'boss')];
-      else this.enemies = [this.createEnemy(175, 155, 'chaser'), this.createEnemy(780, 158, 'shooter'),
-        ...(id === 0 ? [] : [this.createEnemy(762, 323, 'brute')])];
+      this.enemies = encounterFor(this.rooms[id]).map(kind => this.createEnemy(SPAWNS[kind].x, SPAWNS[kind].y, kind));
     }
     for (const coin of this.storedCoins.get(id) ?? []) this.spawnCoin(coin.x, coin.y);
     this.mouseDown = false; this.movePointer = null; this.firePointer = null;
@@ -330,7 +336,8 @@ export class ArenaScene extends Phaser.Scene {
       const dx = this.heroX - enemy.x, dy = this.heroY - enemy.y;
       const length = Math.max(1, Math.hypot(dx, dy));
       const preferred = enemy.kind === 'shooter' && length < 190 ? -0.65 : 1;
-      const motion = enemy.kind === 'boss' && enemy.windup > 0 ? 0 : enemy.kind === 'shooter' && length < 260 && length >= 190 ? 0 : preferred;
+      const motion = enemy.kind === 'sentry' || (enemy.kind === 'boss' && enemy.windup > 0) ? 0
+        : enemy.kind === 'shooter' && length < 260 && length >= 190 ? 0 : preferred;
       const radius = enemy.kind === 'boss' ? 30 : enemy.kind === 'brute' ? 20 : 15;
       const moved = moveAroundObstacle(enemy.x, enemy.y, dx / length * motion, dy / length * motion,
         enemy.speed * dt, radius, obstacles, enemy.escape);
@@ -351,6 +358,18 @@ export class ArenaScene extends Phaser.Scene {
       if (enemy.kind === 'shooter' && enemy.cooldown === 0 && length < 420) {
         enemy.cooldown = 1.65;
         this.spawnEnemyBullet(enemy.x, enemy.y, Math.atan2(dy, dx), 215);
+      }
+      if (enemy.kind === 'sentry' && length < 460) {
+        if (enemy.windup > 0) {
+          enemy.windup = Math.max(0, enemy.windup - dt);
+          this.bossWarning.lineStyle(3, 0xffd28a, 0.85);
+          this.bossWarning.strokeCircle(enemy.x, enemy.y, 25 + (0.7 - enemy.windup) * 17);
+          this.bossWarning.lineBetween(enemy.x, enemy.y, this.heroX, this.heroY);
+          if (enemy.windup === 0) {
+            const aim = Math.atan2(this.heroY - enemy.y, this.heroX - enemy.x);
+            for (const spread of [-0.24, 0, 0.24]) this.spawnEnemyBullet(enemy.x, enemy.y, aim + spread, 195, 0xffbc72);
+          }
+        } else if (enemy.cooldown === 0) { enemy.windup = 0.7; enemy.cooldown = 2.8; }
       }
       if (length < radius + 14) {
         this.damageHero();
@@ -380,9 +399,9 @@ export class ArenaScene extends Phaser.Scene {
     this.skillButton.setAlpha(this.skillCooldown > 0 ? 0.35 : 1);
   }
 
-  private spawnEnemyBullet(x: number, y: number, angle: number, speed: number): void {
+  private spawnEnemyBullet(x: number, y: number, angle: number, speed: number, color = 0xf8a5d9): void {
     if (this.enemyBullets.length >= 48) return;
-    const view = this.add.circle(x, y, 7, 0xf8a5d9).setStrokeStyle(2, 0xffe4fa).setDepth(8);
+    const view = this.add.circle(x, y, 7, color).setStrokeStyle(2, color === 0xffbc72 ? 0xffedba : 0xffe4fa).setDepth(8);
     this.enemyBullets.push({ view, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 2.4, damage: 1 });
   }
 
@@ -571,7 +590,8 @@ export class ArenaScene extends Phaser.Scene {
       this.mapGraphics.lineStyle(2, 0x9cc8df, 0.75);
       if (room.neighbors.east !== undefined && this.visited.has(room.neighbors.east)) this.mapGraphics.lineBetween(x + 8, y + 6, x + 34, y + 6);
       if (room.neighbors.south !== undefined && this.visited.has(room.neighbors.south)) this.mapGraphics.lineBetween(x + 8, y + 6, x + 8, y + 30);
-      this.mapGraphics.fillStyle(room.id === this.currentRoom ? 0x65e5ff : this.cleared.has(room.id) ? 0x79d9b4 : room.kind === 'boss' ? 0xff7896 : 0xf3aa89);
+      this.mapGraphics.fillStyle(room.id === this.currentRoom ? 0x65e5ff : room.kind === 'boss' ? 0xff7896
+        : room.biome === 'forge' ? 0xf3ba78 : this.cleared.has(room.id) ? 0x79d9b4 : 0xa6c9cf);
       this.mapGraphics.fillRoundedRect(x, y, 16, 13, 3);
     }
   }
