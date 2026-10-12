@@ -4,6 +4,8 @@
 
 **Armas integradas, revisão aprovada:** as três [pranchas do Jão](visual/jao-arma-aprovada.webp), [Alice](visual/alice-arma-aprovada.webp) e [Gui](visual/gui-arma-aprovada.webp) foram aprovadas pelo MVP após rejeitar as armas flutuando sobre os sprites. A arma agora faz parte da pose e do figurino: Jão empunha espada e leva bainha nas costas, Alice segura arco e carrega aljava, Gui segura cartas pequenas e usa estojo de couro. As folhas de origem ficam em `art/sheets/`; os PNGs reduzidos são gerados por `scripts/build_approved_sprites.py`. Os efeitos de ataque existentes foram preservados.
 
+**Correção de proporção:** ao ver a build, o MVP apontou que Alice e Gui pareciam altos diante do Jão. As novas matrizes `alice-chibi.webp` e `gui-chibi.webp` usam cabeça maior, tronco e pernas mais curtos e mãos/calçados mais largos. As três silhuetas têm agora altura de frame semelhante; frente, caminhada, costas e ataque seguem a mesma régua. Esta revisão visual ainda aguarda retorno do MVP na tela do celular.
+
 ## O que queremos sentir
 
 Três pessoas reais, Jão, Alice e Gui, entram numa masmorra fantástica e enfrentam salas curtas cheias de inimigos, altares e decisões de afinidade. O visual deve ser **pixel art nítida, expressiva e acolhedora**, com paredes de pedra, madeira, tochas, tapetes, baús e monstros inventados para este jogo. Os momentos de perigo continuam claros em uma tela de celular na horizontal.

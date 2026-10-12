@@ -17,16 +17,17 @@ SOURCE_SCALE = .5  # source sheets were reduced from their generation size
 # Horizontal boundaries separate the figures; character centers stabilize the
 # body's position even while an attack extends a bow, card or sword to the right.
 SHEETS = {
-    'jao': {'scale': .25, 'frames': [(62,423,240),(446,901,720),(952,1734,1180),(1792,2083,1937)]},
-    'alice': {'scale': .19, 'frames': [(47,452,246),(494,952,730),(990,1592,1210),(1619,1949,1782)]},
-    'gui': {'scale': .216, 'frames': [(56,409,240),(519,973,742),(1051,1757,1260),(1790,2148,1958)]},
+    'jao': {'file': 'jao.webp', 'scale': .25, 'frames': [(62,423,240),(446,901,720),(952,1734,1180),(1792,2083,1937)]},
+    'alice': {'file': 'alice-chibi.webp', 'scale': .30, 'frames': [(15,420,210),(440,868,650),(870,1280,1065),(1280,1790,1465),(1795,2160,1965)]},
+    'gui': {'file': 'gui-chibi.webp', 'scale': .28, 'frames': [(15,410,205),(420,820,625),(820,1200,1010),(1205,1780,1400),(1785,2165,1950)]},
 }
 ALTERNATE = {
     'jao': (760, .1415),
     'alice': (570, .1057),
     'gui': (560, .1030),
 }
-FRAMES = ('front', 'walk1', 'attack', 'back')
+JAO_FRAMES = ('front', 'walk1', 'attack', 'back')
+CHIBI_FRAMES = ('front', 'walk1', 'walk2', 'attack', 'back')
 
 
 def extract(sheet, bounds, scale):
@@ -87,9 +88,11 @@ def save(image, filename):
 
 
 for hero, spec in SHEETS.items():
-    sheet = Image.open(SOURCE / f'{hero}.webp').convert('RGBA')
-    frames = {name: extract(sheet, box, spec['scale']) for name,box in zip(FRAMES,spec['frames'])}
-    frames['walk2'] = alternate_step(hero)
+    sheet = Image.open(SOURCE / spec['file']).convert('RGBA')
+    names = JAO_FRAMES if hero == 'jao' else CHIBI_FRAMES
+    frames = {name: extract(sheet, box, spec['scale']) for name,box in zip(names,spec['frames'])}
+    if hero == 'jao':
+        frames['walk2'] = alternate_step(hero)
     for pose, image in frames.items():
         stem = hero if pose == 'front' else f'{hero}-{pose}'
         save(image, f'{stem}-armed' if pose != 'attack' else stem)
