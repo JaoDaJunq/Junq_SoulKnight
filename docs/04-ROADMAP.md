@@ -1,6 +1,6 @@
 # 04 · Etapas para concluir o jogo
 
-Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atualização deste documento e `docs/HANDOFF.md` contendo estado, decisões, evidência e próximo passo. Status inicial de todas as tarefas: **pendente**. Estimativas são de ordem e dependência, não promessa de datas.
+Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atualização deste documento e `docs/HANDOFF.md` contendo estado, decisões, evidência e próximo passo. Estimativas são de ordem e dependência, não promessa de datas. **T001–T003: código implementado e CI verde; aceite de publicação e Android pendente.** T004–T015: pendentes.
 
 | ID | Entrega | Dependência | Aceite observável |
 | --- | --- | --- | --- |
