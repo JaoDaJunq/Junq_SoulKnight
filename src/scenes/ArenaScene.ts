@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
 import { blocked, normalizedMovement, OBSTACLES } from '../core/arena';
 import { generateRun, type Direction, type Room } from '../core/run';
+import { createShots, rewardOptions, WEAPONS, type RewardOption, type WeaponId } from '../core/weapons';
 
-type State = 'menu' | 'playing' | 'paused' | 'dead' | 'cleared';
-type EnemyKind = 'chaser' | 'shooter' | 'brute';
-type Enemy = { view: Phaser.GameObjects.Container; kind: EnemyKind; x: number; y: number; hp: number; speed: number; cooldown: number };
-type Bullet = { view: Phaser.GameObjects.Arc; vx: number; vy: number; life: number };
+type State = 'menu' | 'playing' | 'reward' | 'paused' | 'dead' | 'cleared';
+type EnemyKind = 'chaser' | 'shooter' | 'brute' | 'boss';
+type Enemy = { view: Phaser.GameObjects.Container; kind: EnemyKind; x: number; y: number; hp: number; maxHp: number; speed: number; cooldown: number; windup: number };
+type Bullet = { view: Phaser.GameObjects.Arc; vx: number; vy: number; life: number; damage: number };
+type Coin = { view: Phaser.GameObjects.Arc; x: number; y: number };
 
 const W = 960;
 const H = 540;
@@ -31,9 +33,20 @@ export class ArenaScene extends Phaser.Scene {
   private seed = 0;
   private roomArt: Phaser.GameObjects.GameObject[] = [];
   private mapGraphics!: Phaser.GameObjects.Graphics;
-  private enemyTotal = 4;
   private bullets: Bullet[] = [];
   private enemyBullets: Bullet[] = [];
+  private groundCoins: Coin[] = [];
+  private storedCoins = new Map<number, { x: number; y: number }[]>();
+  private coins = 0;
+  private weapon: WeaponId = 'bolt';
+  private power = 0;
+  private damageTaken = 0;
+  private bossWarning!: Phaser.GameObjects.Graphics;
+  private bossBar!: Phaser.GameObjects.Graphics;
+  private debugFps?: Phaser.GameObjects.Text;
+  private fpsTimer = 0;
+  private healButton!: Phaser.GameObjects.Rectangle;
+  private healLabel!: Phaser.GameObjects.Text;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private mouseDown = false;
   private movePointer: number | null = null;
@@ -63,9 +76,17 @@ export class ArenaScene extends Phaser.Scene {
     this.drawRoom();
     this.createHero();
     this.hud = this.add.text(35, 19, '', { fontFamily: 'system-ui', fontSize: '18px', color: '#eef4ff', fontStyle: 'bold' }).setDepth(20);
+    if (new URLSearchParams(location.search).has('debug')) {
+      this.debugFps = this.add.text(740, 77, '', { fontFamily: 'monospace', fontSize: '11px', color: '#93d8c7' }).setDepth(25);
+    }
     this.mapGraphics = this.add.graphics().setDepth(20);
+    this.bossWarning = this.add.graphics().setDepth(8);
+    this.bossBar = this.add.graphics().setDepth(20);
+    this.healButton = this.add.rectangle(647, 39, 105, 30, 0x367c80).setStrokeStyle(2, 0xa5e8cf).setDepth(20).setInteractive({ useHandCursor: true });
+    this.healLabel = this.add.text(647, 39, 'CURA ◈3', { fontFamily: 'system-ui', fontSize: '14px', color: '#e4fff8', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
+    this.healButton.on('pointerdown', () => this.buyHeal());
     this.hint = this.add.text(480, 506, '', { fontFamily: 'system-ui', fontSize: '14px', color: '#91a5c8' }).setOrigin(0.5).setDepth(20);
-    this.add.text(920, 27, 'Ⅱ', { fontFamily: 'system-ui', fontSize: '26px', color: '#dbeaff' }).setOrigin(0.5).setDepth(20);
+    this.add.text(900, 27, 'Ⅱ', { fontFamily: 'system-ui', fontSize: '26px', color: '#dbeaff' }).setOrigin(0.5).setDepth(20);
 
     this.joyBase = this.add.circle(153, 399, 61, 0x8cc5ff, 0.13).setStrokeStyle(2, 0xa5d4ff, 0.5).setDepth(20);
     this.joyKnob = this.add.circle(153, 399, 25, 0x9ad7ff, 0.47).setDepth(21);
@@ -77,14 +98,16 @@ export class ArenaScene extends Phaser.Scene {
     this.skillLabel = this.add.text(870, 281, 'PULSO', { fontFamily: 'system-ui', fontSize: '11px', color: '#fbeaff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.setTouchVisibility();
 
-    this.keys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,ESC,SPACE,E') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.keys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,ESC,SPACE,E,H') as Record<string, Phaser.Input.Keyboard.Key>;
     this.input.on('pointerdown', this.onDown, this);
     this.input.on('pointermove', this.onMove, this);
     this.input.on('pointerup', this.onUp, this);
     this.input.on('pointerupoutside', this.onUp, this);
     this.game.events.on(Phaser.Core.Events.BLUR, this.pauseOnBlur, this);
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.pauseOnPortrait, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off(Phaser.Core.Events.BLUR, this.pauseOnBlur, this));
-    this.showOverlay('JUNQ · PROTÓTIPO', 'Seis salas conectadas por portas\nElimine os guardiões e encontre a próxima saída.', 'COMEÇAR', () => this.startRun());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.pauseOnPortrait, this));
+    this.showOverlay('JUNQ · RUN', 'Seis salas, escolhas de arma e um chefe.\nElimine os guardiões e encontre a saída.', 'COMEÇAR', () => this.startRun());
     this.refreshHud();
   }
 
@@ -115,7 +138,8 @@ export class ArenaScene extends Phaser.Scene {
         if (direction === 'east') g.fillRect(895, 251, 13, 68);
       }
     }
-    const title = this.add.text(480, 110, room ? `SALA ${String(room.id + 1).padStart(2, '0')} · ${this.cleared.has(room.id) ? 'PORTAS ABERTAS' : 'COMBATE'}` : 'SALA 01 · CÂMARA DE TESTE',
+    const roomName = room?.kind === 'boss' ? 'GUARDIÃO FINAL' : room?.kind === 'reward' ? 'ESCOLHA APÓS COMBATE' : 'COMBATE';
+    const title = this.add.text(480, 110, room ? `SALA ${String(room.id + 1).padStart(2, '0')} · ${this.cleared.has(room.id) ? 'PORTAS ABERTAS' : roomName}` : 'SALA 01 · CÂMARA DE TESTE',
       { fontFamily: 'system-ui', fontSize: '13px', color: '#7398bd', letterSpacing: 3 }).setOrigin(0.5);
     this.roomArt = [g, title];
   }
@@ -129,25 +153,38 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private createEnemy(x: number, y: number, kind: EnemyKind): Enemy {
-    const color = kind === 'brute' ? 0xb57b51 : kind === 'shooter' ? 0x9267bf : 0xbc526b;
-    const edge = kind === 'brute' ? 0xffc286 : kind === 'shooter' ? 0xdcb1ff : 0xff9eaa;
-    const radius = kind === 'brute' ? 20 : 15;
+    const color = kind === 'boss' ? 0x9b405b : kind === 'brute' ? 0xb57b51 : kind === 'shooter' ? 0x9267bf : 0xbc526b;
+    const edge = kind === 'boss' ? 0xffbbce : kind === 'brute' ? 0xffc286 : kind === 'shooter' ? 0xdcb1ff : 0xff9eaa;
+    const radius = kind === 'boss' ? 30 : kind === 'brute' ? 20 : 15;
     const shadow = this.add.ellipse(2, 14, 36, 11, 0x04060d, 0.5);
     const body = this.add.circle(0, 0, radius, color).setStrokeStyle(3, edge);
     const eye1 = this.add.circle(-5, -3, 2, 0xffe6c9);
     const eye2 = this.add.circle(5, -3, 2, 0xffe6c9);
     const view = this.add.container(x, y, [shadow, body, eye1, eye2]).setDepth(9);
-    return { view, kind, x, y, hp: kind === 'brute' ? 7 : kind === 'shooter' ? 3 : 3,
-      speed: kind === 'brute' ? 48 : kind === 'shooter' ? 58 : 84, cooldown: kind === 'shooter' ? 1 : 0 };
+    const hp = kind === 'boss' ? 32 : kind === 'brute' ? 6 : 3;
+    return { view, kind, x, y, hp, maxHp: hp,
+      speed: kind === 'boss' ? 55 : kind === 'brute' ? 48 : kind === 'shooter' ? 58 : 84,
+      cooldown: kind === 'boss' ? 1.8 : kind === 'shooter' ? 1 : 0, windup: 0 };
+  }
+
+  private requestMobileFullscreen(): void {
+    if (!this.touchMode || !matchMedia('(orientation: landscape)').matches || document.fullscreenElement) return;
+    void document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).then(() => {
+      const orientation = screen.orientation as (ScreenOrientation & { lock?: (mode: string) => Promise<void> }) | undefined;
+      void orientation?.lock?.('landscape')?.catch(() => undefined);
+    }).catch(() => undefined);
   }
 
   private startRun(): void {
+    this.requestMobileFullscreen();
     this.clearOverlay();
     this.seed = Math.floor(Math.random() * 0xffffffff);
     this.rooms = generateRun(this.seed);
     this.currentRoom = 0;
     this.cleared = new Set();
     this.visited = new Set([0]);
+    this.storedCoins.clear(); this.coins = 0; this.weapon = 'bolt'; this.power = 0; this.damageTaken = 0;
+    this.groundCoins.forEach(coin => coin.view.destroy()); this.groundCoins = [];
     this.heroHp = 5; this.hurtTimer = 0; this.fireTimer = 0; this.elapsed = 0;
     this.dashTimer = 0; this.dashCooldown = 0; this.skillCooldown = 0;
     this.heroX = 480; this.heroY = 385; this.hero.setPosition(this.heroX, this.heroY);
@@ -156,11 +193,18 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private enterRoom(id: number, entry?: Direction): void {
+    if (this.rooms.length) {
+      this.storedCoins.set(this.currentRoom, this.groundCoins.map(coin => ({ x: coin.x, y: coin.y })));
+    }
+    this.groundCoins.forEach(coin => coin.view.destroy());
+    this.groundCoins = [];
     this.bullets.forEach(b => b.view.destroy());
     this.enemyBullets.forEach(b => b.view.destroy());
     this.enemies.forEach(e => e.view.destroy());
     this.bullets = [];
     this.enemyBullets = [];
+    this.enemies = [];
+    this.bossWarning.clear(); this.bossBar.clear();
     this.currentRoom = id;
     this.visited.add(id);
     if (entry === 'east') { this.heroX = 89; this.heroY = 285; }
@@ -170,16 +214,22 @@ export class ArenaScene extends Phaser.Scene {
     this.hero.setPosition(this.heroX, this.heroY);
     this.drawRoom();
     if (!this.cleared.has(id)) {
-      this.enemies = [this.createEnemy(175, 155, 'chaser'), this.createEnemy(780, 158, 'shooter'),
-        this.createEnemy(168, 350, 'chaser'), this.createEnemy(762, 323, 'brute')];
+      if (this.rooms[id].kind === 'boss') this.enemies = [this.createEnemy(760, 260, 'boss')];
+      else this.enemies = [this.createEnemy(175, 155, 'chaser'), this.createEnemy(780, 158, 'shooter'),
+        ...(id === 0 ? [] : [this.createEnemy(762, 323, 'brute')])];
     }
-    this.enemyTotal = this.enemies.length;
+    for (const coin of this.storedCoins.get(id) ?? []) this.spawnCoin(coin.x, coin.y);
     this.mouseDown = false; this.movePointer = null; this.firePointer = null;
     this.joyX = 0; this.joyY = 0; this.joyKnob.setPosition(153, 399);
     this.refreshHud();
   }
 
   update(_time: number, delta: number): void {
+    this.fpsTimer -= delta;
+    if (this.debugFps && this.fpsTimer <= 0) {
+      this.debugFps.setText(`FPS ${Math.round(this.game.loop.actualFps)}`);
+      this.fpsTimer = 500;
+    }
     if (Phaser.Input.Keyboard.JustDown(this.keys.ESC)) this.togglePause();
     if (this.state !== 'playing') return;
     const dt = Math.min(delta, 50) / 1000;
@@ -191,6 +241,7 @@ export class ArenaScene extends Phaser.Scene {
     this.skillCooldown = Math.max(0, this.skillCooldown - dt);
     if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.dash();
     if (Phaser.Input.Keyboard.JustDown(this.keys.E)) this.pulse();
+    if (Phaser.Input.Keyboard.JustDown(this.keys.H)) this.buyHeal();
     if (this.state !== 'playing') return;
     this.hero.setAlpha(this.hurtTimer > 0 && Math.floor(this.hurtTimer * 12) % 2 === 0 ? 0.45 : 1);
 
@@ -207,24 +258,40 @@ export class ArenaScene extends Phaser.Scene {
     if (!blocked(nextX, this.heroY, 15, obstacles)) this.heroX = nextX;
     if (!blocked(this.heroX, nextY, 15, obstacles)) this.heroY = nextY;
     this.hero.setPosition(this.heroX, this.heroY);
+    for (const coin of [...this.groundCoins]) {
+      if (Math.hypot(this.heroX - coin.x, this.heroY - coin.y) >= 29) continue;
+      coin.view.destroy(); this.groundCoins.splice(this.groundCoins.indexOf(coin), 1);
+      this.coins++; this.refreshHud();
+    }
 
     if (this.firePointer !== null || this.mouseDown) this.fire();
+    this.bossWarning.clear(); this.bossBar.clear();
     for (const enemy of this.enemies) {
       const dx = this.heroX - enemy.x, dy = this.heroY - enemy.y;
       const length = Math.max(1, Math.hypot(dx, dy));
       const preferred = enemy.kind === 'shooter' && length < 190 ? -0.65 : 1;
-      const motion = enemy.kind === 'shooter' && length < 260 && length >= 190 ? 0 : preferred;
+      const motion = enemy.kind === 'boss' && enemy.windup > 0 ? 0 : enemy.kind === 'shooter' && length < 260 && length >= 190 ? 0 : preferred;
       const ex = enemy.x + dx / length * enemy.speed * dt * motion;
       const ey = enemy.y + dy / length * enemy.speed * dt * motion;
-      const radius = enemy.kind === 'brute' ? 20 : 15;
+      const radius = enemy.kind === 'boss' ? 30 : enemy.kind === 'brute' ? 20 : 15;
       if (!blocked(ex, enemy.y, radius, obstacles)) enemy.x = ex;
       if (!blocked(enemy.x, ey, radius, obstacles)) enemy.y = ey;
       enemy.view.setPosition(enemy.x, enemy.y);
       enemy.cooldown = Math.max(0, enemy.cooldown - dt);
+      if (enemy.kind === 'boss') {
+        this.bossBar.fillStyle(0x381e33); this.bossBar.fillRoundedRect(340, 67, 280, 12, 5);
+        this.bossBar.fillStyle(0xff7f9b); this.bossBar.fillRoundedRect(342, 69, Math.max(0, 276 * enemy.hp / enemy.maxHp), 8, 4);
+        if (enemy.windup > 0) {
+          enemy.windup = Math.max(0, enemy.windup - dt);
+          this.bossWarning.lineStyle(3, 0xff91a5, 0.75);
+          this.bossWarning.strokeCircle(enemy.x, enemy.y, 78 + (1 - enemy.windup) * 26);
+          this.bossWarning.lineBetween(enemy.x, enemy.y, this.heroX, this.heroY);
+          if (enemy.windup === 0) this.bossAttack(enemy);
+        } else if (enemy.cooldown === 0) { enemy.windup = 0.85; enemy.cooldown = 3.2; }
+      }
       if (enemy.kind === 'shooter' && enemy.cooldown === 0 && length < 420) {
         enemy.cooldown = 1.65;
-        const shot = this.add.circle(enemy.x, enemy.y, 7, 0xf8a5d9).setStrokeStyle(2, 0xffe4fa).setDepth(8);
-        this.enemyBullets.push({ view: shot, vx: dx / length * 215, vy: dy / length * 215, life: 2.4 });
+        this.spawnEnemyBullet(enemy.x, enemy.y, Math.atan2(dy, dx), 215);
       }
       if (length < radius + 14) {
         this.damageHero();
@@ -236,15 +303,11 @@ export class ArenaScene extends Phaser.Scene {
       bullet.view.y += bullet.vy * dt;
       bullet.life -= dt;
       if (bullet.life <= 0 || blocked(bullet.view.x, bullet.view.y, 5, obstacles)) { this.removeBullet(bullet); continue; }
-      const target = this.enemies.find(e => Math.hypot(e.x - bullet.view.x, e.y - bullet.view.y) < (e.kind === 'brute' ? 26 : 21));
+      const target = this.enemies.find(e => Math.hypot(e.x - bullet.view.x, e.y - bullet.view.y) < (e.kind === 'boss' ? 37 : e.kind === 'brute' ? 26 : 21));
       if (!target) continue;
-      target.hp--; target.view.setAlpha(0.6);
-      this.time.delayedCall(80, () => { if (target.view.active) target.view.setAlpha(1); });
       this.removeBullet(bullet);
-      if (target.hp <= 0) {
-        target.view.destroy(); this.enemies.splice(this.enemies.indexOf(target), 1); this.refreshHud();
-        if (this.enemies.length === 0) { this.finishRoom(); return; }
-      }
+      this.damageEnemy(target, bullet.damage);
+      if (this.state !== 'playing' || this.enemies.length === 0) return;
     }
     for (const bullet of [...this.enemyBullets]) {
       bullet.view.x += bullet.vx * dt; bullet.view.y += bullet.vy * dt; bullet.life -= dt;
@@ -256,6 +319,33 @@ export class ArenaScene extends Phaser.Scene {
     }
     this.dashButton.setAlpha(this.dashCooldown > 0 ? 0.35 : 1);
     this.skillButton.setAlpha(this.skillCooldown > 0 ? 0.35 : 1);
+  }
+
+  private spawnEnemyBullet(x: number, y: number, angle: number, speed: number): void {
+    if (this.enemyBullets.length >= 48) return;
+    const view = this.add.circle(x, y, 7, 0xf8a5d9).setStrokeStyle(2, 0xffe4fa).setDepth(8);
+    this.enemyBullets.push({ view, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 2.4, damage: 1 });
+  }
+
+  private bossAttack(enemy: Enemy): void {
+    for (let i = 0; i < 8; i++) this.spawnEnemyBullet(enemy.x, enemy.y, i * Math.PI / 4, 180);
+    const aim = Math.atan2(this.heroY - enemy.y, this.heroX - enemy.x);
+    for (const offset of [-0.2, 0, 0.2]) this.spawnEnemyBullet(enemy.x, enemy.y, aim + offset, 245);
+  }
+
+  private damageEnemy(enemy: Enemy, amount: number): void {
+    enemy.hp -= amount; enemy.view.setAlpha(0.6);
+    this.time.delayedCall(80, () => { if (enemy.view.active) enemy.view.setAlpha(1); });
+    if (enemy.hp > 0) return;
+    enemy.view.destroy(); this.enemies.splice(this.enemies.indexOf(enemy), 1);
+    if (enemy.kind !== 'boss') this.spawnCoin(enemy.x, enemy.y);
+    this.refreshHud();
+    if (this.enemies.length === 0) this.finishRoom();
+  }
+
+  private spawnCoin(x: number, y: number): void {
+    const view = this.add.circle(x, y, 9, 0xf3cc61).setStrokeStyle(2, 0xfff1ae).setDepth(7);
+    this.groundCoins.push({ view, x, y });
   }
 
   private tryDoor(mx: number, my: number): boolean {
@@ -274,9 +364,12 @@ export class ArenaScene extends Phaser.Scene {
 
   private finishRoom(): void {
     this.cleared.add(this.currentRoom);
+    this.enemyBullets.forEach(bullet => bullet.view.destroy()); this.enemyBullets = [];
+    this.bossWarning.clear();
     this.drawRoom();
     this.refreshHud();
-    if (this.cleared.size === this.rooms.length) this.finish(true);
+    if (this.rooms[this.currentRoom].kind === 'boss') { this.finish(true); return; }
+    if (this.rooms[this.currentRoom].kind === 'reward') this.showReward();
   }
 
   private fire(): void {
@@ -288,9 +381,14 @@ export class ArenaScene extends Phaser.Scene {
       if (closest) { dx = closest.x - this.heroX; dy = closest.y - this.heroY; }
     }
     const length = Math.max(0.001, Math.hypot(dx, dy)); dx /= length; dy /= length;
-    const view = this.add.circle(this.heroX + dx * 20, this.heroY + dy * 20, 6, 0x7beaff).setStrokeStyle(2, 0xf3ffff).setDepth(8);
-    this.bullets.push({ view, vx: dx * 520, vy: dy * 520, life: 1.5 });
-    this.fireTimer = 0.19;
+    for (const shot of createShots(this.weapon, dx, dy, this.power)) {
+      if (this.bullets.length >= 32) break;
+      const view = this.add.circle(this.heroX + shot.vx / Math.hypot(shot.vx, shot.vy) * 20,
+        this.heroY + shot.vy / Math.hypot(shot.vx, shot.vy) * 20, shot.radius, shot.color)
+        .setStrokeStyle(2, 0xf3ffff).setDepth(8);
+      this.bullets.push({ view, ...shot });
+    }
+    this.fireTimer = WEAPONS[this.weapon].cadence;
   }
 
   private removeBullet(b: Bullet): void {
@@ -307,7 +405,7 @@ export class ArenaScene extends Phaser.Scene {
 
   private damageHero(): void {
     if (this.hurtTimer > 0 || this.dashTimer > 0 || this.state !== 'playing') return;
-    this.hurtTimer = 1; this.heroHp--;
+    this.hurtTimer = 1; this.heroHp--; this.damageTaken++;
     this.cameras.main.shake(90, 0.005); this.refreshHud();
     if (this.heroHp <= 0) this.finish(false);
   }
@@ -326,18 +424,50 @@ export class ArenaScene extends Phaser.Scene {
     this.tweens.add({ targets: wave, radius: 135, alpha: 0, duration: 320, onComplete: () => wave.destroy() });
     for (const enemy of [...this.enemies]) {
       if (Math.hypot(enemy.x - this.heroX, enemy.y - this.heroY) > 135) continue;
-      enemy.hp -= 2;
-      if (enemy.hp <= 0) {
-        enemy.view.destroy(); this.enemies.splice(this.enemies.indexOf(enemy), 1);
-      }
+      this.damageEnemy(enemy, 2 + this.power);
     }
     this.refreshHud();
-    if (this.enemies.length === 0) this.finishRoom();
+  }
+
+  private buyHeal(): void {
+    if (this.state !== 'playing' || !this.cleared.has(this.currentRoom) || this.heroHp >= 5 || this.coins < 3) return;
+    this.coins -= 3; this.heroHp++; this.refreshHud();
+  }
+
+  private showReward(): void {
+    this.state = 'reward';
+    this.clearOverlay();
+    const shade = this.add.rectangle(480, 270, W, H, 0x080d18, 0.87).setDepth(40);
+    const heading = this.add.text(480, 152, 'ESCOLHA UMA RECOMPENSA', { fontFamily: 'system-ui', fontSize: '30px', color: '#e8faff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
+    const detail = this.add.text(480, 200, 'Uma escolha para esta sala. Toque ou clique no cartão.', { fontFamily: 'system-ui', fontSize: '16px', color: '#adc4d9' }).setOrigin(0.5).setDepth(41);
+    this.overlay = [shade, heading, detail];
+    rewardOptions(this.weapon).forEach((option, index) => {
+      const x = 260 + index * 220;
+      const plate = this.add.rectangle(x, 320, 200, 150, 0x23415b).setStrokeStyle(3, 0x82d9e4).setInteractive({ useHandCursor: true }).setDepth(41);
+      const name = option === 'power' ? 'POTÊNCIA +1' : WEAPONS[option].name;
+      const description = option === 'power' ? 'Mais dano em cada tiro\ne no pulso' : WEAPONS[option].description;
+      const label = this.add.text(x, 288, name, { fontFamily: 'system-ui', fontSize: '19px', color: '#eaffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
+      const info = this.add.text(x, 342, description, { fontFamily: 'system-ui', fontSize: '14px', color: '#bcd7e6', align: 'center', wordWrap: { width: 175 } }).setOrigin(0.5).setDepth(42);
+      plate.on('pointerdown', () => this.pickReward(option));
+      this.overlay.push(plate, label, info);
+    });
+  }
+
+  private pickReward(option: RewardOption): void {
+    if (this.state !== 'reward') return;
+    if (option === 'power') this.power++;
+    else this.weapon = option;
+    this.clearOverlay(); this.state = 'playing'; this.refreshHud();
   }
 
   private refreshHud(): void {
-    this.hud.setText(`❤ ${'♥'.repeat(this.heroHp)}${'♡'.repeat(5 - this.heroHp)}     ◈ ${this.state === 'menu' ? 0 : this.enemyTotal - this.enemies.length}/${this.enemyTotal}     Salas ${this.cleared.size}/6`);
-    this.hint.setText(this.touchMode ? 'Esquerda: mover · Direita: atirar, dash e pulso' : 'WASD: mover · clique: atirar · ESPAÇO: dash · E: pulso · ESC: pausa · portas verdes: sair');
+    this.hud.setX(this.touchMode ? 78 : 35);
+    this.hud.setText(`❤ ${'♥'.repeat(this.heroHp)}${'♡'.repeat(5 - this.heroHp)}   Salas ${this.cleared.size}/6\n${WEAPONS[this.weapon].name} +${this.power}   ◈ ${this.coins} moedas`);
+    this.healButton.setVisible(this.state === 'playing' && this.cleared.has(this.currentRoom));
+    this.healLabel.setVisible(this.healButton.visible);
+    this.healButton.setAlpha(this.coins >= 3 && this.heroHp < 5 ? 1 : 0.4);
+    this.healLabel.setAlpha(this.healButton.alpha);
+    this.hint.setText(this.touchMode ? 'Esquerda: mover · Direita: atirar, dash e pulso · porta verde: avançar' : 'WASD: mover · clique: atirar · ESPAÇO: dash · E: pulso · H: cura · ESC: pausa');
     this.drawMap();
   }
 
@@ -349,7 +479,7 @@ export class ArenaScene extends Phaser.Scene {
       this.mapGraphics.lineStyle(2, 0x9cc8df, 0.75);
       if (room.neighbors.east !== undefined && this.visited.has(room.neighbors.east)) this.mapGraphics.lineBetween(x + 8, y + 6, x + 34, y + 6);
       if (room.neighbors.south !== undefined && this.visited.has(room.neighbors.south)) this.mapGraphics.lineBetween(x + 8, y + 6, x + 8, y + 30);
-      this.mapGraphics.fillStyle(room.id === this.currentRoom ? 0x65e5ff : this.cleared.has(room.id) ? 0x79d9b4 : 0xf3aa89);
+      this.mapGraphics.fillStyle(room.id === this.currentRoom ? 0x65e5ff : this.cleared.has(room.id) ? 0x79d9b4 : room.kind === 'boss' ? 0xff7896 : 0xf3aa89);
       this.mapGraphics.fillRoundedRect(x, y, 16, 13, 3);
     }
   }
@@ -358,8 +488,8 @@ export class ArenaScene extends Phaser.Scene {
     this.state = won ? 'cleared' : 'dead';
     this.mouseDown = false; this.firePointer = null; this.movePointer = null;
     this.joyX = 0; this.joyY = 0; this.joyKnob.setPosition(153, 399);
-    this.showOverlay(won ? 'SALA LIMPA!' : 'FIM DA TENTATIVA',
-      `${won ? 'Você limpou todas as salas.' : 'Os guardiões venceram desta vez.'}\nSalas: ${this.cleared.size}/6  ·  Tempo: ${Math.floor(this.elapsed)}s  ·  Seed: ${this.seed}`,
+    this.showOverlay(won ? 'GUARDIÃO DERROTADO!' : 'FIM DA TENTATIVA',
+      `${won ? 'Você concluiu a run.' : 'Os guardiões venceram desta vez.'}\nSalas: ${this.cleared.size}/6 · Tempo: ${Math.floor(this.elapsed)}s · Dano: ${this.damageTaken}\nMoedas: ${this.coins} · Seed: ${this.seed}`,
       'JOGAR DE NOVO', () => this.startRun());
   }
 
@@ -372,6 +502,10 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private pauseOnBlur(): void { if (this.state === 'playing') this.togglePause(); }
+
+  private pauseOnPortrait(): void {
+    if (this.touchMode && matchMedia('(orientation: portrait)').matches && this.state === 'playing') this.togglePause();
+  }
 
   private showOverlay(title: string, subtitle: string, button: string, action: () => void): void {
     this.clearOverlay();
@@ -392,7 +526,8 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private onDown(pointer: Phaser.Input.Pointer): void {
-    if (this.state === 'playing' && pointer.x > 876 && pointer.y < 70) { this.togglePause(); return; }
+    if (this.state === 'playing' && pointer.x > 870 && pointer.y < 70) { this.togglePause(); return; }
+    if (pointer.y < 70) return;
     if (this.state !== 'playing') return;
     const isTouch = pointer.wasTouch || (pointer.event as PointerEvent).pointerType === 'touch';
     if (isTouch) {

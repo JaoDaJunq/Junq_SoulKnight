@@ -18,4 +18,6 @@ game.events.once(Phaser.Core.Events.READY, () => {
   game.canvas.tabIndex = 0;
   game.canvas.setAttribute('aria-label', 'Arena do jogo. Use WASD para mover, clique para atirar, Espaço para desviar e Escape para pausar.');
   game.canvas.addEventListener('pointerdown', () => game.canvas.focus());
+  window.addEventListener('resize', () => game.scale.refresh());
+  document.addEventListener('fullscreenchange', () => game.scale.refresh());
 });
