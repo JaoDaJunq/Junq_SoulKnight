@@ -21,10 +21,10 @@ As quantidades são metas iniciais, ajustáveis após teste. Não começar pela 
 
 ## Estrutura de uma run P1
 
-- Um andar gerado de salas pré-montadas por seed: início, 3 ou 4 combates, 1 loja/baú, 1 escolha de melhoria, 1 chefe; variar ordem e bifurcações quando possível.
+- Um andar gerado de salas pré-montadas por seed: início, combates, 2 salas com baús e 1 chefe; variar ordem e bifurcações quando possível.
 - Cada sala tem ID, portas compatíveis, tipo, layout, pontos de spawn, obstáculos e tabela de encontro. Gerar grafo alcançável e depois associar layouts.
 - Ao entrar na sala hostil, iniciar encontro; bloquear saídas; onda pequena e finita. Ao vencer, abrir portas e exibir recompensa quando prevista.
-- Personagem começa com arma básica, HP e habilidade; coleta moeda da run; recompensas não podem depender de anúncio ou servidor.
+- Personagem começa com disparo básico, HP, energia e habilidade; armas extras vêm somente dos baús após limpar salas de recompensa. Coleta moeda da run; recompensas não dependem de anúncio ou servidor.
 - Chefe sinaliza fases/ataques; após derrotá-lo, concluir o andar e mostrar escolhas, duração, dano tomado e seed para reproduzir problemas.
 
 ## Regras para implementar e calibrar
@@ -32,13 +32,13 @@ As quantidades são metas iniciais, ajustáveis após teste. Não começar pela 
 | Sistema | Contrato inicial |
 | --- | --- |
 | Movimento | Vetor normalizado para diagonal não ser mais rápida; colisão com paredes e obstáculos. |
-| Tiro | Comando segurado com cadência por arma; origem/direção coerentes; colisão e alcance; limite de projéteis. |
-| Mira | Mouse no desktop; toque com arrasto opcional ou alvo assistido no mobile. A escolha é configurável e será validada em playtest. |
+| Tiro | Comando segurado com cadência e custo de energia por arma; sem energia suficiente não dispara; origem/direção coerentes, colisão, alcance e limite de projéteis. Energia regenera após pausa curta no disparo. |
+| Mira | Automática no inimigo visível mais próximo em desktop e mobile; sem alvo visível não dispara nem gasta energia. Validar priorização de alvo em playtest. |
 | Desvio | Ação separada, deslocamento curto, recarga visível e janela de proteção a ajustar. |
 | Habilidade | Identidade do herói, custo/recarga com feedback e sem disparo acidental na pausa. |
 | Dano | Vida, invulnerabilidade curta após acerto, feedback visual/sonoro; mortes e cura verificáveis. |
 | Inimigos | Estados de entrada, aproximação/mira/ataque, dano, morte; limites para evitar excesso de entidades. |
-| Recompensa | Escolha única entre três alternativas válidas; evitar oferecer opção sem efeito. |
+| Recompensa | Baú aparece após limpar cada sala de recompensa; revela uma arma extra definida pela seed, com escolha entre equipar ou manter a atual. |
 | Persistência | Som, controles, acessibilidade e desbloqueios em save versionado; resultado da run salvo apenas se fizer sentido. |
 
 ## Identidade Junq
@@ -47,7 +47,7 @@ Jão, Alice e Gui são **candidatos** a kits após P1; seus poderes e imagens n�
 
 ## Interface e controles
 
-- Desktop: WASD/setas, cursor para mirar, clique/segurar para disparar, Espaço para desvio, tecla de habilidade configurável, Esc para pausa.
+- Desktop: WASD/setas, clique/segurar para disparar com mira automática, Espaço para desvio, tecla de habilidade configurável, Esc para pausa.
 - Mobile em horizontal: controle de movimento de área confortável, não colado ao canto; ataque, desvio e habilidade agrupados à direita com áreas de toque generosas, considerando safe areas.
 - Suporte a teclado, toque e gamepad tratado como adaptadores de entrada; a simulação recebe as mesmas ações.
 - Opções: tamanho/posição de controles, intensidade de shake, volume, contraste de projéteis e pausa automática ao perder foco.

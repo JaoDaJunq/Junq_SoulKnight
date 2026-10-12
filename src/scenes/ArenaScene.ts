@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import { blocked, normalizedMovement, OBSTACLES } from '../core/arena';
 import { generateRun, type Direction, type Room } from '../core/run';
-import { createShots, rewardOptions, WEAPONS, type RewardOption, type WeaponId } from '../core/weapons';
+import { chestWeapon, createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS, type WeaponId } from '../core/weapons';
+import { closestTarget } from '../core/targeting';
 
-type State = 'menu' | 'playing' | 'reward' | 'paused' | 'dead' | 'cleared';
+type State = 'menu' | 'playing' | 'chest' | 'paused' | 'dead' | 'cleared';
 type EnemyKind = 'chaser' | 'shooter' | 'brute' | 'boss';
 type Enemy = { view: Phaser.GameObjects.Container; kind: EnemyKind; x: number; y: number; hp: number; maxHp: number; speed: number; cooldown: number; windup: number };
 type Bullet = { view: Phaser.GameObjects.Arc; vx: number; vy: number; life: number; damage: number };
@@ -20,6 +21,8 @@ export class ArenaScene extends Phaser.Scene {
   private heroHp = 5;
   private hurtTimer = 0;
   private fireTimer = 0;
+  private energy = MAX_ENERGY;
+  private energyCooldown = 0;
   private dashTimer = 0;
   private dashCooldown = 0;
   private skillCooldown = 0;
@@ -39,7 +42,7 @@ export class ArenaScene extends Phaser.Scene {
   private storedCoins = new Map<number, { x: number; y: number }[]>();
   private coins = 0;
   private weapon: WeaponId = 'bolt';
-  private power = 0;
+  private openedChests = new Set<number>();
   private damageTaken = 0;
   private bossWarning!: Phaser.GameObjects.Graphics;
   private bossBar!: Phaser.GameObjects.Graphics;
@@ -55,10 +58,10 @@ export class ArenaScene extends Phaser.Scene {
   private firePointer: number | null = null;
   private joyX = 0;
   private joyY = 0;
-  private aimX = 1;
-  private aimY = 0;
   private touchMode = false;
   private hud!: Phaser.GameObjects.Text;
+  private energyText!: Phaser.GameObjects.Text;
+  private energyBar!: Phaser.GameObjects.Graphics;
   private hint!: Phaser.GameObjects.Text;
   private joyBase!: Phaser.GameObjects.Arc;
   private joyKnob!: Phaser.GameObjects.Arc;
@@ -78,6 +81,8 @@ export class ArenaScene extends Phaser.Scene {
     this.drawRoom();
     this.createHero();
     this.hud = this.add.text(35, 19, '', { fontFamily: 'system-ui', fontSize: '18px', color: '#eef4ff', fontStyle: 'bold' }).setDepth(20);
+    this.energyText = this.add.text(345, 16, '', { fontFamily: 'system-ui', fontSize: '14px', color: '#acebff', fontStyle: 'bold' }).setDepth(20);
+    this.energyBar = this.add.graphics().setDepth(20);
     if (new URLSearchParams(location.search).has('debug')) {
       this.debugFps = this.add.text(740, 77, '', { fontFamily: 'monospace', fontSize: '11px', color: '#93d8c7' }).setDepth(25);
     }
@@ -115,7 +120,7 @@ export class ArenaScene extends Phaser.Scene {
       window.removeEventListener('keydown', this.onNativeKeyDown, true);
       window.removeEventListener('keyup', this.onNativeKeyUp, true);
     });
-    this.showOverlay('JUNQ · RUN', 'Seis salas, escolhas de arma e um chefe.\nElimine os guardiões e encontre a saída.', 'COMEÇAR', () => this.startRun());
+    this.showOverlay('JUNQ · RUN', 'Mira automática, energia limitada e armas em baús.\nElimine os guardiões e encontre a saída.', 'COMEÇAR', () => this.startRun());
     this.refreshHud();
   }
 
@@ -146,10 +151,19 @@ export class ArenaScene extends Phaser.Scene {
         if (direction === 'east') g.fillRect(895, 251, 13, 68);
       }
     }
-    const roomName = room?.kind === 'boss' ? 'GUARDIÃO FINAL' : room?.kind === 'reward' ? 'ESCOLHA APÓS COMBATE' : 'COMBATE';
+    const roomName = room?.kind === 'boss' ? 'GUARDIÃO FINAL' : room?.kind === 'reward' ? 'BAÚ APÓS COMBATE' : 'COMBATE';
     const title = this.add.text(480, 110, room ? `SALA ${String(room.id + 1).padStart(2, '0')} · ${this.cleared.has(room.id) ? 'PORTAS ABERTAS' : roomName}` : 'SALA 01 · CÂMARA DE TESTE',
       { fontFamily: 'system-ui', fontSize: '13px', color: '#7398bd', letterSpacing: 3 }).setOrigin(0.5);
     this.roomArt = [g, title];
+    if (room?.kind === 'reward' && this.cleared.has(room.id) && !this.openedChests.has(room.id)) {
+      const chest = this.add.graphics().setDepth(6);
+      chest.fillStyle(0x271c2a); chest.fillRoundedRect(441, 248, 78, 51, 7);
+      chest.fillStyle(0xb27a43); chest.fillRoundedRect(445, 244, 70, 47, 6);
+      chest.lineStyle(3, 0xffd58b); chest.strokeRoundedRect(445, 244, 70, 47, 6);
+      chest.fillStyle(0xf9d774); chest.fillRect(476, 245, 9, 46);
+      const prompt = this.add.text(480, 310, 'TOQUE NO BAÚ', { fontFamily: 'system-ui', fontSize: '14px', color: '#ffe2a0', fontStyle: 'bold' }).setOrigin(0.5).setDepth(6);
+      this.roomArt.push(chest, prompt);
+    }
   }
 
   private createHero(): void {
@@ -192,9 +206,9 @@ export class ArenaScene extends Phaser.Scene {
     this.currentRoom = 0;
     this.cleared = new Set();
     this.visited = new Set([0]);
-    this.storedCoins.clear(); this.coins = 0; this.weapon = 'bolt'; this.power = 0; this.damageTaken = 0;
+    this.storedCoins.clear(); this.coins = 0; this.weapon = 'bolt'; this.openedChests.clear(); this.damageTaken = 0;
     this.groundCoins.forEach(coin => coin.view.destroy()); this.groundCoins = [];
-    this.heroHp = 5; this.hurtTimer = 0; this.fireTimer = 0; this.elapsed = 0;
+    this.heroHp = 5; this.hurtTimer = 0; this.fireTimer = 0; this.energy = MAX_ENERGY; this.energyCooldown = 0; this.elapsed = 0;
     this.dashTimer = 0; this.dashCooldown = 0; this.skillCooldown = 0;
     this.heroX = 480; this.heroY = 385; this.hero.setPosition(this.heroX, this.heroY);
     this.enterRoom(0);
@@ -246,6 +260,9 @@ export class ArenaScene extends Phaser.Scene {
     this.elapsed += dt;
     this.hurtTimer = Math.max(0, this.hurtTimer - dt);
     this.fireTimer -= dt;
+    this.energyCooldown = Math.max(0, this.energyCooldown - dt);
+    this.energy = restoreEnergy(this.energy, dt, this.energyCooldown);
+    this.drawEnergy();
     this.dashTimer = Math.max(0, this.dashTimer - dt);
     this.dashCooldown = Math.max(0, this.dashCooldown - dt);
     this.skillCooldown = Math.max(0, this.skillCooldown - dt);
@@ -382,19 +399,19 @@ export class ArenaScene extends Phaser.Scene {
     this.drawRoom();
     this.refreshHud();
     if (this.rooms[this.currentRoom].kind === 'boss') { this.finish(true); return; }
-    if (this.rooms[this.currentRoom].kind === 'reward') this.showReward();
+    // Salas de recompensa revelam o baú depois do combate. Ele permanece até ser aberto.
   }
 
   private fire(): void {
     if (this.fireTimer > 0 || this.bullets.length >= 32) return;
-    let dx = this.aimX, dy = this.aimY;
-    if (this.firePointer !== null && Math.hypot(dx, dy) < 0.1) {
-      const closest = [...this.enemies].sort((a, b) =>
-        Math.hypot(a.x - this.heroX, a.y - this.heroY) - Math.hypot(b.x - this.heroX, b.y - this.heroY))[0];
-      if (closest) { dx = closest.x - this.heroX; dy = closest.y - this.heroY; }
-    }
-    const length = Math.max(0.001, Math.hypot(dx, dy)); dx /= length; dy /= length;
-    for (const shot of createShots(this.weapon, dx, dy, this.power)) {
+    const target = closestTarget({ x: this.heroX, y: this.heroY }, this.enemies, this.rooms[this.currentRoom].obstacles);
+    if (!target) return;
+    const remaining = spendEnergy(this.energy, this.weapon);
+    if (remaining === null) { this.drawEnergy(); return; }
+    const dx = target.x - this.heroX, dy = target.y - this.heroY;
+    this.energy = remaining;
+    this.energyCooldown = ENERGY_DELAY;
+    for (const shot of createShots(this.weapon, dx, dy)) {
       if (this.bullets.length >= 32) break;
       const view = this.add.circle(this.heroX + shot.vx / Math.hypot(shot.vx, shot.vy) * 20,
         this.heroY + shot.vy / Math.hypot(shot.vx, shot.vy) * 20, shot.radius, shot.color)
@@ -402,6 +419,7 @@ export class ArenaScene extends Phaser.Scene {
       this.bullets.push({ view, ...shot });
     }
     this.fireTimer = WEAPONS[this.weapon].cadence;
+    this.drawEnergy();
   }
 
   private removeBullet(b: Bullet): void {
@@ -437,7 +455,7 @@ export class ArenaScene extends Phaser.Scene {
     this.tweens.add({ targets: wave, radius: 135, alpha: 0, duration: 320, onComplete: () => wave.destroy() });
     for (const enemy of [...this.enemies]) {
       if (Math.hypot(enemy.x - this.heroX, enemy.y - this.heroY) > 135) continue;
-      this.damageEnemy(enemy, 2 + this.power);
+      this.damageEnemy(enemy, 2);
     }
     this.refreshHud();
   }
@@ -447,41 +465,54 @@ export class ArenaScene extends Phaser.Scene {
     this.coins -= 3; this.heroHp++; this.refreshHud();
   }
 
-  private showReward(): void {
-    this.state = 'reward';
+  private openChest(): void {
+    if (this.state !== 'playing' || !this.cleared.has(this.currentRoom) || this.rooms[this.currentRoom].kind !== 'reward'
+      || this.openedChests.has(this.currentRoom)) return;
+    this.state = 'chest';
     this.clearOverlay();
     const shade = this.add.rectangle(480, 270, W, H, 0x080d18, 0.87).setDepth(40);
-    const heading = this.add.text(480, 152, 'ESCOLHA UMA RECOMPENSA', { fontFamily: 'system-ui', fontSize: '30px', color: '#e8faff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
-    const detail = this.add.text(480, 200, 'Uma escolha para esta sala. Toque ou clique no cartão.', { fontFamily: 'system-ui', fontSize: '16px', color: '#adc4d9' }).setOrigin(0.5).setDepth(41);
-    this.overlay = [shade, heading, detail];
-    rewardOptions(this.weapon).forEach((option, index) => {
-      const x = 260 + index * 220;
-      const plate = this.add.rectangle(x, 320, 200, 150, 0x23415b).setStrokeStyle(3, 0x82d9e4).setInteractive({ useHandCursor: true }).setDepth(41);
-      const name = option === 'power' ? 'POTÊNCIA +1' : WEAPONS[option].name;
-      const description = option === 'power' ? 'Mais dano em cada tiro\ne no pulso' : WEAPONS[option].description;
-      const label = this.add.text(x, 288, name, { fontFamily: 'system-ui', fontSize: '19px', color: '#eaffff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
-      const info = this.add.text(x, 342, description, { fontFamily: 'system-ui', fontSize: '14px', color: '#bcd7e6', align: 'center', wordWrap: { width: 175 } }).setOrigin(0.5).setDepth(42);
-      plate.on('pointerdown', () => this.pickReward(option));
-      this.overlay.push(plate, label, info);
-    });
+    const rewardIds = this.rooms.filter(room => room.kind === 'reward').map(room => room.id);
+    const found = chestWeapon(this.seed, this.currentRoom, rewardIds);
+    const heading = this.add.text(480, 168, 'BAÚ ABERTO!', { fontFamily: 'system-ui', fontSize: '32px', color: '#ffdda1', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
+    const detail = this.add.text(480, 245, `${WEAPONS[found].name}\n${WEAPONS[found].description} · ${WEAPONS[found].energy} energia por tiro`,
+      { fontFamily: 'system-ui', fontSize: '19px', color: '#e8faff', align: 'center', lineSpacing: 10 }).setOrigin(0.5).setDepth(41);
+    const equip = this.add.rectangle(365, 370, 205, 60, 0x3eacc6).setStrokeStyle(2, 0x9ff4ff).setInteractive({ useHandCursor: true }).setDepth(41);
+    const equipLabel = this.add.text(365, 370, 'EQUIPAR', { fontFamily: 'system-ui', fontSize: '18px', color: '#091521', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
+    const keep = this.add.rectangle(595, 370, 205, 60, 0x34465b).setStrokeStyle(2, 0x9db9d0).setInteractive({ useHandCursor: true }).setDepth(41);
+    const keepLabel = this.add.text(595, 370, 'MANTER ATUAL', { fontFamily: 'system-ui', fontSize: '16px', color: '#e6f2ff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
+    equip.on('pointerdown', () => this.closeChest(found));
+    keep.on('pointerdown', () => this.closeChest());
+    this.overlay = [shade, heading, detail, equip, equipLabel, keep, keepLabel];
   }
 
-  private pickReward(option: RewardOption): void {
-    if (this.state !== 'reward') return;
-    if (option === 'power') this.power++;
-    else this.weapon = option;
-    this.clearOverlay(); this.state = 'playing'; this.refreshHud();
+  private closeChest(equip?: WeaponId): void {
+    if (this.state !== 'chest') return;
+    if (equip) this.weapon = equip;
+    this.openedChests.add(this.currentRoom);
+    this.clearOverlay(); this.state = 'playing'; this.drawRoom(); this.refreshHud();
   }
 
   private refreshHud(): void {
     this.hud.setX(this.touchMode ? 78 : 35);
-    this.hud.setText(`❤ ${'♥'.repeat(this.heroHp)}${'♡'.repeat(5 - this.heroHp)}   Salas ${this.cleared.size}/6\n${WEAPONS[this.weapon].name} +${this.power}   ◈ ${this.coins} moedas`);
+    this.hud.setText(`❤ ${'♥'.repeat(this.heroHp)}${'♡'.repeat(5 - this.heroHp)}   Salas ${this.cleared.size}/6\n${WEAPONS[this.weapon].name}   ◈ ${this.coins} moedas`);
     this.healButton.setVisible(this.state === 'playing' && this.cleared.has(this.currentRoom));
     this.healLabel.setVisible(this.healButton.visible);
     this.healButton.setAlpha(this.coins >= 3 && this.heroHp < 5 ? 1 : 0.4);
     this.healLabel.setAlpha(this.healButton.alpha);
-    this.hint.setText(this.touchMode ? 'Esquerda: mover · Direita: atirar, dash e pulso · porta verde: avançar' : 'WASD: mover · clique: atirar · ESPAÇO: dash · E: pulso · H: cura · ESC: pausa');
+    this.hint.setText(this.touchMode ? 'Mover à esquerda · segurar ATIRAR mira sozinho · abra baús para novas armas' : 'WASD: mover · segure clique: tiro automático · ESPAÇO: dash · E: pulso · H: cura · ESC: pausa');
+    this.drawEnergy();
     this.drawMap();
+  }
+
+  private drawEnergy(): void {
+    const ready = this.energy >= WEAPONS[this.weapon].energy;
+    this.energyText.setText(`ENERGIA ${Math.floor(this.energy)}/${MAX_ENERGY} · ${WEAPONS[this.weapon].energy}/tiro`);
+    this.energyBar.clear();
+    this.energyBar.fillStyle(0x213c54); this.energyBar.fillRoundedRect(345, 47, 185, 11, 4);
+    this.energyBar.fillStyle(ready ? 0x61cde9 : 0xff8c91);
+    this.energyBar.fillRoundedRect(347, 49, 181 * this.energy / MAX_ENERGY, 7, 3);
+    this.fireBase.setAlpha(ready ? 1 : 0.4);
+    this.fireLabel.setAlpha(ready ? 1 : 0.5);
   }
 
   private drawMap(): void {
@@ -556,25 +587,28 @@ export class ArenaScene extends Phaser.Scene {
     if (this.state === 'playing' && pointer.x > 870 && pointer.y < 70) { this.togglePause(); return; }
     if (pointer.y < 70) return;
     if (this.state !== 'playing') return;
+    if (this.rooms[this.currentRoom].kind === 'reward' && this.cleared.has(this.currentRoom)
+      && !this.openedChests.has(this.currentRoom) && Math.abs(pointer.x - 480) < 52 && Math.abs(pointer.y - 270) < 45) {
+      this.openChest(); return;
+    }
     const isTouch = pointer.wasTouch || (pointer.event as PointerEvent).pointerType === 'touch';
     if (isTouch) {
       this.touchMode = true; this.setTouchVisibility(); this.refreshHud();
       if (pointer.x < 355 && pointer.y > 265 && this.movePointer === null) { this.movePointer = pointer.id; this.updateJoystick(pointer); }
       else if (Math.hypot(pointer.x - 696, pointer.y - 437) < 40) this.dash();
       else if (Math.hypot(pointer.x - 870, pointer.y - 281) < 43) this.pulse();
-      else if (pointer.x > 585 && pointer.y > 250 && this.firePointer === null) { this.firePointer = pointer.id; this.updateAim(pointer); }
-    } else { this.mouseDown = true; this.updateAim(pointer); }
-  }
-
-  private onMove(pointer: Phaser.Input.Pointer): void {
-    if (pointer.id === this.movePointer) this.updateJoystick(pointer);
-    if (pointer.id === this.firePointer || (this.mouseDown && pointer.isDown)) this.updateAim(pointer);
+      else if (pointer.x > 585 && pointer.y > 250 && this.firePointer === null) this.firePointer = pointer.id;
+    } else this.mouseDown = true;
   }
 
   private onUp(pointer: Phaser.Input.Pointer): void {
     if (pointer.id === this.movePointer) { this.movePointer = null; this.joyX = 0; this.joyY = 0; this.joyKnob.setPosition(153, 399); }
     if (pointer.id === this.firePointer) this.firePointer = null;
     if (!pointer.wasTouch && (pointer.event as PointerEvent).pointerType !== 'touch') this.mouseDown = false;
+  }
+
+  private onMove(pointer: Phaser.Input.Pointer): void {
+    if (pointer.id === this.movePointer) this.updateJoystick(pointer);
   }
 
   private updateJoystick(pointer: Phaser.Input.Pointer): void {
@@ -586,11 +620,4 @@ export class ArenaScene extends Phaser.Scene {
     this.joyKnob.setPosition(153 + this.joyX * 48, 399 + this.joyY * 48);
   }
 
-  private updateAim(pointer: Phaser.Input.Pointer): void {
-    if (pointer.id === this.firePointer) {
-      const dx = pointer.x - 810, dy = pointer.y - 399;
-      if (Math.hypot(dx, dy) < 25) { this.aimX = 0; this.aimY = 0; }
-      else { this.aimX = dx; this.aimY = dy; }
-    } else { this.aimX = pointer.x - this.heroX; this.aimY = pointer.y - this.heroY; }
-  }
 }

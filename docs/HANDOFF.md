@@ -3,22 +3,22 @@
 ## Estado real
 
 - T001–T005: Phaser 3/TypeScript/Vite, CI e Pages ativo, combate base e seis salas conectadas por seed. Os testes do gerador cobrem 100 seeds, portas pareadas, spawn e acesso ao chefe.
-- T006: três armas com cadência e padrão de tiro próprios, moedas de inimigos, cura por três moedas e escolhas entre duas armas alternativas ou melhoria de dano em duas salas. Moedas no chão persistem ao revisitar salas.
+- T006 revisado: ataque básico FAÍSCA e duas armas extras com cadência, padrão e custo de energia próprios; moedas de inimigos e cura por três moedas. Duas salas de recompensa revelam baús depois do combate. Cada baú contém uma arma extra determinada pela seed; o jogador decide equipar ou manter a atual. Não há escolha de arma fora de baús. Moedas no chão persistem ao revisitar salas.
 - T007: sala do chefe no ponto mais distante do início, aviso visual antes dos ataques, barra de vida, vitória e derrota com seed, tempo, dano, salas e moedas.
-- T008: CSS preenche a área visível em celular horizontal, aviso para girar no retrato, tentativa de tela cheia após toque, pausa ao girar/perder foco, controles de toque reposicionados e FPS opcional (`?debug=1`). Captura direta de teclado complementa o input do Phaser. **Código implementado, aceite pendente:** run completa e teste Android físico, incluindo multitoque, escala, safe areas e desempenho.
+- T008: CSS preenche a área visível em celular horizontal, aviso para girar no retrato, tentativa de tela cheia após toque, pausa ao girar/perder foco, controles de toque reposicionados e FPS opcional (`?debug=1`). Captura direta de teclado complementa o input do Phaser. Ao segurar tiro, a mira seleciona o inimigo visível mais próximo; o tiro gasta energia conforme a arma, 100 pontos no máximo, recarga de 12/s após 0,65s sem disparar. Sem alvo ou sem energia suficiente não há tiro. **Código implementado, aceite pendente:** run completa e teste Android físico, incluindo multitoque, seleção de alvo, escala, safe areas e desempenho.
 - T009–T015: pendentes. Arte e áudio finais, save, PWA e APK não existem.
 
 ## Evidência e limites
 
 - Commit `1f7ed0a` publicou a correção de teclado após o vertical slice `050377c`; [Actions 38196895602](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38196895602) terminou com sucesso. A documentação atual é um commit posterior.
-- Local: `npm run typecheck`, `npm test` e `npm run build` passaram. Testes de regras cobrem 100 seeds e escolhas/padrões de armas; não simulam combate visual ou input físico.
+- Local: `npm run typecheck`, `npm test` e `npm run build` passaram. Testes de regras cobrem 100 seeds, conteúdo reproduzível dos baús, custos/recarga de energia e seleção de alvo com obstáculo; não simulam combate visual ou input físico.
 - [Pages](https://jaodajunq.github.io/Junq_SoulKnight/) aberto no Chrome desktop: menu novo, sala inicial, HUD de arma/moedas, inimigos, minimapa e pausa por botão visíveis. A automação de teclado não comprovou deslocamento ou pausa; o primeiro clique no canvas às vezes apenas foca a área. Testar em navegador humano. Não se executou a run inteira nem teste em Android real.
 - Build gera aviso de chunk Phaser acima de 500 kB (~1,2 MB JS, ~327 kB gzip). Medir carregamento e FPS no celular antes de fechar T008.
 
 ## Próximo trabalho: concluir T008
 
-1. Jogar do menu à vitória e à derrota no desktop. Conferir WASD/setas, clique para tiro, dash, pulso, H para cura, Esc, portas, escolha de recompensas, moedas persistidas e reinício. Registrar seed e bug encontrado.
-2. Repetir no Android real em horizontal: ocupação da tela, safe areas, dois dedos para mover/atirar, botões, rotação, retorno de foco, tela cheia permitida ou recusada e FPS com `?debug=1`. Registrar aparelho/navegador e corrigir os bloqueios observados.
+1. Jogar do menu à vitória e à derrota no desktop. Conferir WASD/setas, clique para tiro, alvo visível escolhido, energia, dash, pulso, H para cura, Esc, portas, abertura e escolha dos baús, moedas persistidas e reinício. Registrar seed e bug encontrado.
+2. Repetir no Android real em horizontal: ocupação da tela, safe areas, dois dedos para mover/atirar, mira automática, energia, baús, botões, rotação, retorno de foco, tela cheia permitida ou recusada e FPS com `?debug=1`. Registrar aparelho/navegador e corrigir os bloqueios observados.
 3. Só após esse aceite iniciar T009: arte, áudio e créditos auditados. Não marcar T008 concluído pela existência do código.
 
 ## Como rodar

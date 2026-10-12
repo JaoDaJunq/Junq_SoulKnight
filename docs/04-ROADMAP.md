@@ -9,7 +9,7 @@ Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atual
 | T003 | Tiro, um inimigo, vida, dano, derrota e reinício | T002 | Do menu à derrota e ao reinício sem recarregar a página. **Primeiro jogável.** |
 | T004 | Desvio, habilidade provisória, dois novos inimigos e feedback de combate | T003 | Ataques legíveis, recargas visíveis, sem colisão duplicada. |
 | T005 | Grafo de 5 a 7 salas, portas, layouts, spawns e minimapa | T003 | 100 seeds conectadas; nenhuma porta ou jogador bloqueado; limpar abre saídas. |
-| T006 | Três famílias de armas, drops, moeda e recompensas | T004, T005 | Escolhas alteram o combate; sem opções inválidas; run continua entre salas. |
+| T006 | Três famílias de armas, drops, moeda e recompensas | T004, T005 | Disparo básico e armas extras em baús, com custos de energia distintos; run continua entre salas. Ajuste de mira/energia/baús em 12/10/2026. |
 | T007 | Chefe com ataques sinalizados e encerramento da run | T006 | Vitória e derrota completas; relatório com seed e tempo. **Vertical slice P1.** |
 | T008 | Playtest P1 e revisão de desempenho/controles | T007 | Testes no Android e desktop; bugs de bloqueio e mortes sem feedback corrigidos. **Em validação: faltam run completa e Android real.** |
 | T009 | Direção de arte autoral, UI final, áudio licenciado e créditos | T008 | Origem/licença rastreável para cada asset; leitura do combate preservada. |

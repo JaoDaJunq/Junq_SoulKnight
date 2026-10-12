@@ -9,7 +9,7 @@ Pesquisa em 11/10/2026. A referência primária é a [descrição oficial da Chi
 | Shooter de ação com visão superior, elementos de RPG e roguelike | Controle imediato, partidas repetíveis e decisões durante a tentativa. |
 | Heróis com habilidades próprias e arsenal variado | Silhueta e função de cada herói devem mudar a maneira de jogar; três armas com comportamentos distintos já provam o sistema. |
 | Masmorras aleatórias, tesouros, NPCs e cenários diferentes | Usar grafo de salas conectadas, tipos de sala e recompensas, mantendo layout e combate legíveis. |
-| Mira automática, desvio, tiro e habilidade com poucos toques | Prototipar no celular desde T002; assistência de mira configurável, sem abrir mão de mira manual no desktop. |
+| Mira automática, desvio, tiro e habilidade com poucos toques | O botão dispara no inimigo visível mais próximo; movimento, tempo do disparo e gestão de energia ficam com o jogador. |
 | Cooperativo e muitos modos na versão atual | Expansões possíveis; a primeira run será **solo** e sem servidor. |
 
 O resumo de experiência é **entrar, lutar, escolher, avançar e tentar de novo**. Inspirar-se nesse ritmo não autoriza copiar personagens, nomes, mapas, sprites, interfaces, músicas ou a identidade Soul Knight.
@@ -21,9 +21,9 @@ O resumo de experiência é **entrar, lutar, escolher, avançar e tentar de novo
 | Ação legível | Movimento em oito direções, projéteis contrastantes, telegráficos antes de ataques fortes. | Jogador reconhece origem e direção dos ataques em tela de celular. |
 | Sala como encontro | Entrou em sala hostil: portas fecham; ao limpar, recompensa/saídas ficam acessíveis. | Não há travamento por inimigo fora da arena ou atrás de obstáculo. |
 | Aleatoriedade controlada | Grafo com começo, combate, recompensa e chefe garantidos; layouts feitos à mão combinados por semente. | 100 sementes automáticas geram mapa navegável com chefe alcançável. |
-| Escolha com consequência | Equipar arma diferente ou aceitar uma entre três melhorias compatíveis. | Uma run com outra escolha muda alcance, risco ou cadência. |
+| Escolha com consequência | Abrir baú após limpar uma sala e decidir se equipa a arma encontrada. | Outra arma muda custo de energia, alcance, risco ou cadência. |
 | Partida curta | Meta inicial de 10 a 15 minutos para um andar, sujeita a playtest. | Medir partidas reais, não impor duração artificial. |
-| Mobile primeiro | Área de jogo horizontal, joystick de movimento na metade inferior esquerda, botões confortáveis à direita; testar mira por arrasto e auxílio. | Jogar uma run no Android sem cliques perdidos ou mãos cobrindo projéteis. |
+| Mobile primeiro | Área de jogo horizontal, joystick de movimento na metade inferior esquerda, botões confortáveis à direita; mira automática. | Jogar uma run no Android sem cliques perdidos ou mãos cobrindo projéteis. |
 
 ## Limites de escopo
 
@@ -33,7 +33,7 @@ O resumo de experiência é **entrar, lutar, escolher, avançar e tentar de novo
 
 ## Questões para playtest
 
-1. Tiro manual e assistência de mira funcionam bem no mesmo layout mobile?
+1. A mira automática escolhe o alvo esperado mesmo perto de paredes e obstáculos?
 2. Desvio tem tempo de recarga e invulnerabilidade perceptíveis sem trivializar o chefe?
 3. O mapa incentiva exploração ou a rota ótima fica óbvia?
 4. As armas mudam decisões táticas e não apenas números?

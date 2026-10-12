@@ -2,7 +2,7 @@
 
 Planejamento de um jogo autoral 2D de ação, roguelite e tiro com visão superior, inspirado no **ritmo de salas, escolhas e combates** de Soul Knight. Nome de trabalho; título, mundo e arte finais serão próprios. Primeiro destino: navegador e GitHub Pages. Depois: aplicativo Android e, se fizer sentido, iOS.
 
-> Estado em 12/10/2026: **vertical slice web em validação** no [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). T006 e T007 adicionam armas, moedas, recompensas e chefe. T008 inclui revisão de controles, tela horizontal preenchida e medidor de FPS opcional. Build e testes locais passaram; a run inteira e o Android real ainda exigem playtest. Não há APK.
+> Estado em 12/10/2026: **vertical slice web em validação** no [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). O combate agora tem mira automática e barra de energia; as armas extras vêm dos baús após limpar duas salas. Build e testes locais passaram; a run inteira e o Android real ainda exigem playtest. Não há APK.
 
 ## O jogo em uma frase
 
@@ -12,27 +12,27 @@ Escolha um herói Junq, atravesse salas conectadas, desvie de projéteis, use at
 
 1. Selecionar personagem no hub e iniciar uma run.
 2. Entrar em uma sala. Salas de combate fecham as portas até os inimigos serem derrotados.
-3. Mover, mirar/atirar, desviar, usar habilidade e administrar vida e recursos.
-4. Recolher moedas e trocar equipamento ou escolher uma melhoria entre alternativas.
+3. Mover, atirar no alvo indicado automaticamente, desviar, usar habilidade e administrar vida e energia.
+4. Recolher moedas, abrir baús após limpar as salas de recompensa e decidir se equipa a arma encontrada.
 5. Explorar o mapa, concluir o andar, enfrentar o chefe e avançar ou encerrar a run.
 6. Voltar ao hub; a próxima tentativa muda a combinação de salas, inimigos e recompensas.
 
-O diferencial planejado é um elenco Junq de estilos de combate distintos e escolhas entre salas com risco e recompensa. **Não é a migração automática do Junq Bullet:** aquele projeto trabalha com hordas em arena e tiro automático; aqui a unidade básica é uma sala explorável e o combate é orientado por mirar, atacar e decidir por qual porta seguir.
+O diferencial planejado é um elenco Junq de estilos de combate distintos e escolhas entre salas com risco e recompensa. **Não é a migração automática do Junq Bullet:** aquele projeto trabalha com hordas em arena e tiro automático; aqui há salas exploráveis, mira automática acionada pelo botão de disparo, energia e decisões de rota.
 
 ## Primeira versão jogável
 
 Uma run de um andar, 5 a 7 salas conectadas, um personagem provisório, ataque, desvio, habilidade, três famílias de inimigos, três famílias de equipamento, duas salas de recompensa, um chefe, tela de resultado e controles de teclado/mouse e toque. Arte provisória própria ou com licença verificada. Esse recorte é uma **proposta de produção**, não uma descrição do Soul Knight original.
 
-O vertical slice tem **seis salas conectadas**, duas recompensas após combate, três armas com padrões diferentes, moedas derrubadas pelos inimigos, cura comprável, chefe com ataque sinalizado, resultado com seed, dano e tempo, pausa e reinício. O jogo ocupa a área visível do celular na horizontal e tenta entrar em tela cheia ao começar. No retrato, pede para girar o aparelho. Em navegadores que não permitem tela cheia, continua jogável na área visível. Não depende de conta, servidor ou banco de dados.
+O vertical slice tem **seis salas conectadas**, dois baús após combate, ataque básico e duas armas extras com padrões diferentes, moedas derrubadas pelos inimigos, cura comprável, chefe com ataque sinalizado, resultado com seed, dano e tempo, pausa e reinício. O jogo ocupa a área visível do celular na horizontal e tenta entrar em tela cheia ao começar. No retrato, pede para girar o aparelho. Em navegadores que não permitem tela cheia, continua jogável na área visível. Não depende de conta, servidor ou banco de dados.
 
 ## Controles desta versão
 
 | Plataforma | Movimento | Ataque e ações |
 | --- | --- | --- |
-| Desktop | WASD ou setas | Segurar clique para atirar; Espaço desvia; E usa pulso; H compra cura por 3 moedas após limpar sala; Esc pausa. |
-| Celular horizontal | Joystick na parte inferior esquerda | Botões à direita para atirar, desviar e usar pulso; toque nos cartões de recompensa e na cura. |
+| Desktop | WASD ou setas | Segurar clique para atirar automaticamente no inimigo visível mais próximo; Espaço desvia; E usa pulso; H compra cura por 3 moedas após limpar sala; Esc pausa. |
+| Celular horizontal | Joystick na parte inferior esquerda | Segurar ATIRAR para disparar com mira automática; botões de desvio e pulso à direita; toque no baú para abrir e decidir se equipa. |
 
-Recolha as moedas encostando nelas. As portas vermelhas abrem após limpar a sala; avance pela porta verde. Duas salas oferecem uma escolha entre duas armas diferentes da equipada e mais dano. O chefe fica na sala mais distante do início. Acrescente `?debug=1` à URL para ver o FPS durante um teste.
+Cada disparo consome energia conforme a arma, de 4 a 14 pontos. A barra tem 100 pontos e volta após uma breve pausa nos disparos. Sem energia suficiente, a arma espera recarga. Sem inimigo visível, segurar o botão não gasta energia. Recolha as moedas encostando nelas. As portas vermelhas abrem após limpar a sala; avance pela porta verde. Em duas salas, toque no baú revelado depois do combate para encontrar uma arma e escolher entre equipar ou manter a atual. O chefe fica na sala mais distante do início. Acrescente `?debug=1` à URL para ver o FPS durante um teste.
 
 ## Stack proposta
 
@@ -46,7 +46,7 @@ Recolha as moedas encostando nelas. As portas vermelhas abrem após limpar a sal
 
 ## Próximo passo
 
-Jogar uma run inteira no [Pages](https://jaodajunq.github.io/Junq_SoulKnight/) e testar em Android real, especialmente movimento e tiro simultâneos, escolha de recompensa, transição por portas, tela cheia, chefe e FPS. Corrigir os bloqueios encontrados antes de aceitar T008 e iniciar a arte/áudio de T009. Leia o [handoff atual](docs/HANDOFF.md). As bases abertas pesquisadas são fontes de estudo; não foram incorporadas.
+Jogar uma run inteira no [Pages](https://jaodajunq.github.io/Junq_SoulKnight/) e testar em Android real, especialmente movimento e tiro simultâneos, alvo escolhido pela mira, gasto/recarga de energia, abertura dos baús, transição por portas, tela cheia, chefe e FPS. Corrigir os bloqueios encontrados antes de aceitar T008 e iniciar a arte/áudio de T009. Leia o [handoff atual](docs/HANDOFF.md). As bases abertas pesquisadas são fontes de estudo; não foram incorporadas.
 
 ## Fontes essenciais
 

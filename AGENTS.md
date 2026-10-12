@@ -15,4 +15,4 @@ Antes de qualquer alteração, ler `README.md` e `docs/01-REFERENCIA.md` a `docs
 
 ## Próxima tarefa
 
-T008: concluir o playtest do vertical slice em desktop e Android real. A revisão de controles, layout horizontal e FPS já foi implementada; falta validar movimento e tiro simultâneos no toque, portas, recompensas, chefe, vitória/derrota, pausa e desempenho da run completa. Registrar aparelho, navegador, FPS e correções antes de aceitar T008. Em seguida, T009.
+T008: concluir o playtest do vertical slice em desktop e Android real. A revisão de controles, mira automática, energia, baús, layout horizontal e FPS já foi implementada; falta validar movimento e tiro simultâneos no toque, seleção de alvo, consumo e recarga, abertura dos baús, portas, chefe, vitória/derrota, pausa e desempenho da run completa. Registrar aparelho, navegador, FPS e correções antes de aceitar T008. Em seguida, T009.
