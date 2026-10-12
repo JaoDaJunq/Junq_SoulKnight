@@ -512,19 +512,25 @@ export class ArenaScene extends Phaser.Scene {
     this.state = 'chest';
     this.soundscape.play('chest');
     this.clearOverlay();
-    const shade = this.add.rectangle(480, 270, W, H, 0x080d18, 0.87).setDepth(40);
+    const shade = this.add.rectangle(480, 270, W, H, 0x06111c, 0.87).setDepth(40);
+    const card = this.add.graphics().setDepth(41);
+    card.fillStyle(0x122836, 0.98); card.fillRoundedRect(180, 112, 600, 330, 18);
+    card.lineStyle(3, 0xd5b878); card.strokeRoundedRect(180, 112, 600, 330, 18);
+    card.lineStyle(2, 0x7dc9bf); card.lineBetween(236, 156, 724, 156);
+    card.lineBetween(236, 330, 724, 330);
+    card.fillStyle(0xe8ca82); card.fillCircle(207, 138, 5); card.fillCircle(753, 138, 5);
     const rewardIds = this.rooms.filter(room => room.kind === 'reward').map(room => room.id);
     const found = chestWeapon(this.seed, this.currentRoom, rewardIds);
-    const heading = this.add.text(480, 168, 'BAÚ ABERTO!', { fontFamily: 'system-ui', fontSize: '32px', color: '#ffdda1', fontStyle: 'bold' }).setOrigin(0.5).setDepth(41);
+    const heading = this.add.text(480, 196, 'BAÚ ABERTO!', { fontFamily: 'Trebuchet MS, system-ui', fontSize: '32px', color: '#ffe1a0', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
     const detail = this.add.text(480, 245, `${WEAPONS[found].name}\n${WEAPONS[found].description} · ${WEAPONS[found].energy} energia por tiro`,
-      { fontFamily: 'system-ui', fontSize: '19px', color: '#e8faff', align: 'center', lineSpacing: 10 }).setOrigin(0.5).setDepth(41);
-    const equip = this.add.rectangle(365, 370, 205, 60, 0x3eacc6).setStrokeStyle(2, 0x9ff4ff).setInteractive({ useHandCursor: true }).setDepth(41);
-    const equipLabel = this.add.text(365, 370, 'EQUIPAR', { fontFamily: 'system-ui', fontSize: '18px', color: '#091521', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
-    const keep = this.add.rectangle(595, 370, 205, 60, 0x34465b).setStrokeStyle(2, 0x9db9d0).setInteractive({ useHandCursor: true }).setDepth(41);
-    const keepLabel = this.add.text(595, 370, 'MANTER ATUAL', { fontFamily: 'system-ui', fontSize: '16px', color: '#e6f2ff', fontStyle: 'bold' }).setOrigin(0.5).setDepth(42);
+      { fontFamily: 'Trebuchet MS, system-ui', fontSize: '19px', color: '#e4f3e8', align: 'center', lineSpacing: 10 }).setOrigin(0.5).setDepth(42);
+    const equip = this.add.rectangle(365, 377, 205, 60, 0x58bfbd).setStrokeStyle(2, 0xb6f4e1).setInteractive({ useHandCursor: true }).setDepth(42);
+    const equipLabel = this.add.text(365, 377, 'EQUIPAR', { fontFamily: 'Trebuchet MS, system-ui', fontSize: '18px', color: '#0b2632', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
+    const keep = this.add.rectangle(595, 377, 205, 60, 0x2b4650).setStrokeStyle(2, 0x8ebbb6).setInteractive({ useHandCursor: true }).setDepth(42);
+    const keepLabel = this.add.text(595, 377, 'MANTER ATUAL', { fontFamily: 'Trebuchet MS, system-ui', fontSize: '16px', color: '#e3f1e9', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
     equip.on('pointerdown', () => this.closeChest(found));
     keep.on('pointerdown', () => this.closeChest());
-    this.overlay = [shade, heading, detail, equip, equipLabel, keep, keepLabel];
+    this.overlay = [shade, card, heading, detail, equip, equipLabel, keep, keepLabel];
   }
 
   private closeChest(equip?: WeaponId): void {
