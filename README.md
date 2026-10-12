@@ -2,7 +2,7 @@
 
 Planejamento de um jogo autoral 2D de ação, roguelite e tiro com visão superior, inspirado no **ritmo de salas, escolhas e combates** de Soul Knight. Nome de trabalho; título, mundo e arte finais serão próprios. Primeiro destino: navegador e GitHub Pages. Depois: aplicativo Android e, se fizer sentido, iOS.
 
-> Estado em 12/10/2026: **vertical slice web em validação** no [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). O combate agora tem mira automática e barra de energia; as armas extras vêm dos baús após limpar duas salas. Build e testes locais passaram; a run inteira e o Android real ainda exigem playtest. Não há APK.
+> Estado em 12/10/2026: **vertical slice web aprovado pelo MVP para avançar** no [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). Mira automática, energia e baús estão implementados. A primeira passagem de arte, interface e sons originais de T009 está em desenvolvimento. Não há APK.
 
 ## O jogo em uma frase
 
@@ -34,6 +34,8 @@ O vertical slice tem **seis salas conectadas**, dois baús após combate, ataque
 
 Cada disparo consome energia conforme a arma, de 4 a 14 pontos. A barra tem 100 pontos e volta após uma breve pausa nos disparos. Sem energia suficiente, a arma espera recarga. Sem inimigo visível, segurar o botão não gasta energia. Recolha as moedas encostando nelas. As portas vermelhas abrem após limpar a sala; avance pela porta verde. Em duas salas, toque no baú revelado depois do combate para encontrar uma arma e escolher entre equipar ou manter a atual. O chefe fica na sala mais distante do início. Acrescente `?debug=1` à URL para ver o FPS durante um teste.
 
+Os efeitos sonoros são sintetizados no navegador após o botão COMEÇAR. Use **SOM** no topo direito para silenciar ou reativar. A arte e os sons desta passagem são originais e estão registrados em [CREDITS.md](CREDITS.md).
+
 Para reproduzir a geração de salas e baús de uma tentativa, use `?seed=123456` na URL com a seed mostrada no resultado. A seed deve ser um inteiro de 0 a 4294967295; sem ela, cada tentativa gera uma nova. O tempo de ações e movimentos continua dependendo de como a run é jogada.
 
 ## Stack proposta
@@ -48,7 +50,7 @@ Para reproduzir a geração de salas e baús de uma tentativa, use `?seed=123456
 
 ## Próximo passo
 
-Jogar uma run inteira no [Pages](https://jaodajunq.github.io/Junq_SoulKnight/) e testar em Android real, especialmente movimento e tiro simultâneos, alvo escolhido pela mira, gasto/recarga de energia, abertura dos baús, transição por portas, tela cheia, chefe e FPS. Corrigir os bloqueios encontrados antes de aceitar T008 e iniciar a arte/áudio de T009. Leia o [handoff atual](docs/HANDOFF.md). As bases abertas pesquisadas são fontes de estudo; não foram incorporadas.
+Revisar a primeira passagem de T009 no [Pages](https://jaodajunq.github.io/Junq_SoulKnight/): leitura dos inimigos e projéteis, conforto do HUD no celular horizontal, volume e mudo. Fechar direção de arte e áudio antes de expandir elenco e bioma em T010. O aceite de avanço de T008 foi dado pelo MVP; aparelho, FPS e run completa não foram registrados nesta sessão e continuam como observação para o beta. Leia o [handoff atual](docs/HANDOFF.md). As bases abertas pesquisadas são fontes de estudo; não foram incorporadas.
 
 ## Fontes essenciais
 

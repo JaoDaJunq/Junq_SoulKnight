@@ -1,16 +1,16 @@
-:root { color-scheme: dark; font-family: system-ui, sans-serif; background: #090d18; }
+:root { color-scheme: dark; font-family: 'Trebuchet MS', system-ui, sans-serif; background: #08131e; }
 * { box-sizing: border-box; }
 html, body, #game { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-body { background: radial-gradient(circle at 50% 35%, #182543, #090d18 72%); }
+body { background: radial-gradient(circle at 50% 35%, #244852, #08131e 72%); }
 #game { display: flex; align-items: center; justify-content: center; touch-action: none; }
 canvas { display: block; max-width: 100%; max-height: 100%; box-shadow: 0 18px 80px #0008; touch-action: none; }
 canvas:focus:not(:focus-visible) { outline: none; }
-canvas:focus-visible { outline: 2px solid #67d8f1; outline-offset: -2px; }
+canvas:focus-visible { outline: 2px solid #80e4cc; outline-offset: -2px; }
 #rotate-hint { display: none; }
 @media (pointer: coarse) and (orientation: landscape) {
   html, body, #game { width: 100vw; height: 100dvh; }
   #game canvas { width: 100vw !important; height: 100dvh !important; max-width: none; max-height: none; box-shadow: none; }
 }
 @media (pointer: coarse) and (orientation: portrait) {
-  #rotate-hint { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 2rem; background: #0b1324; color: #e8faff; text-align: center; font: bold 1.3rem system-ui, sans-serif; }
+  #rotate-hint { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 2rem; background: #08131e; color: #e5f9ea; text-align: center; font: bold 1.3rem 'Trebuchet MS', system-ui, sans-serif; }
 }

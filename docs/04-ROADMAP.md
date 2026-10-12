@@ -1,6 +1,6 @@
 # 04 · Etapas para concluir o jogo
 
-Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atualização deste documento e `docs/HANDOFF.md` contendo estado, decisões, evidência e próximo passo. Estimativas são de ordem e dependência, não promessa de datas. **T001–T007: código implementado e checagens verdes. T008: revisão de controles, layout horizontal e diagnóstico de FPS implementados; aceite de playtest pendente.** O Pages foi publicado e a sala inicial e pausa foram observadas no desktop. Ainda faltam run completa e Android real. T009–T015: pendentes.
+Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atualização deste documento e `docs/HANDOFF.md` contendo estado, decisões, evidência e próximo passo. Estimativas são de ordem e dependência, não promessa de datas. **T001–T008: aceitos para seguir pelo MVP em 12/10/2026. T009: em execução.** O teste anterior em navegador desktop observou derrota, limpeza da sala inicial e passagem pela porta. O usuário confirmou que testou e aprovou a continuidade; aparelho e FPS não foram informados. T010–T015: pendentes.
 
 | ID | Entrega | Dependência | Aceite observável |
 | --- | --- | --- | --- |
@@ -11,8 +11,8 @@ Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atual
 | T005 | Grafo de 5 a 7 salas, portas, layouts, spawns e minimapa | T003 | 100 seeds conectadas; nenhuma porta ou jogador bloqueado; limpar abre saídas. |
 | T006 | Três famílias de armas, drops, moeda e recompensas | T004, T005 | Disparo básico e armas extras em baús, com custos de energia distintos; run continua entre salas. Ajuste de mira/energia/baús em 12/10/2026. |
 | T007 | Chefe com ataques sinalizados e encerramento da run | T006 | Vitória e derrota completas; relatório com seed e tempo. **Vertical slice P1.** |
-| T008 | Playtest P1 e revisão de desempenho/controles | T007 | Testes no Android e desktop; bugs de bloqueio e mortes sem feedback corrigidos. **Em validação:** derrota, limpeza da sala inicial e transição por porta vistos no Pages; corrigidas mira em contato próximo e IA presa na quina; replay por seed implementado. Faltam baú, chefe, run completa e Android real. |
-| T009 | Direção de arte autoral, UI final, áudio licenciado e créditos | T008 | Origem/licença rastreável para cada asset; leitura do combate preservada. |
+| T008 | Playtest P1 e revisão de desempenho/controles | T007 | Testes no Android e desktop; bugs de bloqueio e mortes sem feedback corrigidos. **Aceite do MVP para seguir em 12/10/2026.** Não há registro de aparelho, FPS ou run completa, então esses casos permanecem em observação para o beta. |
+| T009 | Direção de arte autoral, UI final, áudio licenciado e créditos | T008 | Origem/licença rastreável para cada asset; leitura do combate preservada. **Primeira entrega:** cenário, silhuetas e HUD autorais desenhados em código; sons próprios por Web Audio com botão de mudo; créditos e verificação no Pages. Refinamento visual e mistura de áudio continuam até aceite. |
 | T010 | Personagens Junq adicionais, segundo bioma e novos encontros | T008, T009 | Kits diferentes com balanceamento; conteúdo atravessa run completa. |
 | T011 | Hub, desbloqueios, save com migração, opções e onboarding | T008 | Persistência após fechar/reabrir; reset e recuperação de save inválido. |
 | T012 | Beta fechado e polimento | T009–T011 | Jogadores novos concluem tentativa; erros de console, input e save monitorados. |
