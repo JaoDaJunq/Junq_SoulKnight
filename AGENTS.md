@@ -13,6 +13,6 @@ Antes de qualquer alteração, ler `README.md` e `docs/01-REFERENCIA.md` a `docs
 7. Rodar checagens pertinentes e registrar resultados reais. Nunca afirmar que Pages/APK funciona sem abrir ou observar a publicação.
 8. Ao terminar, atualizar o status em `docs/04-ROADMAP.md` e `docs/HANDOFF.md` com: commit/PR, tarefa, o que funciona, URL verificada, testes/aparelho, riscos e próximo ID.
 
-## Primeiro comando de execução
+## Próxima tarefa
 
-T001: criar scaffold Phaser 3 + TS + Vite com tela de boot, checagens, workflow de Pages, configurar a origem da publicação e verificar o link no Android. Se configurações do GitHub exigirem ação do proprietário, concluir todo o código e apontar precisamente o passo restante.
+T006: três famílias de armas, drops, moeda e escolhas de recompensa. Antes, conferir o deploy da versão T005 e testar portas, teclado e toque no Android. Registrar qualquer limitação de dispositivo como pendência real.
