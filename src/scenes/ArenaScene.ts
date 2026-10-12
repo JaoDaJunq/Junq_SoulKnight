@@ -84,7 +84,7 @@ export class ArenaScene extends Phaser.Scene {
     this.input.on('pointerupoutside', this.onUp, this);
     this.game.events.on(Phaser.Core.Events.BLUR, this.pauseOnBlur, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off(Phaser.Core.Events.BLUR, this.pauseOnBlur, this));
-    this.showOverlay('JUNQ · PROTÓTIPO', 'Primeira sala jogável\nElimine os guardiões e sobreviva.', 'COMEÇAR', () => this.startRun());
+    this.showOverlay('JUNQ · PROTÓTIPO', 'Seis salas conectadas por portas\nElimine os guardiões e encontre a próxima saída.', 'COMEÇAR', () => this.startRun());
     this.refreshHud();
   }
 
