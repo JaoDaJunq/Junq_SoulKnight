@@ -2,7 +2,7 @@
 
 Planejamento de um jogo autoral 2D de ação, roguelite e tiro com visão superior, inspirado no **ritmo de salas, escolhas e combates** de Soul Knight. Nome de trabalho; título, mundo e arte finais serão próprios. Primeiro destino: navegador e GitHub Pages. Depois: aplicativo Android e, se fizer sentido, iOS.
 
-> Estado em 12/10/2026: **vertical slice web aprovado pelo MVP para avançar** no [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). Mira automática, energia e baús estão implementados. A arte e os sons originais de T009 foram publicados; o usuário fará os testes subjetivos depois. T010 começou com uma segunda região e novo encontro. Não há APK.
+> Estado em 12/10/2026: **vertical slice web aprovado pelo MVP para avançar** no [GitHub Pages](https://jaodajunq.github.io/Junq_SoulKnight/). Mira automática, energia e baús estão implementados. A arte e os sons originais de T009 foram publicados; o usuário fará os testes subjetivos depois. T010 começou com uma segunda região e novo encontro. A direção visual foi refeita em conceitos de pixel art com Jão, Alice e Gui, ainda sem integração à build. Não há APK.
 
 ## O jogo em uma frase
 
@@ -52,7 +52,7 @@ Para reproduzir a geração de salas e baús de uma tentativa, use `?seed=123456
 
 ## Próximo passo
 
-Continuar T010 com kits de personagens Junq próprios deste jogo e balanceamento das duas regiões. O MVP adiou a validação no aparelho; quando testar, conferir leitura dos projéteis e do aviso da sentinela, conforto do HUD, áudio e mudo no celular horizontal. O aceite de avanço de T008 foi dado pelo MVP; aparelho, FPS e run completa não foram registrados nesta sessão e continuam como observação para o beta. Leia o [handoff atual](docs/HANDOFF.md). As bases abertas pesquisadas são fontes de estudo; não foram incorporadas.
+Revisar os [conceitos de pixel art](docs/06-DIRECAO-VISUAL.md) com o MVP; em seguida, criar kits de personagens Junq próprios deste jogo, sprites finais e balanceamento das duas regiões. O MVP adiou a validação no aparelho; quando testar, conferir leitura dos projéteis e do aviso da sentinela, conforto do HUD, áudio e mudo no celular horizontal. O aceite de avanço de T008 foi dado pelo MVP; aparelho, FPS e run completa não foram registrados nesta sessão e continuam como observação para o beta. Leia o [handoff atual](docs/HANDOFF.md). As bases abertas pesquisadas são fontes de estudo; não foram incorporadas.
 
 ## Fontes essenciais
 
