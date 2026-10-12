@@ -1,6 +1,6 @@
 # Guia de continuidade: Junq SoulKnight
 
-Antes de qualquer alteração, ler `README.md` e `docs/01-REFERENCIA.md` a `docs/05-PESQUISA-BASES.md`; conferir o estado real do repositório e `docs/HANDOFF.md` se existir. O roadmap é intenção, não evidência de código implementado.
+Antes de qualquer alteração, ler `README.md`, `docs/01-REFERENCIA.md` a `docs/06-DIRECAO-VISUAL.md` e `docs/HANDOFF.md`; conferir o estado real do repositório. O roadmap e a direção visual proposta são intenção, não evidência de código implementado nem aprovação do MVP.
 
 ## Regras de trabalho
 
@@ -15,4 +15,4 @@ Antes de qualquer alteração, ler `README.md` e `docs/01-REFERENCIA.md` a `docs
 
 ## Próxima tarefa
 
-T010: ampliar o conteúdo da run. O MVP adiou os testes subjetivos da arte/áudio e do Android e pediu para seguir em 12/10/2026; não bloquear a implementação por isso. Primeiro, segunda região visual e um inimigo novo com ataque sinalizado; depois, kits próprios para personagens Junq e balanceamento. Não importar sprites ou poderes de outros projetos automaticamente. Registrar as verificações possíveis em desktop/CI, preservar uma seed reproduzível e manter as validações de aparelho para o beta.
+T010: ampliar o conteúdo da run. Segunda região e sentinela já foram publicadas. Em 12/10/2026 o MVP forneceu capturas de Soul Knight para iniciar uma identidade própria; `docs/06-DIRECAO-VISUAL.md` e a prancha são propostas abertas à revisão, não arte aprovada. Em seguida, definir kits próprios para os personagens Junq e balancear. Não importar sprites ou poderes de outros projetos automaticamente. O MVP adiou testes de aparelho; registrar verificações possíveis em desktop/CI e manter validações físicas para o beta.

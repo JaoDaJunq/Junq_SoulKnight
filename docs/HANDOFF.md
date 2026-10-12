@@ -8,6 +8,7 @@
 - T008: CSS preenche a área visível em celular horizontal, aviso para girar no retrato, tentativa de tela cheia após toque, pausa ao girar/perder foco, controles de toque reposicionados e FPS opcional (`?debug=1`). Captura direta de teclado complementa o input do Phaser. Ao segurar tiro, a mira seleciona o inimigo visível mais próximo; o tiro gasta energia conforme a arma, 100 pontos no máximo, recarga de 12/s após 0,65s sem disparar. Sem alvo ou sem energia suficiente não há tiro. Tiro a curta distância acerta o inimigo sobreposto ao herói; inimigos dão um passo lateral persistente para sair da quina de obstáculos; `?seed=N` reproduz salas e baús. **MVP testou e aprovou seguir em 12/10/2026.** Aparelho, FPS e run completa não foram informados nesta sessão; anotar caso haja bugs no beta, sem reabrir o aceite como impedimento.
 - T009 implementada no web: cenário de ruínas com pisos gravados, portas e obstáculos redesenhados, silhuetas próprias para herói e inimigos, HUD e overlays revisados, efeitos Web Audio originais com mudo. `CREDITS.md` registra procedência; não há assets externos. O MVP adiou os testes de áudio/arte no aparelho e pediu para avançar em 12/10/2026.
 - T010 em execução: Forja de Âmbar no trecho final da run de seis salas, com paleta, gravações de piso e pilares próprios; sentinela imóvel avisa por 0,7s e dispara três projéteis alaranjados. Gerador garante sala da Forja com baú antes do chefe em todas as 100 seeds testadas. Ainda não há personagens Junq selecionáveis, segundo andar ou balanceamento em aparelho. T011–T015 pendentes. Save, PWA e APK não existem.
+- O MVP enviou oito capturas do Soul Knight em 12/10/2026 e pediu um descritivo visual próprio. `docs/06-DIRECAO-VISUAL.md` e a prancha `docs/visual/identidade-v1.svg` são **propostas**, sem aprovação visual ainda. O título `JUNQ: RUPTURA`, a fantasia da instalação rachada e as silhuetas são hipóteses. Nenhuma arte da referência entrou no projeto nem foi aplicada à build. Antes de produzir sprites finais, colher feedback sobre mundo, personagens e HUD.
 
 ## Evidência e limites
 
@@ -22,7 +23,7 @@
 
 ## Próximo trabalho: continuar T010
 
-1. Definir kits próprios deste jogo para Jão, Alice e Gui em `docs/personagens/`, sem importar sprites ou habilidades de Junq Bullet/Junqverse. Implementar seleção e diferenças jogáveis em incrementos pequenos.
+1. Validar/revisar a proposta de `docs/06-DIRECAO-VISUAL.md` com o MVP. Definir kits próprios deste jogo para Jão, Alice e Gui em `docs/personagens/`, sem importar sprites ou habilidades de Junq Bullet/Junqverse. Implementar seleção e diferenças jogáveis em incrementos pequenos.
 2. Balancear encontros do Átrio e da Forja; manter a sentinela visível/atingível nos layouts. Registrar feedback de partidas quando o MVP testar.
 3. Recolher a validação adiada de áudio/arte/baú e Android no beta, sem bloquear a implementação agora.
 
