@@ -409,17 +409,24 @@ export class ArenaScene extends Phaser.Scene {
     const remaining = spendEnergy(this.energy, this.weapon);
     if (remaining === null) { this.drawEnergy(); return; }
     const dx = target.x - this.heroX, dy = target.y - this.heroY;
+    const shots = createShots(this.weapon, dx, dy);
     this.energy = remaining;
     this.energyCooldown = ENERGY_DELAY;
-    for (const shot of createShots(this.weapon, dx, dy)) {
+    this.fireTimer = WEAPONS[this.weapon].cadence;
+    this.drawEnergy();
+    if (Math.hypot(dx, dy) < 32) {
+      const impact = this.add.circle(target.x, target.y, 20, shots[0].color, 0.65).setDepth(8);
+      this.tweens.add({ targets: impact, alpha: 0, scale: 1.5, duration: 140, onComplete: () => impact.destroy() });
+      this.damageEnemy(target, shots.reduce((damage, shot) => damage + shot.damage, 0));
+      return;
+    }
+    for (const shot of shots) {
       if (this.bullets.length >= 32) break;
       const view = this.add.circle(this.heroX + shot.vx / Math.hypot(shot.vx, shot.vy) * 20,
         this.heroY + shot.vy / Math.hypot(shot.vx, shot.vy) * 20, shot.radius, shot.color)
         .setStrokeStyle(2, 0xf3ffff).setDepth(8);
       this.bullets.push({ view, ...shot });
     }
-    this.fireTimer = WEAPONS[this.weapon].cadence;
-    this.drawEnergy();
   }
 
   private removeBullet(b: Bullet): void {
