@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { blocked, normalizedMovement, OBSTACLES } from '../core/arena';
+import { generateRun, type Direction, type Room } from '../core/run';
 
 type State = 'menu' | 'playing' | 'paused' | 'dead' | 'cleared';
 type EnemyKind = 'chaser' | 'shooter' | 'brute';
@@ -23,6 +24,14 @@ export class ArenaScene extends Phaser.Scene {
   private lastMoveX = 0;
   private lastMoveY = -1;
   private enemies: Enemy[] = [];
+  private rooms: Room[] = [];
+  private currentRoom = 0;
+  private cleared = new Set<number>();
+  private visited = new Set<number>();
+  private seed = 0;
+  private roomArt: Phaser.GameObjects.GameObject[] = [];
+  private mapGraphics!: Phaser.GameObjects.Graphics;
+  private enemyTotal = 4;
   private bullets: Bullet[] = [];
   private enemyBullets: Bullet[] = [];
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -54,6 +63,7 @@ export class ArenaScene extends Phaser.Scene {
     this.drawRoom();
     this.createHero();
     this.hud = this.add.text(35, 19, '', { fontFamily: 'system-ui', fontSize: '18px', color: '#eef4ff', fontStyle: 'bold' }).setDepth(20);
+    this.mapGraphics = this.add.graphics().setDepth(20);
     this.hint = this.add.text(480, 506, '', { fontFamily: 'system-ui', fontSize: '14px', color: '#91a5c8' }).setOrigin(0.5).setDepth(20);
     this.add.text(920, 27, 'Ⅱ', { fontFamily: 'system-ui', fontSize: '26px', color: '#dbeaff' }).setOrigin(0.5).setDepth(20);
 
@@ -79,6 +89,8 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private drawRoom(): void {
+    this.roomArt.forEach(item => item.destroy());
+    const room = this.rooms[this.currentRoom];
     const g = this.add.graphics();
     g.fillStyle(0x0b1324); g.fillRect(0, 0, W, H);
     g.fillStyle(0x1c2940); g.fillRoundedRect(39, 68, 882, 430, 22);
@@ -88,13 +100,24 @@ export class ArenaScene extends Phaser.Scene {
     for (let y = 95; y < 475; y += 42) g.lineBetween(58, y, 902, y);
     g.lineStyle(4, 0x476b88, 0.9); g.strokeRoundedRect(54, 82, 852, 402, 13);
     g.fillStyle(0x203a54, 0.7); g.fillRect(436, 83, 88, 9); g.fillRect(436, 475, 88, 8);
-    for (const o of OBSTACLES) {
+    for (const o of room?.obstacles ?? OBSTACLES) {
       g.fillStyle(0x090d19, 0.45); g.fillRoundedRect(o.x + 7, o.y + 9, o.w, o.h, 8);
       g.fillStyle(0x354b64); g.fillRoundedRect(o.x, o.y, o.w, o.h, 7);
       g.lineStyle(3, 0x7894a7); g.strokeRoundedRect(o.x, o.y, o.w, o.h, 7);
       g.lineStyle(2, 0x526e85); g.lineBetween(o.x + 10, o.y + 12, o.x + o.w - 10, o.y + o.h - 12);
     }
-    this.add.text(480, 110, 'SALA 01 · CÂMARA DE TESTE', { fontFamily: 'system-ui', fontSize: '13px', color: '#7398bd', letterSpacing: 3 }).setOrigin(0.5);
+    if (room) {
+      g.fillStyle(this.cleared.has(room.id) ? 0x64d8b4 : 0xa25a68);
+      for (const direction of Object.keys(room.neighbors) as Direction[]) {
+        if (direction === 'north') g.fillRect(436, 81, 88, 12);
+        if (direction === 'south') g.fillRect(436, 473, 88, 12);
+        if (direction === 'west') g.fillRect(52, 251, 13, 68);
+        if (direction === 'east') g.fillRect(895, 251, 13, 68);
+      }
+    }
+    const title = this.add.text(480, 110, room ? `SALA ${String(room.id + 1).padStart(2, '0')} · ${this.cleared.has(room.id) ? 'PORTAS ABERTAS' : 'COMBATE'}` : 'SALA 01 · CÂMARA DE TESTE',
+      { fontFamily: 'system-ui', fontSize: '13px', color: '#7398bd', letterSpacing: 3 }).setOrigin(0.5);
+    this.roomArt = [g, title];
   }
 
   private createHero(): void {
@@ -120,21 +143,40 @@ export class ArenaScene extends Phaser.Scene {
 
   private startRun(): void {
     this.clearOverlay();
+    this.seed = Math.floor(Math.random() * 0xffffffff);
+    this.rooms = generateRun(this.seed);
+    this.currentRoom = 0;
+    this.cleared = new Set();
+    this.visited = new Set([0]);
+    this.heroHp = 5; this.hurtTimer = 0; this.fireTimer = 0; this.elapsed = 0;
+    this.dashTimer = 0; this.dashCooldown = 0; this.skillCooldown = 0;
+    this.heroX = 480; this.heroY = 385; this.hero.setPosition(this.heroX, this.heroY);
+    this.enterRoom(0);
+    this.state = 'playing'; this.refreshHud();
+  }
+
+  private enterRoom(id: number, entry?: Direction): void {
     this.bullets.forEach(b => b.view.destroy());
     this.enemyBullets.forEach(b => b.view.destroy());
     this.enemies.forEach(e => e.view.destroy());
     this.bullets = [];
     this.enemyBullets = [];
-    this.enemies = [
-      this.createEnemy(175, 155, 'chaser'), this.createEnemy(780, 158, 'shooter'),
-      this.createEnemy(168, 350, 'chaser'), this.createEnemy(762, 323, 'brute'),
-    ];
-    this.heroX = 480; this.heroY = 385; this.hero.setPosition(this.heroX, this.heroY);
-    this.heroHp = 5; this.hurtTimer = 0; this.fireTimer = 0; this.elapsed = 0;
-    this.dashTimer = 0; this.dashCooldown = 0; this.skillCooldown = 0;
+    this.currentRoom = id;
+    this.visited.add(id);
+    if (entry === 'east') { this.heroX = 89; this.heroY = 285; }
+    if (entry === 'west') { this.heroX = 871; this.heroY = 285; }
+    if (entry === 'south') { this.heroX = 480; this.heroY = 118; }
+    if (entry === 'north') { this.heroX = 480; this.heroY = 447; }
+    this.hero.setPosition(this.heroX, this.heroY);
+    this.drawRoom();
+    if (!this.cleared.has(id)) {
+      this.enemies = [this.createEnemy(175, 155, 'chaser'), this.createEnemy(780, 158, 'shooter'),
+        this.createEnemy(168, 350, 'chaser'), this.createEnemy(762, 323, 'brute')];
+    }
+    this.enemyTotal = this.enemies.length;
     this.mouseDown = false; this.movePointer = null; this.firePointer = null;
     this.joyX = 0; this.joyY = 0; this.joyKnob.setPosition(153, 399);
-    this.state = 'playing'; this.refreshHud();
+    this.refreshHud();
   }
 
   update(_time: number, delta: number): void {
@@ -157,11 +199,13 @@ export class ArenaScene extends Phaser.Scene {
     ({ x: mx, y: my } = normalizedMovement(mx, my));
     if (Math.hypot(mx, my) > 0.15) { this.lastMoveX = mx; this.lastMoveY = my; }
     if (this.dashTimer > 0) { mx = this.lastMoveX; my = this.lastMoveY; }
+    if (this.tryDoor(mx, my)) return;
     const speed = this.dashTimer > 0 ? 520 : 205;
     const nextX = this.heroX + mx * speed * dt;
     const nextY = this.heroY + my * speed * dt;
-    if (!blocked(nextX, this.heroY, 15)) this.heroX = nextX;
-    if (!blocked(this.heroX, nextY, 15)) this.heroY = nextY;
+    const obstacles = this.rooms[this.currentRoom].obstacles;
+    if (!blocked(nextX, this.heroY, 15, obstacles)) this.heroX = nextX;
+    if (!blocked(this.heroX, nextY, 15, obstacles)) this.heroY = nextY;
     this.hero.setPosition(this.heroX, this.heroY);
 
     if (this.firePointer !== null || this.mouseDown) this.fire();
@@ -173,8 +217,8 @@ export class ArenaScene extends Phaser.Scene {
       const ex = enemy.x + dx / length * enemy.speed * dt * motion;
       const ey = enemy.y + dy / length * enemy.speed * dt * motion;
       const radius = enemy.kind === 'brute' ? 20 : 15;
-      if (!blocked(ex, enemy.y, radius)) enemy.x = ex;
-      if (!blocked(enemy.x, ey, radius)) enemy.y = ey;
+      if (!blocked(ex, enemy.y, radius, obstacles)) enemy.x = ex;
+      if (!blocked(enemy.x, ey, radius, obstacles)) enemy.y = ey;
       enemy.view.setPosition(enemy.x, enemy.y);
       enemy.cooldown = Math.max(0, enemy.cooldown - dt);
       if (enemy.kind === 'shooter' && enemy.cooldown === 0 && length < 420) {
@@ -191,7 +235,7 @@ export class ArenaScene extends Phaser.Scene {
       bullet.view.x += bullet.vx * dt;
       bullet.view.y += bullet.vy * dt;
       bullet.life -= dt;
-      if (bullet.life <= 0 || blocked(bullet.view.x, bullet.view.y, 5)) { this.removeBullet(bullet); continue; }
+      if (bullet.life <= 0 || blocked(bullet.view.x, bullet.view.y, 5, obstacles)) { this.removeBullet(bullet); continue; }
       const target = this.enemies.find(e => Math.hypot(e.x - bullet.view.x, e.y - bullet.view.y) < (e.kind === 'brute' ? 26 : 21));
       if (!target) continue;
       target.hp--; target.view.setAlpha(0.6);
@@ -199,12 +243,12 @@ export class ArenaScene extends Phaser.Scene {
       this.removeBullet(bullet);
       if (target.hp <= 0) {
         target.view.destroy(); this.enemies.splice(this.enemies.indexOf(target), 1); this.refreshHud();
-        if (this.enemies.length === 0) { this.finish(true); return; }
+        if (this.enemies.length === 0) { this.finishRoom(); return; }
       }
     }
     for (const bullet of [...this.enemyBullets]) {
       bullet.view.x += bullet.vx * dt; bullet.view.y += bullet.vy * dt; bullet.life -= dt;
-      if (bullet.life <= 0 || blocked(bullet.view.x, bullet.view.y, 7)) { this.removeEnemyBullet(bullet); continue; }
+      if (bullet.life <= 0 || blocked(bullet.view.x, bullet.view.y, 7, obstacles)) { this.removeEnemyBullet(bullet); continue; }
       if (Math.hypot(this.heroX - bullet.view.x, this.heroY - bullet.view.y) < 22) {
         this.removeEnemyBullet(bullet); this.damageHero();
         if (this.state !== 'playing') return;
@@ -212,6 +256,27 @@ export class ArenaScene extends Phaser.Scene {
     }
     this.dashButton.setAlpha(this.dashCooldown > 0 ? 0.35 : 1);
     this.skillButton.setAlpha(this.skillCooldown > 0 ? 0.35 : 1);
+  }
+
+  private tryDoor(mx: number, my: number): boolean {
+    if (!this.cleared.has(this.currentRoom)) return false;
+    const room = this.rooms[this.currentRoom];
+    let direction: Direction | undefined;
+    if (mx > 0.1 && this.heroX >= 878 && Math.abs(this.heroY - 285) < 33) direction = 'east';
+    else if (mx < -0.1 && this.heroX <= 82 && Math.abs(this.heroY - 285) < 33) direction = 'west';
+    else if (my < -0.1 && this.heroY <= 111 && Math.abs(this.heroX - 480) < 45) direction = 'north';
+    else if (my > 0.1 && this.heroY >= 455 && Math.abs(this.heroX - 480) < 45) direction = 'south';
+    const next = direction && room.neighbors[direction];
+    if (next === undefined) return false;
+    this.enterRoom(next, direction);
+    return true;
+  }
+
+  private finishRoom(): void {
+    this.cleared.add(this.currentRoom);
+    this.drawRoom();
+    this.refreshHud();
+    if (this.cleared.size === this.rooms.length) this.finish(true);
   }
 
   private fire(): void {
@@ -267,12 +332,26 @@ export class ArenaScene extends Phaser.Scene {
       }
     }
     this.refreshHud();
-    if (this.enemies.length === 0) this.finish(true);
+    if (this.enemies.length === 0) this.finishRoom();
   }
 
   private refreshHud(): void {
-    this.hud.setText(`❤ ${'♥'.repeat(this.heroHp)}${'♡'.repeat(5 - this.heroHp)}     ◈ ${4 - this.enemies.length}/4`);
-    this.hint.setText(this.touchMode ? 'Esquerda: mover · Direita: atirar, dash e pulso' : 'WASD: mover · clique: atirar · ESPAÇO: dash · E: pulso · ESC: pausa');
+    this.hud.setText(`❤ ${'♥'.repeat(this.heroHp)}${'♡'.repeat(5 - this.heroHp)}     ◈ ${this.state === 'menu' ? 0 : this.enemyTotal - this.enemies.length}/${this.enemyTotal}     Salas ${this.cleared.size}/6`);
+    this.hint.setText(this.touchMode ? 'Esquerda: mover · Direita: atirar, dash e pulso' : 'WASD: mover · clique: atirar · ESPAÇO: dash · E: pulso · ESC: pausa · portas verdes: sair');
+    this.drawMap();
+  }
+
+  private drawMap(): void {
+    this.mapGraphics.clear();
+    for (const room of this.rooms) {
+      if (!this.visited.has(room.id)) continue;
+      const x = 765 + room.x * 34, y = 19 + room.y * 24;
+      this.mapGraphics.lineStyle(2, 0x9cc8df, 0.75);
+      if (room.neighbors.east !== undefined && this.visited.has(room.neighbors.east)) this.mapGraphics.lineBetween(x + 8, y + 6, x + 34, y + 6);
+      if (room.neighbors.south !== undefined && this.visited.has(room.neighbors.south)) this.mapGraphics.lineBetween(x + 8, y + 6, x + 8, y + 30);
+      this.mapGraphics.fillStyle(room.id === this.currentRoom ? 0x65e5ff : this.cleared.has(room.id) ? 0x79d9b4 : 0xf3aa89);
+      this.mapGraphics.fillRoundedRect(x, y, 16, 13, 3);
+    }
   }
 
   private finish(won: boolean): void {
@@ -280,7 +359,7 @@ export class ArenaScene extends Phaser.Scene {
     this.mouseDown = false; this.firePointer = null; this.movePointer = null;
     this.joyX = 0; this.joyY = 0; this.joyKnob.setPosition(153, 399);
     this.showOverlay(won ? 'SALA LIMPA!' : 'FIM DA TENTATIVA',
-      `${won ? 'Você derrotou os guardiões.' : 'Os guardiões venceram desta vez.'}\nTempo: ${Math.floor(this.elapsed)}s  ·  Eliminados: ${4 - this.enemies.length}/4`,
+      `${won ? 'Você limpou todas as salas.' : 'Os guardiões venceram desta vez.'}\nSalas: ${this.cleared.size}/6  ·  Tempo: ${Math.floor(this.elapsed)}s  ·  Seed: ${this.seed}`,
       'JOGAR DE NOVO', () => this.startRun());
   }
 
