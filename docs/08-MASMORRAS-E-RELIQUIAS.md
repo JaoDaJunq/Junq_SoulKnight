@@ -29,12 +29,14 @@ Armas não são sorteadas. Jão inicia com espada, Alice com arco e Gui com cart
 
 São sete elementos, todos em zero no começo. Os altares das fases 2 e 4 oferecem seis fragmentos até o chefe do mundo 3. Dois elementos já investidos permanecem entre as três opções quando ainda podem crescer; a terceira varia. Isso permite perseguir 3 + 3 sem depender de sorte depois da decisão inicial.
 
-- **Jão Fogo 5:** roupa muda para casaco de tons de carvão e brasa; a habilidade faz um corte e uma explosão em torno do alvo. As poses frontal, traseira e laterais recebem a mesma transformação. É a primeira evolução visual prototipada, sem aura externa.
+- **Jão Fogo 5:** roupa muda para casaco de tons de carvão e brasa, com ombreiras; a habilidade faz um corte e uma explosão em torno do alvo. As poses frontal, traseira e laterais recebem a mesma transformação. É a primeira evolução visual prototipada, sem aura externa.
 - **Jão Raio 5:** mantém o corte que atravessa o alvo e termina atrás dele quando há espaço.
 - **Plasma, Fogo 3 + Raio 3:** tiros/ondas rosados mais rápidos e fortes; habilidade ganha impacto aumentado. A forma do Jão muda para casaco violeta com detalhe luminoso. O efeito de cada herói usa sua arma original.
 - **Lodo, Água 3 + Terra 3:** tiros esverdeados causam lentidão breve; a habilidade causa lentidão maior na área ou alvo atingido.
 
 As outras misturas continuam com o bônus híbrido de dano e cor alternada. Elas **ainda não recebem nome, status ou habilidade exclusivos no código**. Se algum elemento chega a nível 5, o domínio puro tem prioridade sobre uma sinergia ativa. As árvores completas de cada herói, os pares restantes e os designs de outras formas são a próxima expansão, sujeitos a playtest.
+
+![Comparação das primeiras formas do Jão](visual/jao-formas-v0.png)
 
 ## Aceite desta etapa
 

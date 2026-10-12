@@ -22,7 +22,14 @@ for pose in POSES:
         for y in range(image.height):
             for x in range(image.width):
                 r, g, b, a = pixels[x, y]
-                if a < 20 or not jacket(r, g, b, y):
+                if a < 20:
+                    continue
+                if 56 <= y <= 111 and r > 160 and g > 130 and b > 115 and max(r, g, b) - min(r, g, b) < 75:
+                    # Hoodie/sleeves darken with the evolved armor; skin stays untouched.
+                    pixels[x, y] = (int(r * .70), int(g * .63), int(b * .57), a) if form == 'fire' else (int(r * .79), int(g * .72), int(b * .88), a)
+                if y > 113 and jacket(r, g, b, 80):
+                    pixels[x, y] = (min(255, int(r * .82 + 54)), int(r * .43 + 13), int(r * .14 + 4), a) if form == 'fire' else (int(r * .68 + 35), int(r * .23 + 9), int(r * .68 + 50), a)
+                if not jacket(r, g, b, y):
                     continue
                 if form == 'fire':
                     # Soot-dark coat with molten amber seams instead of a floating aura.
@@ -33,6 +40,11 @@ for pose in POSES:
         draw = ImageDraw.Draw(image)
         cx = image.width // 2
         emblem = (255, 206, 81, 255) if form == 'fire' else (255, 149, 222, 255)
+        edge = (255, 170, 67, 255) if form == 'fire' else (219, 119, 246, 255)
+        armor = (64, 36, 28, 255) if form == 'fire' else (48, 27, 68, 255)
+        for left in (7, image.width - 27):
+            draw.polygon([(left, 69), (left + 5, 60), (left + 16, 63), (left + 21, 72), (left + 16, 78), (left + 2, 75)], fill=armor, outline=edge)
+            draw.rectangle((left + 8, 66, left + 12, 71), fill=emblem)
         if pose == 'jao-back':
             draw.polygon([(cx, 69), (cx - 4, 79), (cx, 77), (cx - 1, 86), (cx + 5, 72)], fill=emblem)
         else:
