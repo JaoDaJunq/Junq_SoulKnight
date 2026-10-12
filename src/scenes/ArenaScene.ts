@@ -636,10 +636,10 @@ export class ArenaScene extends Phaser.Scene {
   private clearOverlay(): void { this.overlay.forEach(item => item.destroy()); this.overlay = []; }
 
   private toggleSound(): void {
-    this.soundscape.muted = !this.soundscape.muted;
+    this.soundscape.setMuted(!this.soundscape.muted);
     this.soundLabel.setText(this.soundscape.muted ? 'SOM ○' : 'SOM ●');
     this.soundLabel.setColor(this.soundscape.muted ? '#8b9cac' : '#9fe8d1');
-    if (!this.soundscape.muted) { this.soundscape.unlock(); this.soundscape.play('coin'); }
+    if (!this.soundscape.muted) this.soundscape.play('coin');
   }
 
   private setTouchVisibility(): void {
