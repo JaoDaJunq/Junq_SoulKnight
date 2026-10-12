@@ -940,11 +940,14 @@ export class ArenaScene extends Phaser.Scene {
       const frame = this.add.rectangle(x, 292, 227, 299, chosen ? 0x583620 : 0x281c17, 0.92)
         .setStrokeStyle(chosen ? 5 : 3, chosen ? 0xffd47d : 0x8f6946).setDepth(42).setInteractive({ useHandCursor: true });
       const sprite = this.add.image(x, 271, hero.id).setDisplaySize(hero.id === 'gui' ? 125 : 112, 189).setDepth(43);
+      const weaponKey = hero.id === 'jao' ? 'weapon-sword' : hero.id === 'alice' ? 'weapon-bow' : 'weapon-cards';
+      const held = this.add.image(x + 56, 282, weaponKey).setDisplaySize(hero.id === 'gui' ? 72 : 96, hero.id === 'gui' ? 72 : 96).setDepth(44);
       const name = this.add.text(x, 397, hero.name, { fontFamily: 'Georgia, serif', fontSize: '23px', color: '#ffdf9a', fontStyle: 'bold' }).setOrigin(0.5).setDepth(43);
       const description = this.add.text(x, 427, hero.description, { fontFamily: 'Georgia, serif', fontSize: '12px', color: '#f1d2a1' }).setOrigin(0.5).setDepth(43);
       frame.on('pointerdown', () => { this.selectedHero = hero.id; this.showSelection(); });
       sprite.setInteractive({ useHandCursor: true }).on('pointerdown', () => { this.selectedHero = hero.id; this.showSelection(); });
-      this.overlay.push(frame, sprite, name, description);
+      held.setInteractive({ useHandCursor: true }).on('pointerdown', () => { this.selectedHero = hero.id; this.showSelection(); });
+      this.overlay.push(frame, sprite, held, name, description);
     }
     this.overlay.push(...this.addWoodButton(355, 492, 213, 'VOLTAR', () => this.showMainMenu()));
     this.overlay.push(...this.addWoodButton(605, 492, 213, 'ENTRAR', () => this.startRun()));
