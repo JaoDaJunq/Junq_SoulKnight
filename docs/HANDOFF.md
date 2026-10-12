@@ -10,9 +10,9 @@
 
 ## Evidência e limites
 
-- Commit `1f7ed0a` publicou a correção de teclado após o vertical slice `050377c`; [Actions 38196895602](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38196895602) terminou com sucesso. A documentação atual é um commit posterior.
+- Commit `5fa85f8` publicou mira automática, energia e baús; [Actions 38250974864](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38250974864) terminou com sucesso. A atualização desta evidência é um commit posterior.
 - Local: `npm run typecheck`, `npm test` e `npm run build` passaram. Testes de regras cobrem 100 seeds, conteúdo reproduzível dos baús, custos/recarga de energia e seleção de alvo com obstáculo; não simulam combate visual ou input físico.
-- [Pages](https://jaodajunq.github.io/Junq_SoulKnight/) aberto no Chrome desktop: menu novo, sala inicial, HUD de arma/moedas, inimigos, minimapa e pausa por botão visíveis. A automação de teclado não comprovou deslocamento ou pausa; o primeiro clique no canvas às vezes apenas foca a área. Testar em navegador humano. Não se executou a run inteira nem teste em Android real.
+- [Pages](https://jaodajunq.github.io/Junq_SoulKnight/) aberto no Chrome desktop: menu novo, sala inicial, HUD de energia 100/100, inimigos e minimapa visíveis. Ao segurar clique, energia caiu para 96 e 88 e projéteis seguiram em direção a um inimigo. A automação de teclado não comprovou deslocamento ou pausa; o primeiro clique no canvas às vezes apenas foca a área. A abertura de baú foi coberta por regra, não verificada visualmente no Pages. Não se executou a run inteira nem teste em Android real.
 - Build gera aviso de chunk Phaser acima de 500 kB (~1,2 MB JS, ~327 kB gzip). Medir carregamento e FPS no celular antes de fechar T008.
 
 ## Próximo trabalho: concluir T008
