@@ -37,4 +37,4 @@ As imagens de conceito e as matrizes foram geradas para este projeto. Os sprites
 
 ## Validação ainda pendente
 
-Typecheck, testes de regras e build local passaram. A publicação Pages e uma partida com cada domínio ainda precisam ser conferidas; também faltam testes físicos no celular horizontal. As habilidades e valores são uma primeira versão para playtest e podem ser ajustados sem alterar as combinações híbridas.
+Typecheck, testes de regras e build local passaram. O commit `f19dfa6` concluiu o workflow de verificação e deploy do GitHub Pages (`38343179306`). O site implantado e as habilidades ainda precisam de inspeção visual e partida; também faltam testes físicos no celular horizontal. As habilidades e valores são uma primeira versão para playtest e podem ser ajustados sem alterar as combinações híbridas.
