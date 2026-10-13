@@ -99,3 +99,19 @@ O MVP enviou duas capturas comparando o Jão base e Terra. A causa era o pipelin
 O script agora escala cada pose pela altura correspondente ao Jão base (134/130/130/134 px), mantém o aspecto com nearest-neighbour, fixa os pés em `y=150` e valida escala/alinhamento. Regeneramos todas as poses de Terra, Água, Fogo, Raio, Luz e Sombra, incluindo os PNGs usados no corte. A altura visível passou para 130–134 px (base entre 130–134 px); a largura varia com armadura e espada.
 
 Checagens desta rodada: geração das seis folhas sem erro; inspeção programática dos 30 PNGs de formas/ataques confirma os canvases e alturas; `npm run typecheck`, `npm test` (4 arquivos) e `npm run build` passaram. O commit [`a666012`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/a6660122837f470a684aaa3459e9806102efe6fa) foi enviado para `main`; [Actions 38345669066](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38345669066) concluiu verify e deploy com sucesso. No Chrome desktop, o Pages abriu em `?admin=1` e a comparação Jão base/Terra no modo ADM mostrou altura visível e linha dos pés alinhadas. As demais formas ainda não foram inspecionadas uma a uma no jogo; não houve teste em celular horizontal.
+
+
+## Efeitos dos ataques especiais (13/10/2026)
+
+O commit [`d910a72`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/d910a725621584117c08a42e14126bd0a8d810da) acrescentou animações e efeitos visuais dedicados para os golpes especiais, mantendo os mesmos alvos, danos, áreas e recargas:
+
+- Jão base: arco de corte da espada.
+- Terra: fenda rachada no chão com ramificações e pedras que saltam.
+- Água: onda sinuosa com brilho, gotas e crista no impacto.
+- Fogo: corte incandescente que explode no alvo e espalha chamas.
+- Raio: deslocamento fulminante com relâmpago ramificado, clarão de saída e impacto na chegada.
+- Luz: feixe claro com núcleo branco, estrela e raios de impacto.
+- Sombra: avanço com imagem residual e cortes cruzados, incluindo o eco atrasado.
+- Alice: rajada radial de flechas; Gui: leque radial de cartas, usando os próprios projéteis do jogo.
+
+`npm run typecheck`, `npm test` (4 arquivos) e `npm run build` passaram localmente. O build mantém o aviso conhecido do chunk Phaser. O servidor local de preview foi bloqueado pelo ambiente (`listen EPERM`), então esta entrega ainda precisa de inspeção visual no Pages; não houve teste novo em celular físico. O roadmap foi atualizado no commit `630cb97`. Próximo: validar cada especial via ADM no Pages, ajustar legibilidade/ritmo se necessário e seguir com a run longa e o balanceamento de T010.
