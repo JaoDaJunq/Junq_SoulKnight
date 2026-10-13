@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { Soundscape } from '../audio/Soundscape';
 import { BIOMES } from '../content/biomes';
-import { encounterFor, MONSTER_VARIANTS, SPAWNS, SPAWN_POINTS, type EnemyKind } from '../content/encounters';
+import { encounterFor, SPAWNS, type EnemyKind } from '../content/encounters';
 import { blocked, moveAroundObstacle, normalizedMovement, OBSTACLES, type EscapeStep } from '../core/arena';
 import { ADMIN_FORMS, adminAffinitiesFor, adminSpawnPoint, type AdminForm } from '../core/admin';
 import { FIRST_CHECKPOINT_WORLD, generateRun, parseRunSeed, STAGES_PER_WORLD, type Direction, type Room } from '../core/run';
@@ -33,7 +33,7 @@ const HEROES: { id: HeroId; name: string; description: string }[] = [
   { id: 'alice', name: 'ALICE', description: 'Coragem e olhar atento' },
   { id: 'gui', name: 'GUI', description: 'O guardião de cabelos longos' },
 ];
-type Enemy = { view: Phaser.GameObjects.Container; kind: EnemyKind; variant?: string; x: number; y: number; hp: number; maxHp: number; speed: number; cooldown: number; windup: number; slowTimer: number; escape?: EscapeStep };
+type Enemy = { view: Phaser.GameObjects.Container; kind: EnemyKind; x: number; y: number; hp: number; maxHp: number; speed: number; cooldown: number; windup: number; slowTimer: number; escape?: EscapeStep };
 type Bullet = { view: Phaser.GameObjects.Arc | Phaser.GameObjects.Image; vx: number; vy: number; life: number; damage: number; synergy?: 'plasma' | 'mud' };
 type Coin = { view: Phaser.GameObjects.Arc; x: number; y: number };
 
@@ -221,7 +221,7 @@ export class ArenaScene extends Phaser.Scene {
     const palette = BIOMES[room?.biome ?? 'atrium'];
     const backdrop = this.add.image(480, 270, room?.biome === 'forge' ? 'room-forge' : 'room-atrium')
       .setDisplaySize(W, H).setDepth(-2);
-    if (palette.backdropTint) backdrop.setTint(palette.backdropTint);
+    if (room?.biome === 'crypt') backdrop.setTint(0xb8a6d2);
     const g = this.add.graphics();
     for (const o of room?.obstacles ?? OBSTACLES) {
       g.fillStyle(0x130b0b, 0.7); g.fillRect(o.x + 6, o.y + 9, o.w, o.h);
@@ -308,21 +308,16 @@ export class ArenaScene extends Phaser.Scene {
     this.heroSprite.angle = 0;
   }
 
-  private createEnemy(x: number, y: number, kind: EnemyKind, variantId?: string): Enemy {
-    const variant = variantId ? MONSTER_VARIANTS[variantId] : undefined;
-    const height = (kind === 'boss' ? 92 : kind === 'brute' ? 69 : kind === 'sentry' ? 60 : kind === 'shooter' ? 52 : 49)
-      * (variant?.sizeScale ?? 1);
-    const shadow = this.add.ellipse(0, kind === 'boss' ? 32 : 18, (kind === 'boss' ? 70 : 42) * (variant?.sizeScale ?? 1), 10, 0x100b09, 0.65);
+  private createEnemy(x: number, y: number, kind: EnemyKind): Enemy {
+    const height = kind === 'boss' ? 92 : kind === 'brute' ? 69 : kind === 'sentry' ? 60 : kind === 'shooter' ? 52 : 49;
+    const shadow = this.add.ellipse(0, kind === 'boss' ? 32 : 18, kind === 'boss' ? 70 : 42, 10, 0x100b09, 0.65);
     const sprite = this.add.image(0, kind === 'boss' ? -18 : -9, `enemy-${kind}`);
     sprite.setDisplaySize(sprite.width / sprite.height * height, height);
-    if (variant) sprite.setTint(variant.tint);
     const view = this.add.container(x, y, [shadow, sprite]).setDepth(9);
     const world = this.rooms[this.currentRoom]?.world ?? 1;
-    const hp = Math.ceil((kind === 'boss' ? 26 + world * 6 : (kind === 'brute' ? 6 : kind === 'sentry' ? 4 : 3) + Math.min(3, world - 1))
-      * (variant?.hpScale ?? 1));
-    return { view, kind, ...(variantId ? { variant: variantId } : {}), x, y, hp, maxHp: hp,
-      speed: (kind === 'sentry' ? 0 : kind === 'boss' ? 55 : kind === 'brute' ? 48 : kind === 'shooter' ? 58 : 84)
-        * (variant?.speedScale ?? 1),
+    const hp = kind === 'boss' ? 26 + world * 6 : (kind === 'brute' ? 6 : kind === 'sentry' ? 4 : 3) + Math.min(3, world - 1);
+    return { view, kind, x, y, hp, maxHp: hp,
+      speed: kind === 'sentry' ? 0 : kind === 'boss' ? 55 : kind === 'brute' ? 48 : kind === 'shooter' ? 58 : 84,
       cooldown: kind === 'boss' ? 1.8 : kind === 'sentry' ? 1.4 : kind === 'shooter' ? 1 : 0, windup: 0, slowTimer: 0 };
   }
 
@@ -382,10 +377,7 @@ export class ArenaScene extends Phaser.Scene {
     this.drawRoom();
     if (entry) this.cameras.main.flash(180, 35, 21, 9);
     if (!this.cleared.has(id)) {
-      this.enemies = encounterFor(this.rooms[id]).map((spawn, index) => {
-        const point = spawn.kind === 'boss' ? SPAWNS.boss : SPAWN_POINTS[index % SPAWN_POINTS.length];
-        return this.createEnemy(point.x, point.y, spawn.kind, spawn.variant);
-      });
+      this.enemies = encounterFor(this.rooms[id]).map(kind => this.createEnemy(SPAWNS[kind].x, SPAWNS[kind].y, kind));
     }
     for (const coin of this.storedCoins.get(id) ?? []) this.spawnCoin(coin.x, coin.y);
     this.mouseDown = false; this.movePointer = null; this.firePointer = null;
@@ -529,22 +521,8 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private bossAttack(enemy: Enemy): void {
-    const aim = Math.atan2(this.heroY - enemy.y, this.heroX - enemy.x);
-    const pattern = enemy.variant ? MONSTER_VARIANTS[enemy.variant]?.bossPattern : undefined;
-    if (pattern === 'wide-fan') {
-      for (let i = -4; i <= 4; i++) this.spawnEnemyBullet(enemy.x, enemy.y, aim + i * 0.17, 205);
-      return;
-    }
-    if (pattern === 'double-ring') {
-      for (let i = 0; i < 10; i++) this.spawnEnemyBullet(enemy.x, enemy.y, i * Math.PI / 5, 170);
-      for (let i = 0; i < 10; i++) this.spawnEnemyBullet(enemy.x, enemy.y, (i + 0.5) * Math.PI / 5, 210);
-      return;
-    }
-    if (pattern === 'aimed-sweep') {
-      for (const offset of [-0.48, -0.24, 0, 0.24, 0.48]) this.spawnEnemyBullet(enemy.x, enemy.y, aim + offset, 235);
-      return;
-    }
     for (let i = 0; i < 8; i++) this.spawnEnemyBullet(enemy.x, enemy.y, i * Math.PI / 4, 180);
+    const aim = Math.atan2(this.heroY - enemy.y, this.heroX - enemy.x);
     for (const offset of [-0.2, 0, 0.2]) this.spawnEnemyBullet(enemy.x, enemy.y, aim + offset, 245);
   }
 
@@ -1248,5 +1226,3 @@ export class ArenaScene extends Phaser.Scene {
   }
 
 }
-
-
