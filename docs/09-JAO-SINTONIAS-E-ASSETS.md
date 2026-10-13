@@ -22,10 +22,10 @@ Todas as habilidades miram automaticamente o inimigo visível mais próximo, man
 | Referência de roupa/arma/efeito | docs/visual/jao-elementos/v1/ contém as pranchas das cinco formas. |
 | Matrizes originais com poses | art/sheets/jao-{terra,agua,fogo,raio,luz,sombra}-attunement.png, cada uma em grade transparente 2×2: frente, passo A, passo B e costas. |
 | Sprites carregados pelo jogo | src/assets/jao-{element}-armed.png, jao-walk1-{element}-armed.png, jao-walk2-{element}-armed.png, jao-back-{element}-armed.png e jao-attack-{element}.png. |
-| Efeitos de habilidade | Desenhados em tempo real com Phaser.Graphics e tweens: fissura, onda, brasa, arco elétrico, raio de luz e pós-imagem. Não há dependência de novas texturas de efeito. |
+| Efeitos de habilidade | `src/assets/vfx-jao-*.png`: seis spritesheets originais, uma por forma, quatro quadros por folha e canal alfa. Phaser reproduz a animação a 12 quadros por segundo e orienta o efeito na direção do alvo. |
 | Pipeline reproduzível | python scripts/build_jao_elemental_sprites.py recorta as matrizes, reduz com vizinho mais próximo e alinha os PNGs no canvas 224×160 usado pelos outros frames. Requer Pillow. |
 
-As imagens de conceito e as matrizes foram geradas para este projeto. Os sprites na build são versões reduzidas e recortadas dessas matrizes; ainda não são animações finais redesenhadas manualmente em grade baixa. Artefatos de direção visual servem para validar o resultado em jogo, escala e legibilidade.
+As imagens de conceito, matrizes e efeitos foram gerados para este projeto. Os sprites de personagem são versões recortadas e alinhadas das matrizes; os efeitos especiais agora são artes animadas em PNG com transparência. Artefatos de direção visual servem para validar resultado em jogo, escala e legibilidade.
 
 ### Correção de escala das formas
 
@@ -40,9 +40,9 @@ Prévia lado a lado: [Jão base e seis formas na escala corrigida](visual/jao-fo
 - Quatro vistas direcionais e dois passos por direção para cada forma, depois que a leitura das atuais for validada.
 - Quadros exclusivos de ataque, dano, recuperação e esquiva quando as ações exigirem poses próprias.
 - Folhas de sprites com grade e pontos de ancoragem documentados, mais variantes sem espada apenas se uma habilidade realmente a retirar da mão.
-- Efeitos elementais em pequenos spritesheets editáveis se o desenho por código ficar visualmente inconsistente ou custoso.
+- Quadros direcionais adicionais para os efeitos elementais, caso o playtest mostre que a rotação da folha atual não lê bem em todas as direções.
 - Ícone curto de cada habilidade e arte do altar para explicar o desbloqueio de forma dentro da run.
 
 ## Validação ainda pendente
 
-Typecheck, testes de regras e build local passaram. O commit `f19dfa6` concluiu o workflow de verificação e deploy do GitHub Pages (`38343179306`). O site implantado e as habilidades ainda precisam de inspeção visual e partida; também faltam testes físicos no celular horizontal. As habilidades e valores são uma primeira versão para playtest e podem ser ajustados sem alterar as combinações híbridas.
+Typecheck, testes de regras e build local passaram após a integração das seis spritesheets. A checagem visual das habilidades no Pages e o teste físico no celular horizontal continuam pendentes. As habilidades e valores são uma primeira versão para playtest e podem ser ajustados sem alterar as combinações híbridas.
