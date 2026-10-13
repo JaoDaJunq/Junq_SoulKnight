@@ -663,6 +663,135 @@ export class ArenaScene extends Phaser.Scene {
     this.tweens.add({ targets: line, alpha: 0, duration, onComplete: () => line.destroy() });
   }
 
+  private showSwordArc(x: number, y: number, angle: number, color: number, radius = 48): void {
+    const arc = this.add.graphics().setDepth(13);
+    arc.lineStyle(13, 0x2a1915, 0.96);
+    arc.beginPath(); arc.arc(x, y, radius, angle - 0.82, angle + 0.82); arc.strokePath();
+    arc.lineStyle(8, color, 1);
+    arc.beginPath(); arc.arc(x, y, radius, angle - 0.78, angle + 0.78); arc.strokePath();
+    arc.lineStyle(2, 0xfff1cf, 0.95);
+    arc.beginPath(); arc.arc(x, y, radius + 5, angle - 0.55, angle + 0.55); arc.strokePath();
+    this.tweens.add({ targets: arc, alpha: 0, scale: 1.18, duration: 190, onComplete: () => arc.destroy() });
+  }
+
+  private showRockFissure(start: { x: number; y: number }, end: { x: number; y: number }, color: number): void {
+    const dx = end.x - start.x, dy = end.y - start.y, length = Math.max(1, Math.hypot(dx, dy));
+    const nx = -dy / length, ny = dx / length;
+    const points: Array<{ x: number; y: number }> = [];
+    for (let step = 0; step <= 10; step++) {
+      const t = step / 10, jag = step === 0 || step === 10 ? 0 : (step % 2 ? 1 : -1) * (5 + step % 3 * 3);
+      points.push({ x: start.x + dx * t + nx * jag, y: start.y + dy * t + ny * jag });
+    }
+    const crack = this.add.graphics().setDepth(12);
+    crack.lineStyle(15, 0x2c1c15, 0.96); crack.beginPath(); crack.moveTo(points[0].x, points[0].y);
+    for (const point of points.slice(1)) crack.lineTo(point.x, point.y);
+    crack.strokePath();
+    crack.lineStyle(8, color, 1); crack.beginPath(); crack.moveTo(points[0].x, points[0].y);
+    for (const point of points.slice(1)) crack.lineTo(point.x, point.y);
+    crack.strokePath();
+    crack.lineStyle(2, 0xf5d79a, 0.95);
+    for (const t of [0.42, 0.68]) {
+      const x = start.x + dx * t, y = start.y + dy * t, side = t === 0.42 ? -1 : 1;
+      crack.beginPath(); crack.moveTo(x, y); crack.lineTo(x + nx * side * 22 + dx / length * 12, y + ny * side * 22 + dy / length * 12); crack.strokePath();
+    }
+    this.tweens.add({ targets: crack, alpha: 0, scaleY: 0.78, duration: 360, onComplete: () => crack.destroy() });
+    for (const t of [0.28, 0.55, 0.8]) {
+      const x = start.x + dx * t, y = start.y + dy * t;
+      const stone = this.add.triangle(x, y + 8, -9, 7, 0, -13, 10, 8, 0xbba06d).setDepth(13).setStrokeStyle(2, 0x39271d);
+      this.tweens.add({ targets: stone, y: y - 8, alpha: 0, angle: t * 120, duration: 330, onComplete: () => stone.destroy() });
+    }
+  }
+
+  private showWaterCrescent(points: Array<{ x: number; y: number }>, color: number): void {
+    this.showMasteryLine(points, 0xe8f8ff, 21, 360);
+    this.showMasteryLine(points, color, 9, 370);
+    for (const [index, point] of points.entries()) {
+      if (index % 3 !== 1) continue;
+      const drop = this.add.rectangle(point.x, point.y, 5, 12, 0xdaf8ff).setAngle(index % 2 ? 24 : -24).setDepth(13);
+      this.tweens.add({ targets: drop, x: point.x + (index % 2 ? 14 : -14), y: point.y - 18, alpha: 0, angle: drop.angle + 70, duration: 280, onComplete: () => drop.destroy() });
+    }
+    const crest = this.add.arc(points.at(-1)!.x, points.at(-1)!.y, 25, 205, 335, false, color, 0.2).setStrokeStyle(6, 0xe6f9ff).setDepth(13);
+    this.tweens.add({ targets: crest, radius: 58, alpha: 0, duration: 350, onComplete: () => crest.destroy() });
+  }
+
+  private showFireCleave(start: { x: number; y: number }, end: { x: number; y: number }, angle: number, color: number, radius: number): void {
+    this.showSwordArc(start.x, start.y - 8, angle, color, 52);
+    this.showMasteryLine([start, end], color, 11, 220);
+    const burst = this.add.circle(end.x, end.y, 18, 0xff712d, 0.34).setStrokeStyle(5, 0xffdc78).setDepth(12);
+    this.tweens.add({ targets: burst, radius, alpha: 0, duration: 380, onComplete: () => burst.destroy() });
+    for (let i = 0; i < 10; i++) {
+      const theta = i * Math.PI * 2 / 10 + angle * 0.18, distance = 20 + i % 3 * 5;
+      const flame = this.add.triangle(end.x + Math.cos(theta) * distance, end.y + Math.sin(theta) * distance,
+        -5, 5, 0, -13, 5, 5, i % 2 ? 0xffa43b : 0xffe28a).setDepth(13).setRotation(theta + Math.PI / 2);
+      this.tweens.add({ targets: flame, x: end.x + Math.cos(theta) * radius, y: end.y + Math.sin(theta) * radius - 12,
+        alpha: 0, scale: 0.45, duration: 360, onComplete: () => flame.destroy() });
+    }
+  }
+
+  private showLightningCut(start: { x: number; y: number }, end: { x: number; y: number }, color: number): void {
+    const drawBolt = (points: Array<{ x: number; y: number }>, tint: number, width: number) => {
+      const bolt = this.add.graphics().setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
+      bolt.lineStyle(width + 7, 0x2f2438, 0.86); bolt.beginPath(); bolt.moveTo(points[0].x, points[0].y);
+      for (const point of points.slice(1)) bolt.lineTo(point.x, point.y); bolt.strokePath();
+      bolt.lineStyle(width, tint, 1); bolt.beginPath(); bolt.moveTo(points[0].x, points[0].y);
+      for (const point of points.slice(1)) bolt.lineTo(point.x, point.y); bolt.strokePath();
+      this.tweens.add({ targets: bolt, alpha: 0, duration: 190, onComplete: () => bolt.destroy() });
+    };
+    const dx = end.x - start.x, dy = end.y - start.y, length = Math.max(1, Math.hypot(dx, dy)), nx = -dy / length, ny = dx / length;
+    const points = Array.from({ length: 7 }, (_, i) => {
+      const t = i / 6, offset = i === 0 || i === 6 ? 0 : (i % 2 ? 1 : -1) * 12;
+      return { x: start.x + dx * t + nx * offset, y: start.y + dy * t + ny * offset };
+    });
+    drawBolt(points, 0xeafcff, 8); drawBolt(points, color, 3);
+    for (const t of [0.38, 0.73]) {
+      const origin = points[Math.round(t * 6)];
+      drawBolt([origin, { x: origin.x + nx * 20, y: origin.y + ny * 20 }, { x: origin.x + nx * 28 + dx / length * 10, y: origin.y + ny * 28 + dy / length * 10 }], color, 2);
+    }
+  }
+
+  private showAuroraBeam(start: { x: number; y: number }, end: { x: number; y: number }, color: number): void {
+    this.showMasteryLine([start, end], 0xfff9df, 24, 300);
+    this.showMasteryLine([start, end], color, 12, 340);
+    this.showMasteryLine([start, end], 0xffffff, 3, 260);
+    const flare = this.add.star(end.x, end.y, 8, 7, 24, 0xfff0a0, 0.95).setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: flare, scale: 2.1, alpha: 0, angle: 22, duration: 320, onComplete: () => flare.destroy() });
+    for (let i = 0; i < 4; i++) {
+      const angle = i * Math.PI / 2 + 0.3;
+      this.showMasteryLine([end, { x: end.x + Math.cos(angle) * 34, y: end.y + Math.sin(angle) * 34 }], 0xffe9a3, 3, 250);
+    }
+  }
+
+  private showShadowCross(x: number, y: number, color: number): void {
+    for (const angle of [-0.72, 0.72]) {
+      const dx = Math.cos(angle) * 45, dy = Math.sin(angle) * 45;
+      this.showMasteryLine([{ x: x - dx, y: y - dy }, { x: x + dx, y: y + dy }], 0x1a1420, 15, 300);
+      this.showMasteryLine([{ x: x - dx, y: y - dy }, { x: x + dx, y: y + dy }], color, 6, 280);
+    }
+    const shade = this.add.circle(x, y, 9, 0x18121f, 0.55).setStrokeStyle(3, color).setDepth(11);
+    this.tweens.add({ targets: shade, radius: 40, alpha: 0, duration: 300, onComplete: () => shade.destroy() });
+  }
+
+  private showArcherVolley(x: number, y: number, radius: number, color: number): void {
+    const charge = this.add.circle(x, y - 12, 10, color, 0.12).setStrokeStyle(3, 0xffedc3).setDepth(12);
+    this.tweens.add({ targets: charge, radius: 32, alpha: 0, duration: 220, onComplete: () => charge.destroy() });
+    for (let i = 0; i < 9; i++) {
+      const angle = -Math.PI / 2 + i * Math.PI * 2 / 9, startX = x + Math.cos(angle) * 17, startY = y - 12 + Math.sin(angle) * 17;
+      const arrow = this.add.image(startX, startY, 'projectile-arrow').setDisplaySize(31, 10).setAngle(angle * 180 / Math.PI).setDepth(13).setTint(color);
+      this.tweens.add({ targets: arrow, x: x + Math.cos(angle) * radius, y: y + Math.sin(angle) * radius,
+        alpha: 0, duration: 300, onComplete: () => arrow.destroy() });
+    }
+  }
+
+  private showCardFan(x: number, y: number, radius: number): void {
+    for (let i = 0; i < 11; i++) {
+      const angle = -Math.PI / 2 + i * Math.PI * 2 / 11, startX = x + Math.cos(angle) * 15, startY = y - 8 + Math.sin(angle) * 15;
+      const card = this.add.image(startX, startY, `projectile-card-${i % 3 + 1}`).setDisplaySize(16, 22)
+        .setAngle(angle * 180 / Math.PI + 90).setDepth(13);
+      this.tweens.add({ targets: card, x: x + Math.cos(angle) * radius, y: y + Math.sin(angle) * radius,
+        alpha: 0, angle: card.angle + 190, duration: 330, onComplete: () => card.destroy() });
+    }
+  }
+
   private pulse(): void {
     if (this.state !== 'playing' || this.skillCooldown > 0) return;
     const bonus = affinityDamageBonus(this.affinities);
@@ -675,6 +804,7 @@ export class ArenaScene extends Phaser.Scene {
       this.skillCooldown = 6; this.soundscape.play('pulse');
       const oldX = this.heroX, oldY = this.heroY;
       const dx = target.x - oldX, dy = target.y - oldY, length = Math.max(1, Math.hypot(dx, dy));
+      const angle = Math.atan2(dy, dx);
       this.attackPose = 0.24;
       this.facing = Math.abs(dy) > Math.abs(dx) * 1.7 ? dy < 0 ? 'north' : 'south' : dx < 0 ? 'west' : 'east';
       this.animateHero(0, 0);
@@ -682,28 +812,24 @@ export class ArenaScene extends Phaser.Scene {
       const color = mastery?.color ?? effectColor;
       const end = { x: target.x + dx / length * 42, y: target.y + dy / length * 42 };
       if (mastery?.effect === 'blink') {
-        this.showMasteryLine([{ x: oldX, y: oldY - 9 }, end], color, 12, 180);
+        this.showLightningCut({ x: oldX, y: oldY - 9 }, { x: target.x, y: target.y - 10 }, color);
+        const originFlash = this.add.circle(oldX, oldY, 7, 0xe7fbff, 0.9).setStrokeStyle(3, color).setDepth(13);
+        this.tweens.add({ targets: originFlash, radius: 34, alpha: 0, duration: 180, onComplete: () => originFlash.destroy() });
+        const arrival = this.add.star(end.x, end.y, 6, 5, 17, color, 0.9).setDepth(13);
+        this.tweens.add({ targets: arrival, scale: 1.8, alpha: 0, duration: 200, onComplete: () => arrival.destroy() });
         if (!blocked(end.x, end.y, 15, this.rooms[this.currentRoom].obstacles)) {
           this.heroX = end.x; this.heroY = end.y; this.hero.setPosition(end.x, end.y);
           this.dashTimer = 0.22;
         }
         this.damageEnemy(target, mastery.damage + bonus);
       } else if (mastery?.effect === 'burst') {
-        this.showMasteryLine([
-          { x: oldX, y: oldY - 9 }, { x: target.x, y: target.y - 20 }, end,
-        ], color, 10, 190);
-        const blaze = this.add.circle(target.x, target.y, 14, 0xff7a32, 0.5).setStrokeStyle(5, 0xffdc75).setDepth(8);
-        this.tweens.add({ targets: blaze, radius: 74, alpha: 0, duration: 360, onComplete: () => blaze.destroy() });
+        this.showFireCleave({ x: oldX, y: oldY - 9 }, { x: target.x, y: target.y - 12 }, angle, color, 74);
         for (const nearby of [...this.enemies]) {
           if (Math.hypot(nearby.x - target.x, nearby.y - target.y) > 74) continue;
           this.damageEnemy(nearby, nearby === target ? mastery.damage + bonus : 2 + bonus);
         }
       } else if (mastery?.effect === 'fissure') {
-        this.showMasteryLine([{ x: oldX, y: oldY + 8 }, { x: target.x, y: target.y + 8 }], color, 22, 320);
-        this.showMasteryLine([
-          { x: target.x - dx / length * 10, y: target.y - dy / length * 10 },
-          { x: target.x + dx / length * 34 - dy / length * 23, y: target.y + dy / length * 34 + dx / length * 23 },
-        ], 0xdbc18e, 5, 330);
+        this.showRockFissure({ x: oldX, y: oldY + 9 }, { x: target.x, y: target.y + 9 }, color);
         for (const nearby of [...this.enemies]) {
           if (distanceToSegment(nearby.x, nearby.y, oldX, oldY, target.x, target.y) > 34) continue;
           nearby.slowTimer = mastery.slow;
@@ -717,9 +843,8 @@ export class ArenaScene extends Phaser.Scene {
           points.push({ x: oldX + dx / length * length * t - dy / length * offset,
             y: oldY + dy / length * length * t + dx / length * offset });
         }
-        this.showMasteryLine(points, 0xe3f8ff, 20, 340);
-        this.showMasteryLine(points, color, 9, 340);
-        const ripple = this.add.circle(target.x, target.y, 18, color, 0.08).setStrokeStyle(4, color).setDepth(8);
+        this.showWaterCrescent(points, color);
+        const ripple = this.add.circle(target.x, target.y, 15, color, 0.08).setStrokeStyle(4, color).setDepth(8);
         this.tweens.add({ targets: ripple, radius: 77, alpha: 0, duration: 380, onComplete: () => ripple.destroy() });
         for (const nearby of [...this.enemies]) {
           if (distanceToSegment(nearby.x, nearby.y, oldX, oldY, target.x, target.y) > 58) continue;
@@ -728,16 +853,16 @@ export class ArenaScene extends Phaser.Scene {
         }
       } else if (mastery?.effect === 'ray') {
         const rayEnd = { x: target.x + dx / length * 180, y: target.y + dy / length * 180 };
-        this.showMasteryLine([{ x: oldX, y: oldY - 8 }, rayEnd], 0xfff7d6, 18, 260);
-        this.showMasteryLine([{ x: oldX, y: oldY - 8 }, rayEnd], color, 8, 300);
+        this.showAuroraBeam({ x: oldX, y: oldY - 8 }, rayEnd, color);
         for (const nearby of [...this.enemies]) {
           if (distanceToSegment(nearby.x, nearby.y, oldX, oldY, rayEnd.x, rayEnd.y) > 25) continue;
           this.damageEnemy(nearby, mastery.damage + bonus);
         }
       } else if (mastery?.effect === 'echo') {
         const flank = { x: target.x - dx / length * 43, y: target.y - dy / length * 43 };
-        this.showMasteryLine([{ x: oldX, y: oldY - 8 }, flank], 0x332139, 15, 320);
-        this.showMasteryLine([{ x: oldX, y: oldY - 8 }, flank], color, 5, 300);
+        this.showShadowCross(target.x, target.y - 8, color);
+        this.showMasteryLine([{ x: oldX, y: oldY - 8 }, flank], 0x332139, 18, 320);
+        this.showMasteryLine([{ x: oldX, y: oldY - 8 }, flank], color, 7, 300);
         if (!blocked(flank.x, flank.y, 15, this.rooms[this.currentRoom].obstacles)) {
           this.heroX = flank.x; this.heroY = flank.y; this.hero.setPosition(flank.x, flank.y);
           this.dashTimer = 0.16;
@@ -748,11 +873,11 @@ export class ArenaScene extends Phaser.Scene {
         this.damageEnemy(target, mastery.damage + bonus);
         this.time.delayedCall(260, () => {
           if (this.state !== 'playing' || !this.enemies.includes(target)) return;
-          this.showMasteryLine([{ x: target.x - 32, y: target.y - 15 }, { x: target.x + 32, y: target.y + 15 }], color, 8, 160);
+          this.showShadowCross(target.x, target.y, color);
           this.damageEnemy(target, 2 + bonus);
         });
       } else {
-        this.showMasteryLine([{ x: oldX, y: oldY - 8 }, { x: target.x, y: target.y }], color, synergy ? 8 : 5);
+        this.showSwordArc(oldX, oldY - 8, angle, color, 43);
         if (synergy === 'mud') target.slowTimer = 3;
         this.damageEnemy(target, (synergy === 'plasma' ? 5 : 2) + bonus);
       }
@@ -763,7 +888,9 @@ export class ArenaScene extends Phaser.Scene {
     this.soundscape.play('pulse');
     const color = infusion || synergy ? effectColor : this.selectedHero === 'alice' ? 0xd9c191 : 0xc5a17b;
     const radius = this.selectedHero === 'alice' ? 170 : 135;
-    const wave = this.add.circle(this.heroX, this.heroY, 15, color, 0.09).setStrokeStyle(4, color).setDepth(7);
+    if (this.selectedHero === 'alice') this.showArcherVolley(this.heroX, this.heroY, radius, color);
+    else this.showCardFan(this.heroX, this.heroY, radius);
+    const wave = this.add.circle(this.heroX, this.heroY, 18, color, 0.08).setStrokeStyle(3, color).setDepth(7);
     this.tweens.add({ targets: wave, radius, alpha: 0, duration: 320, onComplete: () => wave.destroy() });
     for (const enemy of [...this.enemies]) {
       if (Math.hypot(enemy.x - this.heroX, enemy.y - this.heroY) > radius) continue;
