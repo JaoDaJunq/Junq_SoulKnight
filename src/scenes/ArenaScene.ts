@@ -778,7 +778,7 @@ export class ArenaScene extends Phaser.Scene {
       const angle = -Math.PI / 2 + i * Math.PI * 2 / 9, startX = x + Math.cos(angle) * 17, startY = y - 12 + Math.sin(angle) * 17;
       const arrow = this.add.image(startX, startY, 'projectile-arrow').setDisplaySize(31, 10).setAngle(angle * 180 / Math.PI).setDepth(13).setTint(color);
       this.tweens.add({ targets: arrow, x: x + Math.cos(angle) * radius, y: y + Math.sin(angle) * radius,
-        alpha: 0, duration: 300, onComplete: () => arrow.destroy() });
+        alpha: 0, duration: 520, onComplete: () => arrow.destroy() });
     }
   }
 
@@ -788,7 +788,7 @@ export class ArenaScene extends Phaser.Scene {
       const card = this.add.image(startX, startY, `projectile-card-${i % 3 + 1}`).setDisplaySize(16, 22)
         .setAngle(angle * 180 / Math.PI + 90).setDepth(13);
       this.tweens.add({ targets: card, x: x + Math.cos(angle) * radius, y: y + Math.sin(angle) * radius,
-        alpha: 0, angle: card.angle + 190, duration: 330, onComplete: () => card.destroy() });
+        alpha: 0, angle: card.angle + 190, duration: 560, onComplete: () => card.destroy() });
     }
   }
 
@@ -891,7 +891,7 @@ export class ArenaScene extends Phaser.Scene {
     if (this.selectedHero === 'alice') this.showArcherVolley(this.heroX, this.heroY, radius, color);
     else this.showCardFan(this.heroX, this.heroY, radius);
     const wave = this.add.circle(this.heroX, this.heroY, 18, color, 0.08).setStrokeStyle(3, color).setDepth(7);
-    this.tweens.add({ targets: wave, radius, alpha: 0, duration: 320, onComplete: () => wave.destroy() });
+    this.tweens.add({ targets: wave, radius, alpha: 0, duration: 430, onComplete: () => wave.destroy() });
     for (const enemy of [...this.enemies]) {
       if (Math.hypot(enemy.x - this.heroX, enemy.y - this.heroY) > radius) continue;
       if (synergy === 'mud') enemy.slowTimer = 3;
