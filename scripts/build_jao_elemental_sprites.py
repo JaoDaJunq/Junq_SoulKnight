@@ -15,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SHEETS = ROOT / "art" / "sheets"
 ASSETS = ROOT / "src" / "assets"
 ELEMENTS = ("earth", "water", "fire", "lightning", "light", "shadow")
+ATTACK_SHEETS = {element: SHEETS / f"jao-attack-{element}-v2.png" for element in ELEMENTS}
+LIGHTNING_SHEET = "jao-lightning-attunement-v2.png"
 FRAME_SIZE = (224, 160)
 # Alpha-bounds of jao-armed, jao-walk1-armed, jao-walk2-armed and
 # jao-back-armed, respectively. Keep evolved silhouettes aligned to the
@@ -30,7 +32,7 @@ def make_frame(atlas: Image.Image, cell: int) -> Image.Image:
     x1 = width if cell % 2 else width // 2
     y1 = height if cell // 2 else height // 2
     frame = atlas.crop((x0, y0, x1, y1)).convert("RGBA")
-    alpha = frame.getchannel("A")
+    alpha = frame.getchannel("A").point(lambda value: 255 if value >= 32 else 0)
     bounds = alpha.getbbox()
     if bounds is None:
         raise ValueError(f"Empty sprite cell {cell}")
@@ -50,9 +52,36 @@ def make_frame(atlas: Image.Image, cell: int) -> Image.Image:
     return canvas
 
 
+def make_attack_frame(source: Path) -> Image.Image:
+    image = Image.open(source).convert("RGBA")
+    alpha = image.getchannel("A").point(lambda value: 255 if value >= 32 else 0)
+    bounds = alpha.getbbox()
+    if bounds is None:
+        raise ValueError(f"Empty attack pose: {source}")
+    figure = image.crop(bounds)
+    height = POSE_HEIGHTS[0]
+    scale = height / figure.height
+    width = round(figure.width * scale)
+    if width > FRAME_SIZE[0]:
+        scale = FRAME_SIZE[0] / figure.width
+        width = FRAME_SIZE[0]
+        height = round(figure.height * scale)
+    if height < 118:
+        raise ValueError(f"Attack pose is too wide for the character scale: {source} ({width}×{height})")
+    figure = figure.resize((width, height), Image.Resampling.NEAREST)
+    figure.putalpha(figure.getchannel("A").point(lambda value: 0 if value < 32 else value))
+    canvas = Image.new("RGBA", FRAME_SIZE, (0, 0, 0, 0))
+    canvas.alpha_composite(figure, (ANCHOR_X - width // 2, BASELINE_Y - height))
+    visible = canvas.getchannel("A").getbbox()
+    if visible is None or visible[3] != BASELINE_Y:
+        raise ValueError(f"Attack pose missed the shared foot baseline: {source} ({visible})")
+    return canvas
+
+
 def main() -> None:
     for element in ELEMENTS:
-        source = SHEETS / f"jao-{element}-attunement.png"
+        source_name = LIGHTNING_SHEET if element == "lightning" else f"jao-{element}-attunement.png"
+        source = SHEETS / source_name
         atlas = Image.open(source).convert("RGBA")
         if atlas.width != atlas.height:
             raise ValueError(f"Expected square atlas: {source}")
@@ -65,9 +94,8 @@ def main() -> None:
         )
         for name, frame in zip(names, frames):
             frame.save(ASSETS / name, optimize=True)
-        # The active slash pose reuses the second distinct step; combat trails
-        # and elemental geometry are rendered separately in the scene.
-        frames[2].save(ASSETS / f"jao-attack-{element}.png", optimize=True)
+        attack = make_attack_frame(ATTACK_SHEETS[element])
+        attack.save(ASSETS / f"jao-attack-{element}.png", optimize=True)
 
 
 if __name__ == "__main__":

@@ -122,3 +122,15 @@ O commit [`d910a72`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/d910a72
 As seis artes de ataque foram integradas em `src/assets/vfx-jao-*.png`. Cada folha tem quatro quadros de 512×512 em linha horizontal, canal alfa e reprodução a 12 fps. `ArenaScene` carrega as folhas com Vite, cria animações do Phaser e usa cada forma em sua habilidade; efeitos procedurais principais dessas seis habilidades foram removidos. Dano, lentidão, alcance, recarga, teleporte e eco permanecem iguais. Os efeitos de Alice, Gui e o corte básico do Jão não mudaram. `CREDITS.md` registra a procedência das imagens. Implementação e assets preparados na branch `feat/jao-attack-art`; aguardando revisão e deploy.
 
 Validação local: `npm run typecheck`, `npm test` (4 arquivos; tudo passou) e `npm run build` passaram. O build inclui os seis PNGs; permanece o aviso conhecido de chunk Phaser acima de 500 kB. A abertura do servidor Vite foi bloqueada no ambiente por `listen EPERM`, então não houve inspeção visual via navegador nesta rodada. O Pages ainda depende de CI/deploy após integração no repositório.
+
+## Revisão de implementação, animação e sprites do Jão (13/10/2026)
+
+Critérios: manter a direção chibi e armas incorporadas; deixar o ciclo de movimento estável ao parar e coerente nas quatro direções; dar ao corte básico poses próprias; fazer a forma Raio emitir energia da mão, sem espada; manter dimensões e baseline no pipeline existente.
+
+- Corrigida a seleção de pose: Jão mantém a direção quando para, alterna passos laterais apenas em movimento e não inclina o sprite; o deslocamento vertical usa as poses de frente/costas com um balanço sutil.
+- Seis golpes básicos de lado agora usam artes PNG próprias, em vez de reaproveitar um frame de caminhada. Removido o arco procedural duplicado que se sobrepunha à arte do golpe. Os ataques verticais ainda usam frente/costas.
+- A matriz v2 de Raio remove a espada e concentra o relâmpago na mão aberta. A forma base mantém a espada; as demais formas elementais seguem armadas.
+- O pipeline recorta por alpha útil, reduz por vizinho mais próximo e centra os PNGs no canvas `224×160` com pés em `y=150`; falha se o ataque perder escala ou baseline. Matrizes-fonte e poses v2 estão registradas em `CREDITS.md`.
+- Inspeção em contato dos seis ataques confirmou leitura coerente de roupa, silhueta, arma e efeito por forma. Ainda não houve inspeção dos golpes em execução no Pages nem teste físico no celular.
+
+Validação local: `npm run typecheck`, `npm test` (4 arquivos, 4 passaram) e `npm run build` passaram. Build gera os seis PNGs; permanece o aviso de bundle Phaser maior que 500 kB. Pages e GitHub Actions: verificar após abrir PR. Próximo: conferir ataque lateral e direções no Pages via ADM e testar em celular horizontal; T010 segue aberto.

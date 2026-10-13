@@ -21,11 +21,17 @@ Todas as habilidades miram automaticamente o inimigo visível mais próximo, man
 | --- | --- |
 | Referência de roupa/arma/efeito | docs/visual/jao-elementos/v1/ contém as pranchas das cinco formas. |
 | Matrizes originais com poses | art/sheets/jao-{terra,agua,fogo,raio,luz,sombra}-attunement.png, cada uma em grade transparente 2×2: frente, passo A, passo B e costas. |
-| Sprites carregados pelo jogo | src/assets/jao-{element}-armed.png, jao-walk1-{element}-armed.png, jao-walk2-{element}-armed.png, jao-back-{element}-armed.png e jao-attack-{element}.png. |
+| Sprites carregados pelo jogo | `src/assets/jao-{element}-armed.png`, `jao-walk1-{element}-armed.png`, `jao-walk2-{element}-armed.png`, `jao-back-{element}-armed.png` e `jao-attack-{element}.png`. Os seis PNGs de ataque agora usam poses próprias, alinhadas no canvas `224×160`; não reutilizam mais um passo de caminhada. |
 | Efeitos de habilidade | `src/assets/vfx-jao-*.png`: seis spritesheets originais, uma por forma, quatro quadros por folha e canal alfa. Phaser reproduz a animação a 12 quadros por segundo e orienta o efeito na direção do alvo. |
 | Pipeline reproduzível | python scripts/build_jao_elemental_sprites.py recorta as matrizes, reduz com vizinho mais próximo e alinha os PNGs no canvas 224×160 usado pelos outros frames. Requer Pillow. |
 
-As imagens de conceito, matrizes e efeitos foram gerados para este projeto. Os sprites de personagem são versões recortadas e alinhadas das matrizes; os efeitos especiais agora são artes animadas em PNG com transparência. Artefatos de direção visual servem para validar resultado em jogo, escala e legibilidade.
+As imagens de conceito, matrizes, poses de ataque e efeitos foram gerados para este projeto. Os sprites de personagem são versões recortadas e alinhadas das matrizes; os efeitos especiais agora são artes animadas em PNG com transparência. A forma Raio usa uma matriz atualizada sem espada: a descarga parte da mão aberta. As outras formas mantêm a espada integrada ao corpo. Artefatos de direção visual servem para validar resultado em jogo, escala e legibilidade.
+
+### Refinamento de animação e golpes (13/10/2026)
+
+O ciclo lateral alterna os dois passos apenas durante movimento; ao parar, conserva a direção e usa uma pose estável. Movimento vertical usa frente/costas com um balanço curto, sem inclinar o personagem nem deslocar os pés. O corte básico usa uma pose de ataque própria para cada sintonia nas direções laterais e já não sobrepõe um arco temporário desenhado por código. Os golpes verticais preservam a pose frontal/costas até haver ilustrações direcionais próprias.
+
+As novas matrizes e poses de ataque ficam em `art/sheets/*-v2.png`; `scripts/build_jao_elemental_sprites.py` faz o recorte por alfa, escala e baseline reproduzíveis. A prévia dos seis golpes foi conferida como conjunto; o encaixe em combate ainda deve ser observado no Pages e em aparelho antes de declarar a animação aprovada.
 
 ### Correção de escala das formas
 
@@ -38,11 +44,11 @@ Prévia lado a lado: [Jão base e seis formas na escala corrigida](visual/jao-fo
 ## Assets previstos para a etapa de acabamento
 
 - Quatro vistas direcionais e dois passos por direção para cada forma, depois que a leitura das atuais for validada.
-- Quadros exclusivos de ataque, dano, recuperação e esquiva quando as ações exigirem poses próprias.
+- Quadros direcionais de ataque, dano, recuperação e esquiva quando as ações exigirem poses próprias; os golpes laterais básicos já têm poses exclusivas.
 - Folhas de sprites com grade e pontos de ancoragem documentados, mais variantes sem espada apenas se uma habilidade realmente a retirar da mão.
 - Quadros direcionais adicionais para os efeitos elementais, caso o playtest mostre que a rotação da folha atual não lê bem em todas as direções.
 - Ícone curto de cada habilidade e arte do altar para explicar o desbloqueio de forma dentro da run.
 
 ## Validação ainda pendente
 
-Typecheck, testes de regras e build local passaram após a integração das seis spritesheets. A checagem visual das habilidades no Pages e o teste físico no celular horizontal continuam pendentes. As habilidades e valores são uma primeira versão para playtest e podem ser ajustados sem alterar as combinações híbridas.
+Typecheck, testes de regras e build local passaram após a integração das seis spritesheets. A checagem dos golpes e habilidades no Pages e o teste físico no celular horizontal continuam pendentes. As habilidades e valores são uma primeira versão para playtest e podem ser ajustados sem alterar as combinações híbridas.

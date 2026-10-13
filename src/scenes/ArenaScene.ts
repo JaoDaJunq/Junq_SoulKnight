@@ -288,9 +288,9 @@ export class ArenaScene extends Phaser.Scene {
   private animateHero(mx: number, my: number): void {
     const moving = Math.hypot(mx, my) > 0.15;
     if (moving && this.attackPose <= 0) this.facing = Math.abs(mx) > Math.abs(my) ? mx > 0 ? 'east' : 'west' : my < 0 ? 'north' : 'south';
-    const baseKey = !moving || this.facing === 'south' ? this.selectedHero
+    const baseKey = this.facing === 'south' ? this.selectedHero
       : this.facing === 'north' ? `${this.selectedHero}-back`
-      : `${this.selectedHero}-walk${Math.floor(this.elapsed * 8) % 2 + 1}`;
+      : `${this.selectedHero}-walk${moving ? Math.floor(this.elapsed * 8) % 2 + 1 : 1}`;
     const form = this.selectedHero === 'jao'
       ? jaoFormTextureSuffix(this.affinities) || (activeSynergy(this.affinities) === 'plasma' ? '-plasma' : '')
       : '';
@@ -303,8 +303,9 @@ export class ArenaScene extends Phaser.Scene {
     }
     this.heroSprite.setFlipX(this.facing === 'west');
     this.heroSprite.setOrigin(this.facing === 'west' ? 144 / 224 : 80 / 224, 0.5);
-    this.heroSprite.y = -19 + (moving ? Math.sin(this.elapsed * 16) * 2 : 0);
-    this.heroSprite.angle = moving ? Math.sin(this.elapsed * 8) * 1.5 : 0;
+    const verticalStep = moving && (this.facing === 'north' || this.facing === 'south');
+    this.heroSprite.y = -19 + (verticalStep ? Math.abs(Math.sin(this.elapsed * 12)) * 1.2 : Math.sin(this.elapsed * 2) * 0.35);
+    this.heroSprite.angle = 0;
   }
 
   private createEnemy(x: number, y: number, kind: EnemyKind): Enemy {
@@ -587,20 +588,12 @@ export class ArenaScene extends Phaser.Scene {
     this.fireTimer = WEAPONS[this.weapon].cadence;
     this.drawEnergy();
     this.soundscape.play('shot');
-    this.attackPose = 0.18;
+    this.attackPose = 0.22;
     this.facing = this.weapon === 'bolt' && Math.abs(dy) > Math.abs(dx) * 1.7
       ? dy < 0 ? 'north' : 'south' : dx < 0 ? 'west' : 'east';
     this.animateHero(0, 0);
     if (this.weapon === 'bolt') {
       const angle = Math.atan2(dy, dx);
-      const slash = this.add.graphics().setDepth(12);
-      slash.lineStyle(13, 0x342733, 0.9);
-      slash.beginPath(); slash.arc(this.heroX, this.heroY - 8, 78, angle - 0.73, angle + 0.73); slash.strokePath();
-      slash.lineStyle(8, shots[0].color, 1);
-      slash.beginPath(); slash.arc(this.heroX, this.heroY - 8, 78, angle - 0.73, angle + 0.73); slash.strokePath();
-      slash.lineStyle(3, 0xfff4d4, 0.95);
-      slash.beginPath(); slash.arc(this.heroX, this.heroY - 8, 83, angle - 0.62, angle + 0.62); slash.strokePath();
-      this.tweens.add({ targets: slash, alpha: 0, scale: 1.12, duration: 170, onComplete: () => slash.destroy() });
       for (const enemy of [...this.enemies]) {
         const reach = Math.hypot(enemy.x - this.heroX, enemy.y - this.heroY);
         const deviation = Math.atan2(Math.sin(Math.atan2(enemy.y - this.heroY, enemy.x - this.heroX) - angle),
