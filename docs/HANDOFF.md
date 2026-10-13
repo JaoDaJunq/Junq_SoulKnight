@@ -103,7 +103,7 @@ Checagens desta rodada: geração das seis folhas sem erro; inspeção programá
 
 ## Efeitos dos ataques especiais (13/10/2026)
 
-O commit [`d910a72`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/d910a725621584117c08a42e14126bd0a8d810da) acrescentou animações e efeitos visuais dedicados para os golpes especiais, mantendo os mesmos alvos, danos, áreas e recargas:
+O commit [`d910a72`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/d910a725621584117c08a42e14126bd0a8d810da) acrescentou animações e efeitos visuais dedicados para os golpes especiais. O ajuste [`d42fc7f`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/d42fc7f071d3d2b0b80982758a8382bbd166535a) aumentou o tempo de voo das flechas e cartas e a duração do impacto, para os ataques ficarem mais legíveis. Alvos, dano, áreas, recargas e regras da run permanecem iguais.
 
 - Jão base: arco de corte da espada.
 - Terra: fenda rachada no chão com ramificações e pedras que saltam.
@@ -114,4 +114,4 @@ O commit [`d910a72`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/d910a72
 - Sombra: avanço com imagem residual e cortes cruzados, incluindo o eco atrasado.
 - Alice: rajada radial de flechas; Gui: leque radial de cartas, usando os próprios projéteis do jogo.
 
-`npm run typecheck`, `npm test` (4 arquivos) e `npm run build` passaram localmente. O build mantém o aviso conhecido do chunk Phaser. O servidor local de preview foi bloqueado pelo ambiente (`listen EPERM`), então esta entrega ainda precisa de inspeção visual no Pages; não houve teste novo em celular físico. O roadmap foi atualizado no commit `630cb97`. Próximo: validar cada especial via ADM no Pages, ajustar legibilidade/ritmo se necessário e seguir com a run longa e o balanceamento de T010.
+`npm run typecheck`, `npm test` (4 arquivos) e `npm run build` passaram localmente após o ajuste. O build mantém o aviso conhecido do chunk Phaser. O servidor local de preview foi bloqueado pelo ambiente (`listen EPERM`). No Pages foram observados anteriormente o impacto de Fogo e a habilidade da Alice; após o ajuste, o site passou a servir `assets/index-CN2sDUSw.js`, confirmando que o build atualizado chegou à publicação. A duração final dos projéteis, os efeitos de cada forma individualmente, Gui e as demais habilidades ainda precisam de inspeção visual via ADM. Também falta playtest em celular físico. Próximo: validar cada especial no Pages via ADM, ajustar legibilidade/ritmo se necessário e seguir com a run longa e o balanceamento de T010.
