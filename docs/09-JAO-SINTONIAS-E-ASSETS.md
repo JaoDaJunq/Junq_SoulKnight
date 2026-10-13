@@ -27,6 +27,14 @@ Todas as habilidades miram automaticamente o inimigo visível mais próximo, man
 
 As imagens de conceito e as matrizes foram geradas para este projeto. Os sprites na build são versões reduzidas e recortadas dessas matrizes; ainda não são animações finais redesenhadas manualmente em grade baixa. Artefatos de direção visual servem para validar o resultado em jogo, escala e legibilidade.
 
+### Correção de escala das formas
+
+As capturas comparando o Jão base com Terra mostraram que a forma parecia menor. A causa estava na geração: as pranchas elementais têm personagens mais largos e baixos do que a prancha base, mas o script aplicava o mesmo limite de largura (`106 px`). Isso exportava corpos com aproximadamente `100 px` de altura útil, enquanto o base tem `134 px`. O Phaser já dimensionava o canvas inteiro pela mesma altura, então o espaço transparente não compensava a diferença.
+
+O pipeline agora dimensiona cada pose pela altura visível equivalente do base — `134/130/130/134 px` — preserva a proporção original com vizinho mais próximo e mantém os pés em `y=150`. A regra vale para Terra, Água, Fogo, Raio, Luz e Sombra, incluindo os frames usados no corte de ataque. A largura pode variar com a armadura, a espada e efeitos desenhados na prancha; a altura e a linha dos pés ficam consistentes. O próprio script falha se uma matriz sair fora dessa escala ou alinhamento.
+
+Prévia lado a lado: [Jão base e seis formas na escala corrigida](visual/jao-formas-escalas-corrigidas.png).
+
 ## Assets previstos para a etapa de acabamento
 
 - Quatro vistas direcionais e dois passos por direção para cada forma, depois que a leitura das atuais for validada.

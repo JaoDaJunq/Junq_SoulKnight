@@ -3,7 +3,10 @@
 
 Each source atlas contains, in row-major order: idle, walk A, walk B,
 and back view. Generated production frames are fitted to the existing 224x160
-Jão canvas using nearest-neighbour scaling.
+Jão canvas using nearest-neighbour scaling. Each pose matches the visible
+height of its equivalent base Jão frame. The elemental concepts are wider and
+shorter than the base sheet, so fitting them to the same width made their
+in-game silhouettes visibly smaller.
 """
 from pathlib import Path
 from PIL import Image
@@ -13,7 +16,10 @@ SHEETS = ROOT / "art" / "sheets"
 ASSETS = ROOT / "src" / "assets"
 ELEMENTS = ("earth", "water", "fire", "lightning", "light", "shadow")
 FRAME_SIZE = (224, 160)
-MAX_SPRITE = (106, 134)
+# Alpha-bounds of jao-armed, jao-walk1-armed, jao-walk2-armed and
+# jao-back-armed, respectively. Keep evolved silhouettes aligned to the
+# approved base model in every pose while preserving each concept's aspect.
+POSE_HEIGHTS = (134, 130, 130, 134)
 ANCHOR_X = 80
 BASELINE_Y = 150
 
@@ -29,11 +35,18 @@ def make_frame(atlas: Image.Image, cell: int) -> Image.Image:
     if bounds is None:
         raise ValueError(f"Empty sprite cell {cell}")
     frame = frame.crop(bounds)
-    frame.thumbnail(MAX_SPRITE, Image.Resampling.NEAREST)
+    target_height = POSE_HEIGHTS[cell]
+    target_width = round(frame.width * target_height / frame.height)
+    frame = frame.resize((target_width, target_height), Image.Resampling.NEAREST)
+    if target_width > FRAME_SIZE[0]:
+        raise ValueError(f"Sprite cell {cell} exceeds the gameplay canvas width: {target_width}")
     canvas = Image.new("RGBA", FRAME_SIZE, (0, 0, 0, 0))
     x = ANCHOR_X - frame.width // 2
     y = BASELINE_Y - frame.height
     canvas.alpha_composite(frame, (x, y))
+    visible = canvas.getchannel("A").getbbox()
+    if visible is None or visible[3] != BASELINE_Y or abs((visible[3] - visible[1]) - target_height) > 1:
+        raise ValueError(f"Sprite cell {cell} lost base scale or foot alignment: {visible}")
     return canvas
 
 

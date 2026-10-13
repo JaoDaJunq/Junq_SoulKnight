@@ -8,7 +8,7 @@ Planejamento de um jogo autoral 2D de ação, roguelite e tiro com visão superi
 
 **Arte dos heróis:** as [três pranchas aprovadas](docs/06-DIRECAO-VISUAL.md) orientam sprites novos de seleção, caminhada e ataque com as armas desenhadas junto ao corpo. A espada, o arco e as cartas não dependem mais de uma camada solta sobre o personagem. Os projéteis e a lógica de combate continuam os mesmos.
 
-Alice e Gui foram reajustados à proporção compacta do Jão nas poses de seleção, movimento e ataque. As matrizes ficam em `art/sheets/`; `python scripts/build_approved_sprites.py` regenera os PNGs com Pillow.
+Alice e Gui foram reajustados à proporção compacta do Jão nas poses de seleção, movimento e ataque. As seis formas elementais do Jão também usam agora a altura visível do sprite base em cada pose, com os pés alinhados; isso corrige a extração antiga, que limitava pela largura e deixava as formas baixas. As matrizes ficam em `art/sheets/`; `python scripts/build_approved_sprites.py` e `python scripts/build_jao_elemental_sprites.py` regeneram seus PNGs com Pillow.
 
 ## O jogo em uma frase
 
