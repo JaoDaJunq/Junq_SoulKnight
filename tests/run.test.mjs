@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { blocked } from '../src/core/arena.ts';
 import { FIRST_CHECKPOINT_WORLD, generateRun, parseRunSeed, STAGES_PER_WORLD } from '../src/core/run.ts';
 import { encounterFor, MONSTER_ROSTERS } from '../src/content/encounters.ts';
+import { biomeForRun, WORLD_BIOMES } from '../src/content/biomes.ts';
 
 test('seed de URL aceita inteiros uint32 e rejeita entradas inválidas', () => {
   assert.equal(parseRunSeed('0'), 0);
@@ -26,7 +27,7 @@ test('100 seeds têm três mundos de 1/5 a 5/5, recompensas alternadas e saída 
       assert.equal(room.kind === 'boss', stage === 5);
       assert.equal(room.neighbors.west, stage === 1 ? undefined : id - 1);
       assert.equal(room.neighbors.east, stage === 5 ? undefined : id + 1);
-      assert.equal(room.biome, ['atrium', 'grove', 'crypt'][world - 1]);
+      assert.equal(room.biome, biomeForRun(seed));
       assert.equal(blocked(480, 385, 15, room.obstacles), false);
       for (const [x, y] of [[89, 285], [871, 285], [480, 118], [480, 447]])
         assert.equal(blocked(x, y, 15, room.obstacles), false, `porta bloqueada: seed ${seed}, sala ${id}`);
@@ -45,21 +46,23 @@ test('100 seeds têm três mundos de 1/5 a 5/5, recompensas alternadas e saída 
   assert.ok(layouts.size > 1);
 });
 
-test('mundos 2 a 6 têm bioma e elenco próprios com 4 comuns, 2 elites e 2 chefes', () => {
-  const rooms = generateRun(42, 6);
-  assert.equal(rooms.length, 30);
-  const expected = ['grove', 'crypt', 'tide', 'crystal', 'eclipse'];
-  for (let world = 2; world <= 6; world++) {
-    const worldRooms = rooms.filter(room => room.world === world);
-    assert.ok(worldRooms.every(room => room.biome === expected[world - 2]));
-    const roster = MONSTER_ROSTERS[worldRooms[0].biome];
+test('a run chooses one map at its start and keeps its roster through continuous worlds', () => {
+  for (const seed of Array.from({ length: 100 }, (_, index) => index)) {
+    const rooms = generateRun(seed, 6);
+    const selectedMap = biomeForRun(seed);
+    assert.equal(rooms.length, 30);
+    assert.ok(rooms.every(room => room.biome === selectedMap));
+    const roster = MONSTER_ROSTERS[selectedMap];
     assert.equal(roster.normal.length, 4);
     assert.equal(roster.elite.length, 2);
     assert.equal(roster.bosses.length, 2);
-    assert.ok(worldRooms.some(room => encounterFor(room).some(enemy => enemy.variant)));
+    for (let world = 2; world <= 6; world++) {
+      const worldRooms = rooms.filter(room => room.world === world);
+      assert.ok(worldRooms.some(room => encounterFor(room).some(enemy => enemy.variant)));
+    }
   }
-  assert.equal(generateRun(42, 8)[34].biome, 'grove');
-  assert.equal(generateRun(42, 8)[39].biome, 'crypt');
+  assert.ok(new Set(Array.from({ length: 100 }, (_, seed) => biomeForRun(seed))).size > 1);
+  assert.deepEqual(WORLD_BIOMES.slice().sort(), ['crypt', 'crystal', 'eclipse', 'grove', 'tide']);
 });
 
 test('encontros são reproduzíveis pela seed e variam os monstros e o chefe', () => {
@@ -73,6 +76,6 @@ test('encontros são reproduzíveis pela seed e variam os monstros e o chefe', (
     bosses.add(encounterFor(rooms.find(room => room.world === 2 && room.stage === 5))[0].variant);
   }
   assert.ok(compositions.size > 1);
-  assert.equal(bosses.size, 2);
+  assert.ok(bosses.size > 1);
 });
 
