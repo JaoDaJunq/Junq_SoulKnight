@@ -28,6 +28,8 @@ O altar substitui o baú de armas no jogo atual. A pedra acesa no pedestal e os 
 - **Híbrida:** 3 Fogo/2 Raio soma o bônus de dano e alterna as cores dos ataques 3:2; **não** libera o corte de Raio 5. Misturas futuras podem gerar interações próprias após prototipagem e balanceamento. Nenhuma combinação dupla domina duas maestrias na run de cinco escolhas.
 - Um elemento já escolhido fica entre as três opções seguintes, permitindo seguir uma build concentrada até 5. As outras opções continuam variando com a seed. Escolher o mesmo elemento cinco vezes é sempre possível se o jogador visitar os cinco altares.
 
+As habilidades e a identidade visual das formas puras do Jão estão descritas em [09 · Sintonias e assets](09-JAO-SINTONIAS-E-ASSETS.md). As fusões não foram modificadas nesta entrega.
+
 ## Heróis nesta etapa
 
 | Herói | Equipamento inicial | Ataque com energia | Habilidade de seis segundos |

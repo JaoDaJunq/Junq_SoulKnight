@@ -4,6 +4,8 @@ import { createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAP
 import { activeSynergy, altarChoices, affinityDamageBonus, ELEMENTS, emptyAffinities, gainAffinity, hasPureMastery, totalAffinity } from '../src/core/affinities.ts';
 import { emptyEquipment, energyRegen, gearChoices, maxEnergy, maxHealth, maxShield } from '../src/core/equipment.ts';
 import { closestTarget } from '../src/core/targeting.ts';
+import { distanceToSegment } from '../src/core/geometry.ts';
+import { jaoMasteryFor, jaoFormTextureSuffix } from '../src/content/jaoMasteries.ts';
 
 test('altares oferecem três elementos distintos pela seed e mantêm um elemento já escolhido', () => {
   for (let seed = 0; seed < 100; seed++) {
@@ -65,6 +67,33 @@ test('híbrido 3 fogo + 2 raio causa dano acumulado sem domínio puro', () => {
   assert.equal(affinityDamageBonus(build), 2);
   assert.equal(hasPureMastery(build, 'lightning'), false);
   assert.equal(ELEMENTS.length, 7);
+});
+
+test('Jão recebe forma e habilidade próprias ao alcançar cinco pontos elementais', () => {
+  const expected = {
+    earth: ['FENDA', '-earth', 'fissure'],
+    water: ['MARÉ', '-water', 'wave'],
+    fire: ['BRASA', '-fire', 'burst'],
+    lightning: ['RAIO', '-lightning', 'blink'],
+    light: ['AURORA', '-light', 'ray'],
+    shadow: ['VÉU', '-shadow', 'echo'],
+  };
+  for (const [element, [button, suffix, effect]] of Object.entries(expected)) {
+    const affinities = { ...emptyAffinities(), [element]: 4 };
+    assert.equal(jaoMasteryFor(affinities), null);
+    affinities[element] = 5;
+    assert.equal(jaoMasteryFor(affinities)?.button, button);
+    assert.equal(jaoMasteryFor(affinities)?.effect, effect);
+    assert.equal(jaoFormTextureSuffix(affinities), suffix);
+  }
+  assert.equal(jaoMasteryFor(emptyAffinities()), null);
+});
+
+test('distância ao segmento inclui extremos e calcula a largura de cortes elementais', () => {
+  assert.equal(distanceToSegment(5, 4, 0, 0, 10, 0), 4);
+  assert.equal(distanceToSegment(10, 3, 0, 0, 10, 0), 3);
+  assert.equal(distanceToSegment(13, 0, 0, 0, 10, 0), 3, 'ponto depois da ponta mede até a ponta');
+  assert.equal(distanceToSegment(3, 4, 2, 2, 2, 2), Math.sqrt(5), 'segmento de tamanho zero vira ponto');
 });
 
 test('segurar o disparo esgota a energia, pausa e restaura sem ultrapassar o máximo', () => {

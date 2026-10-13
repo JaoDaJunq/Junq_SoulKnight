@@ -1,4 +1,4 @@
-# Handoff · 12/10/2026
+# Handoff · 13/10/2026
 
 ## Estado real
 
@@ -76,3 +76,12 @@ O MVP rejeitou a arma como camada sobreposta e aprovou as três pranchas em `doc
 ## Proporção compacta do trio (12/10/2026)
 
 O MVP observou que Alice e Gui tinham proporções mais altas que Jão. As matrizes `alice-chibi.webp` e `gui-chibi.webp` redesenham ambos com cabeça maior, tronco e pernas curtos, mantendo roupas, arco/cartas nas mãos e cinco poses integradas. `build_approved_sprites.py` extrai os dois passos laterais da mesma folha; a frente fica com 132 pixels de altura útil, perto dos 134 pixels de Jão. As matrizes anteriores permanecem apenas como histórico. `npm run typecheck`, `npm test` (três arquivos) e `npm run build` passaram; a build local gerou `assets/index-CftrHaiy.js`. O commit [`15a6f2c`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/15a6f2c0f43775279b18a0aeafe81559a1fa5e20) foi publicado por [Actions 38323487470](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38323487470) com sucesso. O Pages carregou esse mesmo bundle: seleção com as três silhuetas lado a lado e Alice na arena foram conferidas no Chrome desktop. Ainda falta retorno visual do MVP no celular horizontal e teste de movimento/ataque em partida mais longa.
+
+## Seis sintonias puras do Jão (13/10/2026)
+
+O MVP escolheu Ronin da Tempestade e aprovou a rodada seguinte com conceitos de Terra, Água, Fogo, Luz e Sombra. A integração adiciona transformação visual ao Jão ao chegar a nível 5 em Terra, Água, Fogo, Raio, Luz ou Sombra. Cada forma tem folha 2×2 própria, quatro PNGs de pose na escala 224×160, rótulo de habilidade e efeito de arena. Vento continua sem forma e as fusões existentes não mudaram.
+
+- Terra: Fenda Basáltica, corte de linha com lentidão; Água: Maré Ascendente, onda sinuosa com lentidão; Fogo: Corte da Brasa com explosão; Raio: Passo Fulminante, corte que atravessa e reposiciona atrás do alvo; Luz: Corte da Aurora, raio penetrante; Sombra: Corte do Véu, avanço à frente do alvo e eco atrasado.
+- Matrizes geradas ficam em art/sheets/jao-*-attunement.png. O script scripts/build_jao_elemental_sprites.py recria os sprites de jogo; os efeitos usam Phaser.Graphics.
+- Verificação local nesta rodada: npm run typecheck, npm test (3 arquivos, tudo passou) e npm run build passaram. O build usa assets com nomes de textura para os seis domínios. Aviso conhecido do bundle Phaser permanece.
+- O Pages não foi observado após essa mudança e não houve playtest de cada habilidade nem teste em Android físico. Próximo: acompanhar Actions/Pages após publicar, conferir aquisição de afinidade 5 e cada habilidade em uma run, depois ajustar força/legibilidade e detalhar os assets finais. T010 permanece aberto.

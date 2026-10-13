@@ -6,8 +6,10 @@ import { blocked, moveAroundObstacle, normalizedMovement, OBSTACLES, type Escape
 import { FIRST_CHECKPOINT_WORLD, generateRun, parseRunSeed, STAGES_PER_WORLD, type Direction, type Room } from '../core/run';
 import { createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS, type WeaponId } from '../core/weapons';
 import { closestTarget } from '../core/targeting';
-import { activeSynergy, altarChoices, affinityDamageBonus, ELEMENT, ELEMENTS, emptyAffinities, gainAffinity, hasPureMastery, primaryElement, totalAffinity,
+import { activeSynergy, altarChoices, affinityDamageBonus, ELEMENT, ELEMENTS, emptyAffinities, gainAffinity, primaryElement, totalAffinity,
   type Affinities, type ElementId } from '../core/affinities';
+import { distanceToSegment } from '../core/geometry';
+import { jaoFormTextureSuffix, jaoMasteryFor } from '../content/jaoMasteries';
 import { emptyEquipment, energyRegen, GEAR, gearChoices, GEAR_IDS, maxEnergy, maxHealth, maxShield, type Equipment, type GearId } from '../core/equipment';
 import openingArt from '../assets/abertura.webp';
 import selectionArt from '../assets/selecao.webp';
@@ -261,7 +263,8 @@ export class ArenaScene extends Phaser.Scene {
     this.facing = 'south';
     this.attackPose = 0;
     this.hero.add([shadow, this.heroSprite]);
-    this.skillLabel?.setText(this.selectedHero === 'jao' ? 'CORTE' : this.selectedHero === 'alice' ? 'FOCO' : 'IMPACTO');
+    const mastery = this.selectedHero === 'jao' ? jaoMasteryFor(this.affinities) : null;
+    this.skillLabel?.setText(mastery?.button ?? (this.selectedHero === 'jao' ? 'CORTE' : this.selectedHero === 'alice' ? 'FOCO' : 'IMPACTO'));
   }
 
   private animateHero(mx: number, my: number): void {
@@ -270,8 +273,9 @@ export class ArenaScene extends Phaser.Scene {
     const baseKey = !moving || this.facing === 'south' ? this.selectedHero
       : this.facing === 'north' ? `${this.selectedHero}-back`
       : `${this.selectedHero}-walk${Math.floor(this.elapsed * 8) % 2 + 1}`;
-    const form = this.selectedHero === 'jao' && activeSynergy(this.affinities) === 'plasma' ? '-plasma'
-      : this.selectedHero === 'jao' && hasPureMastery(this.affinities, 'fire') ? '-fire' : '';
+    const form = this.selectedHero === 'jao'
+      ? jaoFormTextureSuffix(this.affinities) || (activeSynergy(this.affinities) === 'plasma' ? '-plasma' : '')
+      : '';
     const key = this.attackPose > 0 && (this.facing === 'east' || this.facing === 'west')
       ? `${this.selectedHero}-attack${form}` : `${baseKey}${form}-armed`;
     if (this.heroSprite.texture.key !== key) {
@@ -549,6 +553,8 @@ export class ArenaScene extends Phaser.Scene {
     if (remaining === null) { this.drawEnergy(); return; }
     const dx = target.x - this.heroX, dy = target.y - this.heroY;
     const shots = createShots(this.weapon, dx, dy, affinityDamageBonus(this.affinities));
+    const mastery = this.selectedHero === 'jao' ? jaoMasteryFor(this.affinities) : null;
+    if (mastery && this.weapon === 'bolt') shots[0].color = mastery.color;
     const synergy = activeSynergy(this.affinities);
     if (synergy === 'plasma') for (const shot of shots) { shot.color = 0xffa3e5; shot.damage += 2; shot.vx *= 1.25; shot.vy *= 1.25; }
     if (synergy === 'mud') for (const shot of shots) { shot.color = 0x87aa63; shot.damage += 1; }
@@ -633,6 +639,16 @@ export class ArenaScene extends Phaser.Scene {
     this.tweens.add({ targets: trail, alpha: 0, scale: 2.2, duration: 220, onComplete: () => trail.destroy() });
   }
 
+  private showMasteryLine(points: Array<{ x: number; y: number }>, color: number, width: number, duration = 260): void {
+    const line = this.add.graphics().setDepth(12);
+    line.lineStyle(width, color, 0.92);
+    line.beginPath();
+    line.moveTo(points[0].x, points[0].y);
+    for (const point of points.slice(1)) line.lineTo(point.x, point.y);
+    line.strokePath();
+    this.tweens.add({ targets: line, alpha: 0, duration, onComplete: () => line.destroy() });
+  }
+
   private pulse(): void {
     if (this.state !== 'playing' || this.skillCooldown > 0) return;
     const bonus = affinityDamageBonus(this.affinities);
@@ -645,28 +661,87 @@ export class ArenaScene extends Phaser.Scene {
       this.skillCooldown = 6; this.soundscape.play('pulse');
       const oldX = this.heroX, oldY = this.heroY;
       const dx = target.x - oldX, dy = target.y - oldY, length = Math.max(1, Math.hypot(dx, dy));
-      const mastered = hasPureMastery(this.affinities, 'lightning');
-      const slash = this.add.graphics().setDepth(12);
-      slash.lineStyle(mastered || synergy ? 8 : 5, mastered ? ELEMENT.lightning.color : effectColor, 0.9);
-      slash.lineBetween(oldX, oldY, mastered ? target.x + dx / length * 43 : target.x, mastered ? target.y + dy / length * 43 : target.y);
-      this.tweens.add({ targets: slash, alpha: 0, duration: 260, onComplete: () => slash.destroy() });
-      if (mastered) {
-        const behindX = target.x + dx / length * 43, behindY = target.y + dy / length * 43;
-        if (!blocked(behindX, behindY, 15, this.rooms[this.currentRoom].obstacles)) {
-          this.heroX = behindX; this.heroY = behindY; this.hero.setPosition(behindX, behindY);
+      this.attackPose = 0.24;
+      this.facing = Math.abs(dy) > Math.abs(dx) * 1.7 ? dy < 0 ? 'north' : 'south' : dx < 0 ? 'west' : 'east';
+      this.animateHero(0, 0);
+      const mastery = jaoMasteryFor(this.affinities);
+      const color = mastery?.color ?? effectColor;
+      const end = { x: target.x + dx / length * 42, y: target.y + dy / length * 42 };
+      if (mastery?.effect === 'blink') {
+        this.showMasteryLine([{ x: oldX, y: oldY - 9 }, end], color, 12, 180);
+        if (!blocked(end.x, end.y, 15, this.rooms[this.currentRoom].obstacles)) {
+          this.heroX = end.x; this.heroY = end.y; this.hero.setPosition(end.x, end.y);
           this.dashTimer = 0.22;
         }
-      }
-      if (hasPureMastery(this.affinities, 'fire')) {
-        const blaze = this.add.circle(target.x, target.y, 12, 0xff9a36, 0.45).setStrokeStyle(5, 0xffdf75).setDepth(8);
-        this.tweens.add({ targets: blaze, radius: 72, alpha: 0, duration: 350, onComplete: () => blaze.destroy() });
+        this.damageEnemy(target, mastery.damage + bonus);
+      } else if (mastery?.effect === 'burst') {
+        this.showMasteryLine([
+          { x: oldX, y: oldY - 9 }, { x: target.x, y: target.y - 20 }, end,
+        ], color, 10, 190);
+        const blaze = this.add.circle(target.x, target.y, 14, 0xff7a32, 0.5).setStrokeStyle(5, 0xffdc75).setDepth(8);
+        this.tweens.add({ targets: blaze, radius: 74, alpha: 0, duration: 360, onComplete: () => blaze.destroy() });
         for (const nearby of [...this.enemies]) {
-          if (nearby === target || Math.hypot(nearby.x - target.x, nearby.y - target.y) > 72) continue;
-          this.damageEnemy(nearby, 2 + bonus);
+          if (Math.hypot(nearby.x - target.x, nearby.y - target.y) > 74) continue;
+          this.damageEnemy(nearby, nearby === target ? mastery.damage + bonus : 2 + bonus);
         }
+      } else if (mastery?.effect === 'fissure') {
+        this.showMasteryLine([{ x: oldX, y: oldY + 8 }, { x: target.x, y: target.y + 8 }], color, 22, 320);
+        this.showMasteryLine([
+          { x: target.x - dx / length * 10, y: target.y - dy / length * 10 },
+          { x: target.x + dx / length * 34 - dy / length * 23, y: target.y + dy / length * 34 + dx / length * 23 },
+        ], 0xdbc18e, 5, 330);
+        for (const nearby of [...this.enemies]) {
+          if (distanceToSegment(nearby.x, nearby.y, oldX, oldY, target.x, target.y) > 34) continue;
+          nearby.slowTimer = mastery.slow;
+          this.damageEnemy(nearby, mastery.damage + bonus);
+        }
+      } else if (mastery?.effect === 'wave') {
+        const points: Array<{ x: number; y: number }> = [];
+        for (let step = 0; step <= 16; step++) {
+          const t = step / 16;
+          const offset = Math.sin(t * Math.PI * 4) * 15;
+          points.push({ x: oldX + dx / length * length * t - dy / length * offset,
+            y: oldY + dy / length * length * t + dx / length * offset });
+        }
+        this.showMasteryLine(points, 0xe3f8ff, 20, 340);
+        this.showMasteryLine(points, color, 9, 340);
+        const ripple = this.add.circle(target.x, target.y, 18, color, 0.08).setStrokeStyle(4, color).setDepth(8);
+        this.tweens.add({ targets: ripple, radius: 77, alpha: 0, duration: 380, onComplete: () => ripple.destroy() });
+        for (const nearby of [...this.enemies]) {
+          if (distanceToSegment(nearby.x, nearby.y, oldX, oldY, target.x, target.y) > 58) continue;
+          nearby.slowTimer = mastery.slow;
+          this.damageEnemy(nearby, mastery.damage + bonus);
+        }
+      } else if (mastery?.effect === 'ray') {
+        const rayEnd = { x: target.x + dx / length * 180, y: target.y + dy / length * 180 };
+        this.showMasteryLine([{ x: oldX, y: oldY - 8 }, rayEnd], 0xfff7d6, 18, 260);
+        this.showMasteryLine([{ x: oldX, y: oldY - 8 }, rayEnd], color, 8, 300);
+        for (const nearby of [...this.enemies]) {
+          if (distanceToSegment(nearby.x, nearby.y, oldX, oldY, rayEnd.x, rayEnd.y) > 25) continue;
+          this.damageEnemy(nearby, mastery.damage + bonus);
+        }
+      } else if (mastery?.effect === 'echo') {
+        const flank = { x: target.x - dx / length * 43, y: target.y - dy / length * 43 };
+        this.showMasteryLine([{ x: oldX, y: oldY - 8 }, flank], 0x332139, 15, 320);
+        this.showMasteryLine([{ x: oldX, y: oldY - 8 }, flank], color, 5, 300);
+        if (!blocked(flank.x, flank.y, 15, this.rooms[this.currentRoom].obstacles)) {
+          this.heroX = flank.x; this.heroY = flank.y; this.hero.setPosition(flank.x, flank.y);
+          this.dashTimer = 0.16;
+        }
+        const afterimage = this.add.image(oldX, oldY - 19, 'jao-shadow-armed')
+          .setDisplaySize(55, 78).setOrigin(80 / 224, 0.5).setTint(color).setAlpha(0.65).setDepth(9);
+        this.tweens.add({ targets: afterimage, alpha: 0, duration: 300, onComplete: () => afterimage.destroy() });
+        this.damageEnemy(target, mastery.damage + bonus);
+        this.time.delayedCall(260, () => {
+          if (this.state !== 'playing' || !this.enemies.includes(target)) return;
+          this.showMasteryLine([{ x: target.x - 32, y: target.y - 15 }, { x: target.x + 32, y: target.y + 15 }], color, 8, 160);
+          this.damageEnemy(target, 2 + bonus);
+        });
+      } else {
+        this.showMasteryLine([{ x: oldX, y: oldY - 8 }, { x: target.x, y: target.y }], color, synergy ? 8 : 5);
+        if (synergy === 'mud') target.slowTimer = 3;
+        this.damageEnemy(target, (synergy === 'plasma' ? 5 : 2) + bonus);
       }
-      if (synergy === 'mud') target.slowTimer = 3;
-      this.damageEnemy(target, (mastered ? 5 : synergy === 'plasma' ? 5 : hasPureMastery(this.affinities, 'fire') ? 4 : 2) + bonus);
       this.refreshHud();
       return;
     }
@@ -776,9 +851,10 @@ export class ArenaScene extends Phaser.Scene {
       this.affinityHud[index].setColor(this.affinities[id] ? ELEMENT[id].css : '#8a7764');
     }
     const synergy = activeSynergy(this.affinities);
-    this.skillLabel.setText(synergy === 'plasma' ? 'PLASMA' : synergy === 'mud' ? 'LODO' : this.selectedHero === 'jao' ? 'CORTE' : this.selectedHero === 'alice' ? 'FOCO' : 'CARTAS');
+    const mastery = this.selectedHero === 'jao' ? jaoMasteryFor(this.affinities) : null;
+    this.skillLabel.setText(mastery?.button ?? (synergy === 'plasma' ? 'PLASMA' : synergy === 'mud' ? 'LODO' : this.selectedHero === 'jao' ? 'CORTE' : this.selectedHero === 'alice' ? 'FOCO' : 'CARTAS'));
     this.gearHud.setText(GEAR_IDS.map(id => `${GEAR[id].glyph}${this.equipment[id]}`).join('  ') + (synergy ? ` · ${synergy === 'plasma' ? 'PLASMA' : 'LODO'}`
-      : hasPureMastery(this.affinities, 'fire') ? ' · FOGO VIVO' : hasPureMastery(this.affinities, 'lightning') ? ' · RAIO 5' : ''));
+      : mastery ? ` · ${ELEMENT[mastery.element].name} 5` : ''));
     this.healButton.setVisible(this.state === 'playing' && this.cleared.has(this.currentRoom));
     this.healLabel.setVisible(this.healButton.visible);
     this.healButton.setAlpha(this.coins >= 3 && this.heroHp < maxHealth(this.equipment) ? 1 : 0.4);
