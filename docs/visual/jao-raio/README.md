@@ -1,6 +1,6 @@
 # Jão · Sintonia total de Raio · cinco explorações
 
-Pranchas conceituais para decisão do MVP, geradas em 12/10/2026 a partir do sprite jogável do Jão e da prancha aprovada da espada. **Nenhuma opção foi aprovada nem integrada à build.** Mantêm cabelo castanho desalinhado, óculos, jaqueta vinho com moletom claro, tênis vinho, espada de aço na mão e proporção compacta. As cenas de ataque ilustram a habilidade já prevista em Raio 5: mirar um inimigo e cortar até uma posição livre atrás dele. Não representam projétil novo nem alterações de dano/custo.
+Primeira rodada de exploração visual, agora **rejeitada pelo MVP** porque preservou demais o uniforme e a ideia original. Não foi integrada à build. A [segunda rodada](v2/README.md) muda de forma mais marcante a silhueta, a roupa e a espada.
 
 | Opção | Arquivo | Mudança na silhueta | Linguagem do Raio | Leitura em escala de jogo |
 | --- | --- | --- | --- | --- |

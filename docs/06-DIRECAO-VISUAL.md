@@ -6,7 +6,7 @@
 
 **Correção de proporção:** ao ver a build, o MVP apontou que Alice e Gui pareciam altos diante do Jão. As novas matrizes `alice-chibi.webp` e `gui-chibi.webp` usam cabeça maior, tronco e pernas mais curtos e mãos/calçados mais largos. As três silhuetas têm agora altura de frame semelhante; frente, caminhada, costas e ataque seguem a mesma régua. Esta revisão visual ainda aguarda retorno do MVP na tela do celular.
 
-**Exploração pendente de validação:** [cinco pranchas para a sintonia total de Raio do Jão](visual/jao-raio/README.md) com variações de roupa, espada e efeito do corte atravessado. Nenhuma está na build enquanto o conceito é escolhido.
+**Exploração pendente de validação:** a primeira rodada para a sintonia total de Raio foi rejeitada por preservar demais o uniforme. A [segunda rodada](visual/jao-raio/v2/README.md) transforma de forma mais clara roupa, silhueta e espada do Jão; ainda não foi aplicada na build.
 
 ## O que queremos sentir
 
