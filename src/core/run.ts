@@ -1,5 +1,5 @@
 import type { OBSTACLES } from './arena';
-import { biomeForWorld, type BiomeId } from '../content/biomes.ts';
+import { biomeForRun, type BiomeId } from '../content/biomes.ts';
 
 export type Direction = 'north' | 'east' | 'south' | 'west';
 export type RoomKind = 'start' | 'combat' | 'reward' | 'boss';
@@ -47,7 +47,7 @@ export function generateRun(seed: number, worlds = FIRST_CHECKPOINT_WORLD): Room
         },
         kind: stage === 5 ? 'boss' : stage === 1 && world === 1 ? 'start' : stage % 2 ? 'reward' : 'combat',
         reward: stage === 5 ? null : stage % 2 ? 'gear' : 'affinity',
-        biome: biomeForWorld(world),
+        biome: biomeForRun(seed),
       });
     }
   }
