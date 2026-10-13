@@ -1,5 +1,5 @@
 import type { OBSTACLES } from './arena';
-import type { BiomeId } from '../content/biomes';
+import { biomeForWorld, type BiomeId } from '../content/biomes.ts';
 
 export type Direction = 'north' | 'east' | 'south' | 'west';
 export type RoomKind = 'start' | 'combat' | 'reward' | 'boss';
@@ -15,6 +15,7 @@ export type Room = {
   kind: RoomKind;
   reward: RewardKind;
   biome: BiomeId;
+  encounterSeed: number;
 };
 
 export const STAGES_PER_WORLD = 5;
@@ -39,16 +40,17 @@ export function generateRun(seed: number, worlds = FIRST_CHECKPOINT_WORLD): Room
         ? [{ x: 296 + offset, y: 206, w: 72, h: 68 }, { x: 610 - offset, y: 326, w: 72, h: 68 }]
         : [{ x: 296 + offset, y: 326, w: 72, h: 68 }, { x: 610 - offset, y: 206, w: 72, h: 68 }];
       rooms.push({
-        id, world, stage, x: stage - 1, y: world - 1, obstacles,
+        id, world, stage, x: stage - 1, y: world - 1, obstacles, encounterSeed: value,
         neighbors: {
           ...(stage > 1 ? { west: id - 1 } : {}),
           ...(stage < STAGES_PER_WORLD ? { east: id + 1 } : {}),
         },
         kind: stage === 5 ? 'boss' : stage === 1 && world === 1 ? 'start' : stage % 2 ? 'reward' : 'combat',
         reward: stage === 5 ? null : stage % 2 ? 'gear' : 'affinity',
-        biome: world % 3 === 1 ? 'atrium' : world % 3 === 2 ? 'forge' : 'crypt',
+        biome: biomeForWorld(world),
       });
     }
   }
   return rooms;
 }
+
