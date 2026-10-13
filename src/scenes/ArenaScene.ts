@@ -3,6 +3,7 @@ import { Soundscape } from '../audio/Soundscape';
 import { BIOMES } from '../content/biomes';
 import { encounterFor, SPAWNS, type EnemyKind } from '../content/encounters';
 import { blocked, moveAroundObstacle, normalizedMovement, OBSTACLES, type EscapeStep } from '../core/arena';
+import { ADMIN_FORMS, adminAffinitiesFor, adminSpawnPoint, type AdminForm } from '../core/admin';
 import { FIRST_CHECKPOINT_WORLD, generateRun, parseRunSeed, STAGES_PER_WORLD, type Direction, type Room } from '../core/run';
 import { createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS, type WeaponId } from '../core/weapons';
 import { closestTarget } from '../core/targeting';
@@ -25,7 +26,7 @@ import cardOne from '../assets/projectile-card-1.png';
 import cardTwo from '../assets/projectile-card-2.png';
 import cardThree from '../assets/projectile-card-3.png';
 
-type State = 'menu' | 'selecting' | 'playing' | 'altar' | 'chest' | 'interlude' | 'paused' | 'dead' | 'cleared';
+type State = 'menu' | 'selecting' | 'playing' | 'altar' | 'chest' | 'interlude' | 'paused' | 'admin' | 'dead' | 'cleared';
 type HeroId = 'jao' | 'alice' | 'gui';
 const HEROES: { id: HeroId; name: string; description: string }[] = [
   { id: 'jao', name: 'JÃO', description: 'O explorador de jaqueta vinho' },
@@ -42,6 +43,10 @@ const H = 540;
 export class ArenaScene extends Phaser.Scene {
   private state: State = 'menu';
   private selectedHero: HeroId = 'jao';
+  private adminMode = false;
+  private adminForm: AdminForm = 'base';
+  private adminSpawnSequence = 0;
+  private adminMessage = '';
   private hero!: Phaser.GameObjects.Container;
   private heroSprite!: Phaser.GameObjects.Image;
   private attackPose = 0;
@@ -113,6 +118,7 @@ export class ArenaScene extends Phaser.Scene {
   private elapsed = 0;
   private soundscape = new Soundscape();
   private soundLabel!: Phaser.GameObjects.Text;
+  private adminOverlay: Phaser.GameObjects.GameObject[] = [];
 
   constructor() { super('Arena'); }
 
@@ -135,6 +141,7 @@ export class ArenaScene extends Phaser.Scene {
 
   create(): void {
     this.touchMode = navigator.maxTouchPoints > 0 || matchMedia('(pointer: coarse)').matches;
+    this.adminMode = new URLSearchParams(location.search).get('admin') === '1';
     this.drawRoom();
     this.createHero();
     const panels = this.add.graphics().setDepth(19);
@@ -167,6 +174,11 @@ export class ArenaScene extends Phaser.Scene {
     this.soundLabel = this.add.text(895, 67, 'SOM ●', { fontFamily: 'Georgia, serif', fontSize: '13px', color: '#ffe0a0', fontStyle: 'bold' })
       .setOrigin(0.5).setDepth(24);
     soundButton.on('pointerdown', () => this.toggleSound());
+    if (this.adminMode) {
+      this.add.rectangle(895, 111, 82, 30, 0x5e3c26).setStrokeStyle(2, 0xe4b96f).setDepth(23);
+      this.add.text(895, 111, 'ADM', { fontFamily: 'Georgia, serif', fontSize: '15px', color: '#ffe8af', fontStyle: 'bold' })
+        .setOrigin(0.5).setDepth(24);
+    }
 
     this.joyBase = this.add.circle(153, 399, 61, 0x503b29, 0.45).setStrokeStyle(3, 0xd3aa67, 0.75).setDepth(20);
     this.joyKnob = this.add.circle(153, 399, 25, 0xc69454, 0.7).setDepth(21);
@@ -372,6 +384,8 @@ export class ArenaScene extends Phaser.Scene {
       this.debugFps.setText(`FPS ${Math.round(this.game.loop.actualFps)}`);
       this.fpsTimer = 500;
     }
+    if (this.adminMode && this.consumeKey('F2') && (this.state === 'playing' || this.state === 'admin')) this.toggleAdminPanel();
+    if (this.state === 'admin') { this.pressedCodes.clear(); return; }
     const escape = this.consumeKey('Escape');
     if (Phaser.Input.Keyboard.JustDown(this.keys.ESC) || escape) this.togglePause();
     if (this.state !== 'playing') { this.pressedCodes.clear(); return; }
@@ -934,6 +948,120 @@ export class ArenaScene extends Phaser.Scene {
     } else if (this.state === 'paused') { this.clearOverlay(); this.state = 'playing'; }
   }
 
+  private toggleAdminPanel(): void {
+    if (!this.adminMode) return;
+    if (this.state === 'admin') {
+      this.clearAdminPanel();
+      this.state = 'playing';
+      this.refreshHud();
+      return;
+    }
+    if (this.state !== 'playing') return;
+    this.heldCodes.clear(); this.pressedCodes.clear();
+    this.mouseDown = false; this.firePointer = null; this.movePointer = null;
+    this.joyX = 0; this.joyY = 0; this.joyKnob.setPosition(153, 399);
+    this.state = 'admin';
+    this.showAdminPanel();
+  }
+
+  private showAdminPanel(): void {
+    this.clearAdminPanel();
+    const shade = this.add.rectangle(480, 270, W, H, 0x160e0b, 0.8).setDepth(60);
+    const card = this.add.graphics().setDepth(61);
+    card.fillStyle(0x332119, 0.98); card.fillRect(130, 52, 700, 436);
+    card.lineStyle(5, 0xc29455); card.strokeRect(130, 52, 700, 436);
+    card.lineStyle(2, 0xc5ad75, 0.8); card.lineBetween(174, 112, 786, 112);
+    const title = this.add.text(480, 82, 'PAINEL DE ADM', { fontFamily: 'Georgia, serif', fontSize: '31px', color: '#ffe4aa', fontStyle: 'bold' })
+      .setOrigin(0.5).setDepth(62);
+    const mastery = jaoMasteryFor(this.affinities);
+    const status = this.add.text(480, 137,
+      `${mastery?.form ?? 'JÃO BASE'} · ${totalAffinity(this.affinities)} fragmentos · ${this.enemies.length} inimigos · HP ${this.heroHp}/${maxHealth(this.equipment)} · ◈ ${Math.floor(this.energy)}`,
+      { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#f0d7b0', align: 'center' }).setOrigin(0.5).setDepth(62);
+    const formHeading = this.add.text(480, 164, 'ESCOLHER FORMA', { fontFamily: 'Georgia, serif', fontSize: '16px', color: '#e9bf79', fontStyle: 'bold' })
+      .setOrigin(0.5).setDepth(62);
+    this.adminOverlay.push(shade, card, title, status, formHeading);
+    for (const [index, form] of ADMIN_FORMS.entries()) {
+      const x = 190 + index * 96;
+      this.adminOverlay.push(...this.addAdminButton(x, 198, 88, form.label, () => this.applyAdminForm(form.id), this.adminForm === form.id));
+    }
+    const enemyHeading = this.add.text(480, 245, 'INVOCAR INIMIGO', { fontFamily: 'Georgia, serif', fontSize: '16px', color: '#e9bf79', fontStyle: 'bold' })
+      .setOrigin(0.5).setDepth(62);
+    this.adminOverlay.push(enemyHeading);
+    const enemies: { kind: EnemyKind; label: string }[] = [
+      { kind: 'chaser', label: 'DIABRETE' }, { kind: 'shooter', label: 'ATIRADOR' },
+      { kind: 'sentry', label: 'SENTINELA' }, { kind: 'brute', label: 'BRUTO' }, { kind: 'boss', label: 'CHEFE' },
+    ];
+    for (const [index, enemy] of enemies.entries()) {
+      const x = 204 + index * 138;
+      this.adminOverlay.push(...this.addAdminButton(x, 280, 126, enemy.label, () => this.spawnAdminEnemy(enemy.kind)));
+    }
+    const utilities = this.addAdminButton(365, 350, 210, 'RESTAURAR HP + ENERGIA', () => this.restoreAdminVitals());
+    this.adminOverlay.push(...utilities);
+    const close = this.addAdminButton(480, 435, 220, 'VOLTAR À RUN · F2', () => this.toggleAdminPanel());
+    this.adminOverlay.push(...close);
+    if (this.adminMessage) {
+      const message = this.add.text(480, 396, this.adminMessage, { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#ffe3aa' })
+        .setOrigin(0.5).setDepth(63);
+      this.adminOverlay.push(message);
+    }
+  }
+
+  private addAdminButton(x: number, y: number, width: number, label: string, action: () => void, selected = false): Phaser.GameObjects.GameObject[] {
+    const plate = this.add.rectangle(x, y, width, 42, selected ? 0x80542f : 0x573721)
+      .setStrokeStyle(selected ? 3 : 2, selected ? 0xffd47d : 0xc29455).setDepth(62).setInteractive({ useHandCursor: true });
+    const text = this.add.text(x, y, label, { fontFamily: 'Georgia, serif', fontSize: width < 100 ? '13px' : '14px',
+      color: '#fff0c2', fontStyle: 'bold', align: 'center', wordWrap: { width: width - 8 } }).setOrigin(0.5).setDepth(63);
+    plate.on('pointerdown', action);
+    return [plate, text];
+  }
+
+  private applyAdminForm(form: AdminForm): void {
+    this.adminForm = form;
+    this.selectedHero = 'jao';
+    this.weapon = 'bolt';
+    this.affinities = adminAffinitiesFor(form);
+    this.skillCooldown = 0;
+    this.setHeroArt();
+    this.animateHero(0, 0);
+    this.adminMessage = form === 'base' ? 'Jão voltou à forma base.' : `${jaoMasteryFor(this.affinities)?.form} pronto para testar.`;
+    this.refreshHud();
+    this.showAdminPanel();
+  }
+
+  private spawnAdminEnemy(kind: EnemyKind): void {
+    if (this.enemies.length >= 30) {
+      this.adminMessage = 'Limite de 30 inimigos atingido. Derrote alguns antes de invocar mais.';
+      this.showAdminPanel();
+      return;
+    }
+    const point = adminSpawnPoint(
+      { x: this.heroX, y: this.heroY }, kind, this.rooms[this.currentRoom].obstacles,
+      this.enemies.map(enemy => ({ x: enemy.x, y: enemy.y, kind: enemy.kind })), this.adminSpawnSequence,
+    );
+    if (!point) {
+      this.adminMessage = 'Sem espaço livre. Afaste-se e tente novamente.';
+      this.showAdminPanel();
+      return;
+    }
+    this.adminSpawnSequence++;
+    this.enemies.push(this.createEnemy(point.x, point.y, kind));
+    this.adminMessage = `${kind === 'boss' ? 'Chefe' : kind} invocado. ${this.enemies.length}/30 inimigos.`;
+    this.refreshHud();
+    this.showAdminPanel();
+  }
+
+  private restoreAdminVitals(): void {
+    this.heroHp = maxHealth(this.equipment);
+    this.heroShield = maxShield(this.equipment);
+    this.energy = maxEnergy(this.equipment);
+    this.hurtTimer = 0; this.shieldRecharge = 0; this.skillCooldown = 0;
+    this.adminMessage = 'Vida, escudo, energia e habilidade restaurados.';
+    this.refreshHud();
+    this.showAdminPanel();
+  }
+
+  private clearAdminPanel(): void { this.adminOverlay.forEach(item => item.destroy()); this.adminOverlay = []; }
+
   private pauseOnBlur(): void { if (this.state === 'playing') this.togglePause(); }
 
   private onNativeKeyDown = (event: KeyboardEvent): void => {
@@ -1027,6 +1155,9 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private onDown(pointer: Phaser.Input.Pointer): void {
+    if (this.adminMode && this.state === 'playing' && pointer.x > 845 && pointer.y >= 90 && pointer.y < 133) {
+      this.toggleAdminPanel(); return;
+    }
     if (this.state === 'playing' && pointer.x > 870 && pointer.y < 48) { this.togglePause(); return; }
     if (pointer.y < 90 && pointer.x > 850) return;
     if (pointer.y < 70) return;
