@@ -26,12 +26,19 @@ ANCHOR_X = 80
 BASELINE_Y = 150
 
 
-def make_frame(atlas: Image.Image, cell: int) -> Image.Image:
+def make_frame(atlas: Image.Image, cell: int, trim_lower_row_seam: bool = False) -> Image.Image:
     width, height = atlas.size
     x0, y0 = (cell % 2) * (width // 2), (cell // 2) * (height // 2)
     x1 = width if cell % 2 else width // 2
     y1 = height if cell // 2 else height // 2
     frame = atlas.crop((x0, y0, x1, y1)).convert("RGBA")
+    # The Terra concept sheet has a few opaque pixels bleeding across the
+    # horizontal divider from the top row. They are detached from the pose,
+    # but alpha-bounds would otherwise include them and shrink the whole frame.
+    if trim_lower_row_seam and cell >= 2:
+        alpha = frame.getchannel("A")
+        alpha.paste(0, (0, 0, frame.width, 16))
+        frame.putalpha(alpha)
     alpha = frame.getchannel("A").point(lambda value: 255 if value >= 32 else 0)
     bounds = alpha.getbbox()
     if bounds is None:
@@ -85,7 +92,7 @@ def main() -> None:
         atlas = Image.open(source).convert("RGBA")
         if atlas.width != atlas.height:
             raise ValueError(f"Expected square atlas: {source}")
-        frames = [make_frame(atlas, i) for i in range(4)]
+        frames = [make_frame(atlas, i, trim_lower_row_seam=element == "earth") for i in range(4)]
         names = (
             f"jao-{element}-armed.png",
             f"jao-walk1-{element}-armed.png",

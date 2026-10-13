@@ -51,6 +51,8 @@ export class ArenaScene extends Phaser.Scene {
   private heroSprite!: Phaser.GameObjects.Image;
   private attackPose = 0;
   private facing: 'north' | 'south' | 'east' | 'west' = 'south';
+  private heroMoveX = 0;
+  private heroMoveY = 0;
   private heroX = 480;
   private heroY = 385;
   private heroHp = 5;
@@ -287,14 +289,14 @@ export class ArenaScene extends Phaser.Scene {
 
   private animateHero(mx: number, my: number): void {
     const moving = Math.hypot(mx, my) > 0.15;
-    if (moving && this.attackPose <= 0) this.facing = Math.abs(mx) > Math.abs(my) ? mx > 0 ? 'east' : 'west' : my < 0 ? 'north' : 'south';
+    if (moving) this.facing = Math.abs(mx) > Math.abs(my) ? mx > 0 ? 'east' : 'west' : my < 0 ? 'north' : 'south';
     const baseKey = this.facing === 'south' ? this.selectedHero
       : this.facing === 'north' ? `${this.selectedHero}-back`
       : `${this.selectedHero}-walk${moving ? Math.floor(this.elapsed * 8) % 2 + 1 : 1}`;
     const form = this.selectedHero === 'jao'
       ? jaoFormTextureSuffix(this.affinities) || (activeSynergy(this.affinities) === 'plasma' ? '-plasma' : '')
       : '';
-    const key = this.attackPose > 0 && (this.facing === 'east' || this.facing === 'west')
+    const key = this.attackPose > 0 && !moving && (this.facing === 'east' || this.facing === 'west')
       ? `${this.selectedHero}-attack${form}` : `${baseKey}${form}-armed`;
     if (this.heroSprite.texture.key !== key) {
       this.heroSprite.setTexture(key);
@@ -425,6 +427,7 @@ export class ArenaScene extends Phaser.Scene {
     ({ x: mx, y: my } = normalizedMovement(mx, my));
     if (Math.hypot(mx, my) > 0.15) { this.lastMoveX = mx; this.lastMoveY = my; }
     if (this.dashTimer > 0) { mx = this.lastMoveX; my = this.lastMoveY; }
+    this.heroMoveX = mx; this.heroMoveY = my;
     if (this.tryDoor(mx, my)) return;
     const speed = this.dashTimer > 0 ? 520 : 205;
     const nextX = this.heroX + mx * speed * dt;
@@ -589,9 +592,11 @@ export class ArenaScene extends Phaser.Scene {
     this.drawEnergy();
     this.soundscape.play('shot');
     this.attackPose = 0.22;
-    this.facing = this.weapon === 'bolt' && Math.abs(dy) > Math.abs(dx) * 1.7
-      ? dy < 0 ? 'north' : 'south' : dx < 0 ? 'west' : 'east';
-    this.animateHero(0, 0);
+    if (Math.hypot(this.heroMoveX, this.heroMoveY) <= 0.15) {
+      this.facing = this.weapon === 'bolt' && Math.abs(dy) > Math.abs(dx) * 1.7
+        ? dy < 0 ? 'north' : 'south' : dx < 0 ? 'west' : 'east';
+    }
+    this.animateHero(this.heroMoveX, this.heroMoveY);
     if (this.weapon === 'bolt') {
       const angle = Math.atan2(dy, dx);
       for (const enemy of [...this.enemies]) {
