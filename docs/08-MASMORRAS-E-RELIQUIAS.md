@@ -2,7 +2,7 @@
 
 ## Contrato da primeira versão jogável
 
-A run começa em **mundo 1, fase 1/5**. Cada mundo tem cinco encontros em sequência. O chefe é sempre **5/5**. Vencê-lo abre a passagem para a próxima masmorra mantendo HP, escudo, energia, relíquias, moedas e afinidades. Os mundos 1, 2 e 3 usam respectivamente Átrio, Forja de Âmbar e Cripta das Velas. A Cripta usa provisoriamente a arte do Átrio com outra paleta; precisa de cenário próprio.
+A run sorteia **um mapa no início** entre Mata de Esporos, Cripta das Velas, Ruínas Afogadas, Cavernas de Cristal e Fenda do Eclipse. Esse mapa e seu elenco permanecem durante toda a expedição; a seed reproduz a escolha. A progressão segue contínua: cada mundo tem cinco encontros em sequência, o chefe é sempre **5/5**, e vencer abre a passagem para a próxima masmorra mantendo HP, escudo, energia, relíquias, moedas e afinidades. Depois do mundo 3, o jogador ainda pode encerrar a expedição ou continuar.
 
 | Fase de cada mundo | Recompensa depois do combate |
 | --- | --- |
@@ -12,7 +12,21 @@ A run começa em **mundo 1, fase 1/5**. Cada mundo tem cinco encontros em sequê
 | 4/5 | Altar: escolha um elemento entre três. |
 | 5/5 | Chefe. Após os mundos 1 e 2, passagem; ao terminar o 3, encerrar ou continuar. |
 
-O mapa das cinco etapas e os obstáculos variam por seed; o percurso dentro de cada mundo é linear nesta versão. No fim do mundo 3, o jogador decide encerrar a expedição com vitória ou seguir. Mundos seguintes repetem a estrutura de cinco fases e alternam as três paletas provisórias, sem novo conteúdo exclusivo. Isso é uma validação de loop, não um lançamento com mundos infinitos prontos.
+O mapa escolhido e os obstáculos variam por seed; o percurso dentro de cada mundo é linear nesta versão. No fim do mundo 3, o jogador decide encerrar a expedição com vitória ou seguir. Mundos 4 em diante usam a mesma estrutura e o mapa escolhido no início, com inimigos escalados pela dificuldade do mundo.
+
+## Biomas e encontros
+
+Cada prancha aprovada corresponde a um mapa selecionável e define quatro monstros comuns, dois elites e dois chefes. No início da run, a seed escolhe um dos cinco mapas; em salas comuns, escolhe monstros sem repetição dentro do grupo, e a fase 4 também traz um elite. Na fase 5, um dos dois chefes daquele mapa é escolhido pela seed, com padrão de ataque próprio. Assim, uma mesma seed reproduz mapa e encontros, enquanto runs diferentes variam o cenário e o elenco.
+
+| Mapa | Monstros comuns | Elites | Chefes |
+| --- | --- | --- | --- | --- |
+| Mata de Esporos | Bolinha de Esporos, Raiz Espinhosa, Besouro Musgoso, Diabrete de Cipó | Cervo de Casca, Bruxa Micelial | Colosso de Raízes, Rainha Micelial |
+| Cripta das Velas | Enxame de Crânios, Vulto de Mortalha, Cão de Ossos, Besouro-Caixão | Sentinela Tumular, Cantor das Covas | Rei Ossuário, Matriarca da Cripta |
+| Ruínas Afogadas | Caranguejo de Recife, Afogado de Algas, Peixe-Lanterna, Rastejante de Concha | Guardião de Coral, Oráculo Salino | Raia Abissal, Titã das Marés |
+| Cavernas de Cristal | Ácaro de Cristal, Mímico de Cascalho, Mariposa de Estilhaço, Larva Geódica | Sentinela Prismático, Fagulha Prismática | Escavador de Quartzo, Coração Geódico |
+| Fenda do Eclipse | Sombrio Faminto, Máscara Rachada, Tentáculo do Vazio, Fagulha Faminta | Cavaleiro do Eclipse, Tecelão Gravitacional | Devorador de Estrelas, Fera do Eclipse |
+
+Os encontros dos novos biomas reutilizam as cinco famílias de comportamento existentes (perseguidor, atirador, sentinela, resistente e chefe), com vida, velocidade, escala e cor definidas por criatura. Os dois chefes de cada mundo alternam entre padrões radiais, leques e rajadas direcionadas. A arte conceitual orienta os próximos sprites próprios; os retratos conceituais não são usados como textura de jogo.
 
 ## Baú de relíquias
 
@@ -45,3 +59,4 @@ As outras misturas continuam com o bônus híbrido de dano e cor alternada. Elas
 3. Seis altares até mundo 3, fase 4; Fogo 3 + Raio 3 ativar Plasma, Água 3 + Terra 3 ativar Lodo, e Fogo 5 manter seu domínio próprio.
 4. Gui lançar cartas com naipe, Alice flecha reconhecível, Jão cortar de perto sem projétil; armas visíveis nas mãos e ataque com mira automática e custo de energia.
 5. Seed repetir layout e ofertas. Verificar interface no Pages desktop; Android físico permanece validação do beta.
+

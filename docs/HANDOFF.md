@@ -134,3 +134,11 @@ Critérios: manter a direção chibi e armas incorporadas; deixar o ciclo de mov
 - Inspeção em contato dos seis ataques confirmou leitura coerente de roupa, silhueta, arma e efeito por forma. Ainda não houve inspeção dos golpes em execução no Pages nem teste físico no celular.
 
 Validação local: `npm run typecheck`, `npm test` (4 arquivos, 4 passaram) e `npm run build` passaram. Build gera os seis PNGs; permanece o aviso de bundle Phaser maior que 500 kB. PR [#3](https://github.com/JaoDaJunq/Junq_SoulKnight/pull/3) foi integrado no commit [`35cdd81`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/35cdd81abca52ce228cb0c297ace415469b9546d); [Actions 38417332377](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38417332377) concluiu o deploy com sucesso. O Pages foi aberto em `?admin=1`: seleção e arena carregaram, o painel ADM aplicou Raio 5 e a forma ficou visível no campo sem espada, com descarga na mão. O golpe básico lateral em combate e o ciclo de movimento ainda não foram observados no Pages; Android físico continua pendente. Próximo: testar golpes e quatro direções no Pages via ADM, depois testar celular horizontal; T010 segue aberto.
+
+## Mapas e elencos sorteados por run (13/10/2026)
+
+O MVP aprovou cinco concepts como mapas possíveis para a run. A seed escolhe um deles no início e o mantém durante a progressão contínua; não existe uma ordem fixa de biomas entre mundos. `src/content/encounters.ts` tem quatro monstros comuns, dois elites e dois chefes por mapa; a seed da sala escolhe os encontros e os chefes. Fase 4 inclui um elite. Os chefes recebem padrões de ataque em leque, anéis ou rajada direcionada, além de vida, velocidade, escala e tint próprios. As cinco fases por mundo e a escolha de encerrar/continuar após o mundo 3 permanecem.
+
+Após o ajuste para escolher um mapa por run, `node --experimental-strip-types --test tests/*.test.mjs` passou com quatro arquivos. A CI desta revisão ainda não apareceu no GitHub. A [PR #1](https://github.com/JaoDaJunq/Junq_SoulKnight/pull/1) está aberta para revisão; deploy e playtest visual ficam pendentes. Nenhum deploy ou teste em aparelho foi afirmado.
+
+
