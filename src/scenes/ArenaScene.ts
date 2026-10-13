@@ -290,14 +290,17 @@ export class ArenaScene extends Phaser.Scene {
   private animateHero(mx: number, my: number): void {
     const moving = Math.hypot(mx, my) > 0.15;
     if (moving) this.facing = Math.abs(mx) > Math.abs(my) ? mx > 0 ? 'east' : 'west' : my < 0 ? 'north' : 'south';
+    const walkFrame = Math.floor(this.elapsed * 8) % 2 + 1;
     const baseKey = this.facing === 'south' ? this.selectedHero
       : this.facing === 'north' ? `${this.selectedHero}-back`
-      : `${this.selectedHero}-walk${moving ? Math.floor(this.elapsed * 8) % 2 + 1 : 1}`;
+      : `${this.selectedHero}-walk${moving ? walkFrame : 1}`;
     const form = this.selectedHero === 'jao'
       ? jaoFormTextureSuffix(this.affinities) || (activeSynergy(this.affinities) === 'plasma' ? '-plasma' : '')
       : '';
+    const earthDownWalk = moving && this.facing === 'south' && this.selectedHero === 'jao' && form === '-earth'
+      ? `jao-walk-down${walkFrame}-earth-armed` : null;
     const key = this.attackPose > 0 && !moving && (this.facing === 'east' || this.facing === 'west')
-      ? `${this.selectedHero}-attack${form}` : `${baseKey}${form}-armed`;
+      ? `${this.selectedHero}-attack${form}` : earthDownWalk ?? `${baseKey}${form}-armed`;
     if (this.heroSprite.texture.key !== key) {
       this.heroSprite.setTexture(key);
       const frame = this.textures.get(key).get();

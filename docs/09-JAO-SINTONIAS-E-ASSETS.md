@@ -20,7 +20,7 @@ Todas as habilidades miram automaticamente o inimigo visível mais próximo, man
 | Entrega | Caminho e uso |
 | --- | --- |
 | Referência de roupa/arma/efeito | docs/visual/jao-elementos/v1/ contém as pranchas das cinco formas. |
-| Matrizes originais com poses | art/sheets/jao-{terra,agua,fogo,raio,luz,sombra}-attunement.png, cada uma em grade transparente 2×2: frente, passo A, passo B e costas. |
+| Matrizes originais com poses | Água/Fogo/Raio/Luz/Sombra em `art/sheets/jao-{agua,fogo,raio,luz,sombra}-attunement.png`, grade transparente 2×2. Terra tem prancha v2 em `art/sheets/jao-earth-attunement-v2.png`, grade transparente 3×2: frente parada, dois passos para baixo, dois passos laterais e costas. |
 | Sprites carregados pelo jogo | `src/assets/jao-{element}-armed.png`, `jao-walk1-{element}-armed.png`, `jao-walk2-{element}-armed.png`, `jao-back-{element}-armed.png` e `jao-attack-{element}.png`. Os seis PNGs de ataque agora usam poses próprias, alinhadas no canvas `224×160`; não reutilizam mais um passo de caminhada. |
 | Efeitos de habilidade | `src/assets/vfx-jao-*.png`: seis spritesheets originais, uma por forma, quatro quadros por folha e canal alfa. Phaser reproduz a animação a 12 quadros por segundo e orienta o efeito na direção do alvo. |
 | Pipeline reproduzível | python scripts/build_jao_elemental_sprites.py recorta as matrizes, reduz com vizinho mais próximo e alinha os PNGs no canvas 224×160 usado pelos outros frames. Requer Pillow. |
@@ -38,6 +38,8 @@ As novas matrizes e poses de ataque ficam em `art/sheets/*-v2.png`; `scripts/bui
 As capturas comparando o Jão base com Terra mostraram que a forma parecia menor. A causa estava na geração: as pranchas elementais têm personagens mais largos e baixos do que a prancha base, mas o script aplicava o mesmo limite de largura (`106 px`). Isso exportava corpos com aproximadamente `100 px` de altura útil, enquanto o base tem `134 px`. O Phaser já dimensionava o canvas inteiro pela mesma altura, então o espaço transparente não compensava a diferença.
 
 O pipeline agora dimensiona cada pose pela altura visível equivalente do base — `134/130/130/134 px` — preserva a proporção original com vizinho mais próximo e mantém os pés em `y=150`. A regra vale para Terra, Água, Fogo, Raio, Luz e Sombra, incluindo os frames usados no corte de ataque. A largura pode variar com a armadura, a espada e efeitos desenhados na prancha; a altura e a linha dos pés ficam consistentes. O próprio script falha se uma matriz sair fora dessa escala ou alinhamento.
+
+**Correção da animação da Terra (13/10/2026):** o conjunto anterior só tinha uma pose frontal parada, então mover para baixo repetia o mesmo desenho com balanço vertical. A prancha v2 acrescenta dois passos de frente, com cabeça, tronco e pés voltados para baixo, e mantém os dois passos laterais e a pose de costas. A cena alterna os novos frames frontais a 8 fps quando Jão/Terra anda para baixo; parado continua na pose frontal. As outras formas preservam suas pranchas atuais.
 
 Prévia lado a lado: [Jão base e seis formas na escala corrigida](visual/jao-formas-escalas-corrigidas.png).
 

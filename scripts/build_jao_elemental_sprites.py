@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build deterministic in-game Jão sprites from 2x2 transparent concept atlases.
+"""Build deterministic in-game Jão sprites from transparent concept atlases.
 
 Each source atlas contains, in row-major order: idle, walk A, walk B,
 and back view. Generated production frames are fitted to the existing 224x160
@@ -17,6 +17,7 @@ ASSETS = ROOT / "src" / "assets"
 ELEMENTS = ("earth", "water", "fire", "lightning", "light", "shadow")
 ATTACK_SHEETS = {element: SHEETS / f"jao-attack-{element}-v2.png" for element in ELEMENTS}
 LIGHTNING_SHEET = "jao-lightning-attunement-v2.png"
+EARTH_SHEET = "jao-earth-attunement-v2.png"
 FRAME_SIZE = (224, 160)
 # Alpha-bounds of jao-armed, jao-walk1-armed, jao-walk2-armed and
 # jao-back-armed, respectively. Keep evolved silhouettes aligned to the
@@ -26,25 +27,19 @@ ANCHOR_X = 80
 BASELINE_Y = 150
 
 
-def make_frame(atlas: Image.Image, cell: int, trim_lower_row_seam: bool = False) -> Image.Image:
+def make_frame(atlas: Image.Image, cell: int, columns: int = 2, target_height: int | None = None) -> Image.Image:
     width, height = atlas.size
-    x0, y0 = (cell % 2) * (width // 2), (cell // 2) * (height // 2)
-    x1 = width if cell % 2 else width // 2
-    y1 = height if cell // 2 else height // 2
+    cell_width, cell_height = width // columns, height // 2
+    x0, y0 = (cell % columns) * cell_width, (cell // columns) * cell_height
+    x1 = width if cell % columns == columns - 1 else x0 + cell_width
+    y1 = height if cell // columns == 1 else y0 + cell_height
     frame = atlas.crop((x0, y0, x1, y1)).convert("RGBA")
-    # The Terra concept sheet has a few opaque pixels bleeding across the
-    # horizontal divider from the top row. They are detached from the pose,
-    # but alpha-bounds would otherwise include them and shrink the whole frame.
-    if trim_lower_row_seam and cell >= 2:
-        alpha = frame.getchannel("A")
-        alpha.paste(0, (0, 0, frame.width, 16))
-        frame.putalpha(alpha)
     alpha = frame.getchannel("A").point(lambda value: 255 if value >= 32 else 0)
     bounds = alpha.getbbox()
     if bounds is None:
         raise ValueError(f"Empty sprite cell {cell}")
     frame = frame.crop(bounds)
-    target_height = POSE_HEIGHTS[cell]
+    target_height = target_height or POSE_HEIGHTS[cell % len(POSE_HEIGHTS)]
     target_width = round(frame.width * target_height / frame.height)
     frame = frame.resize((target_width, target_height), Image.Resampling.NEAREST)
     if target_width > FRAME_SIZE[0]:
@@ -87,18 +82,32 @@ def make_attack_frame(source: Path) -> Image.Image:
 
 def main() -> None:
     for element in ELEMENTS:
-        source_name = LIGHTNING_SHEET if element == "lightning" else f"jao-{element}-attunement.png"
+        source_name = EARTH_SHEET if element == "earth" else LIGHTNING_SHEET if element == "lightning" else f"jao-{element}-attunement.png"
         source = SHEETS / source_name
         atlas = Image.open(source).convert("RGBA")
-        if atlas.width != atlas.height:
-            raise ValueError(f"Expected square atlas: {source}")
-        frames = [make_frame(atlas, i, trim_lower_row_seam=element == "earth") for i in range(4)]
-        names = (
-            f"jao-{element}-armed.png",
-            f"jao-walk1-{element}-armed.png",
-            f"jao-walk2-{element}-armed.png",
-            f"jao-back-{element}-armed.png",
-        )
+        if element == "earth":
+            if atlas.width != atlas.height * 3 // 2:
+                raise ValueError(f"Expected a three-column, two-row Terra atlas: {source}")
+            poses = (
+                ("jao-earth-armed.png", 0, 134),
+                ("jao-walk-down1-earth-armed.png", 1, 130),
+                ("jao-walk-down2-earth-armed.png", 2, 130),
+                ("jao-walk1-earth-armed.png", 3, 130),
+                ("jao-walk2-earth-armed.png", 4, 130),
+                ("jao-back-earth-armed.png", 5, 134),
+            )
+            frames = [make_frame(atlas, cell, columns=3, target_height=pose_height) for _, cell, pose_height in poses]
+            names = tuple(name for name, _, _ in poses)
+        else:
+            if atlas.width != atlas.height:
+                raise ValueError(f"Expected square atlas: {source}")
+            frames = [make_frame(atlas, i) for i in range(4)]
+            names = (
+                f"jao-{element}-armed.png",
+                f"jao-walk1-{element}-armed.png",
+                f"jao-walk2-{element}-armed.png",
+                f"jao-back-{element}-armed.png",
+            )
         for name, frame in zip(names, frames):
             frame.save(ASSETS / name, optimize=True)
         attack = make_attack_frame(ATTACK_SHEETS[element])
