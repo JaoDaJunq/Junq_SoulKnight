@@ -1,10 +1,21 @@
 export type BiomeId = 'atrium' | 'forge' | 'crypt' | 'grove' | 'tide' | 'crystal' | 'eclipse';
 
-export const WORLD_BIOMES: readonly BiomeId[] = ['atrium', 'grove', 'crypt', 'tide', 'crystal', 'eclipse'];
+export const WORLD_BIOMES: readonly BiomeId[] = ['grove', 'crypt', 'tide', 'crystal', 'eclipse'];
 
-export function biomeForWorld(world: number): BiomeId {
-  if (world <= 1) return 'atrium';
-  return WORLD_BIOMES[1 + ((world - 2) % (WORLD_BIOMES.length - 1))];
+/** The run seed chooses one map, which stays active for the whole expedition. */
+export function biomeForRun(seed: number): BiomeId {
+  let state = seed >>> 0;
+  state = Math.imul(state ^ (state >>> 16), 0x7feb352d);
+  state = Math.imul(state ^ (state >>> 15), 0x846ca68b);
+  state = (state ^ (state >>> 16)) >>> 0;
+  if (state === 0) state = 0x9e3779b9;
+  const random = () => {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    return (state >>> 0) / 0x100000000;
+  };
+  return WORLD_BIOMES[Math.floor(random() * WORLD_BIOMES.length)];
 }
 
 export const BIOMES: Record<BiomeId, {
