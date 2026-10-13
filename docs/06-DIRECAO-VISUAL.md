@@ -6,6 +6,8 @@
 
 **Correção de proporção:** ao ver a build, o MVP apontou que Alice e Gui pareciam altos diante do Jão. As novas matrizes `alice-chibi.webp` e `gui-chibi.webp` usam cabeça maior, tronco e pernas mais curtos e mãos/calçados mais largos. As três silhuetas têm agora altura de frame semelhante; frente, caminhada, costas e ataque seguem a mesma régua. Esta revisão visual ainda aguarda retorno do MVP na tela do celular.
 
+**Exploração pendente de validação:** [cinco pranchas para a sintonia total de Raio do Jão](visual/jao-raio/README.md) com variações de roupa, espada e efeito do corte atravessado. Nenhuma está na build enquanto o conceito é escolhido.
+
 ## O que queremos sentir
 
 Três pessoas reais, Jão, Alice e Gui, entram numa masmorra fantástica e enfrentam salas curtas cheias de inimigos, altares e decisões de afinidade. O visual deve ser **pixel art nítida, expressiva e acolhedora**, com paredes de pedra, madeira, tochas, tapetes, baús e monstros inventados para este jogo. Os momentos de perigo continuam claros em uma tela de celular na horizontal.
