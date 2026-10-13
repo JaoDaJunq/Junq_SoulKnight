@@ -8,6 +8,8 @@
 
 **Exploração pendente de validação:** a primeira rodada para a sintonia total de Raio foi rejeitada por preservar demais o uniforme. A [segunda rodada](visual/jao-raio/v2/README.md) transforma de forma mais clara roupa, silhueta e espada do Jão; ainda não foi aplicada na build.
 
+**Base escolhida para as sintonias elementais:** o MVP gostou do conceito **Ronin da Tempestade**. As novas [pranchas de Terra, Água, Fogo, Luz e Sombra](visual/jao-elementos/v1/README.md) seguem essa silhueta e exploram a transformação completa de roupa, espada e efeitos. Continuam em validação conceitual e não foram integradas ao jogo.
+
 ## O que queremos sentir
 
 Três pessoas reais, Jão, Alice e Gui, entram numa masmorra fantástica e enfrentam salas curtas cheias de inimigos, altares e decisões de afinidade. O visual deve ser **pixel art nítida, expressiva e acolhedora**, com paredes de pedra, madeira, tochas, tapetes, baús e monstros inventados para este jogo. Os momentos de perigo continuam claros em uma tela de celular na horizontal.
