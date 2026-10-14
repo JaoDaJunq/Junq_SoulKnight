@@ -2,7 +2,7 @@
 
 ## Revisão global de direção e golpes · 14/10/2026
 
-O facing usa o deslocamento real após colisões, evitando que movimento diagonal bloqueado deixe o sprite olhando para outra direção. A pose lateral do golpe aparece durante caminhada; Alice e Gui fazem pose ao usar suas habilidades em área; o corte automático do Jão exibe a faixa de alcance. Typecheck, 17 testes e build passaram localmente. Ainda não houve inspeção visual desta versão em partida no Pages ou em celular horizontal; CI e deploy estão pendentes.
+O facing usa o deslocamento real após colisões, evitando que movimento diagonal bloqueado deixe o sprite olhando para outra direção. A pose lateral do golpe aparece durante caminhada; Alice e Gui fazem pose ao usar suas habilidades em área; o corte automático do Jão exibe a faixa de alcance. Typecheck, 17 testes e build passaram localmente. PR [#11](https://github.com/JaoDaJunq/Junq_SoulKnight/pull/11) integrado no commit [`56e6af7`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/56e6af76f33c35de867bb8278f2144c8a4a72c9b); CI e deploy [Actions 38498674726](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38498674726) passaram. O Pages atualizou; ainda não houve inspeção visual desta versão em partida nem teste em celular horizontal.
 
 ## Estado real
 
