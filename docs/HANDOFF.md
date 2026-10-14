@@ -2,7 +2,7 @@
 
 ## Estado real
 
-- **T010 · Cripta das Velas implementada localmente.** O fundo que reaproveitava o Átrio foi substituído por uma arte autoral 960×540. Critérios atendidos no asset: nichos funerários, velas, paleta violeta fria, quatro saídas e centro livre para combate; a cena seleciona a textura apenas nas salas do bioma `crypt`. Typecheck, 16 testes e build passaram localmente. A inspeção no jogo publicado e o deploy desta revisão ainda estão pendentes.
+- **T010 · Cripta das Velas publicada.** O fundo que reaproveitava o Átrio foi substituído por uma arte autoral 960×540. A cena seleciona a textura apenas no bioma `crypt`; nichos, velas, quatro saídas e centro livre foram conferidos no asset. PR [#9](https://github.com/JaoDaJunq/Junq_SoulKnight/pull/9) foi integrado no commit [`8c5423f`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/8c5423f4c3ad745ebf934ae99ee330a2398d0898); CI do PR e [deploy Actions 38496776450](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38496776450) passaram. Typecheck, 16 testes e build passaram localmente. Ainda falta inspecionar o fundo dentro da partida no Pages; o navegador desta sessão bloqueou essa URL e Android real segue pendente.
 
 - T001–T005: Phaser 3/TypeScript/Vite, CI e Pages ativo, combate base e seis salas conectadas por seed. Os testes do gerador cobrem 100 seeds, portas pareadas, spawn e acesso ao chefe.
 - T006 revisado: ataque básico FAÍSCA e duas armas extras com cadência, padrão e custo de energia próprios; moedas de inimigos e cura por três moedas. Duas salas de recompensa revelam baús depois do combate. Cada baú contém uma arma extra determinada pela seed; o jogador decide equipar ou manter a atual. Não há escolha de arma fora de baús. Moedas no chão persistem ao revisitar salas.
