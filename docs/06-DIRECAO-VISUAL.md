@@ -1,6 +1,6 @@
 # 06 · Direção visual · pixel art de aventura (v0.2)
 
-**Estado em 12/10/2026:** o MVP aprovou com entusiasmo esta direção. Os quatro mockups abaixo continuam sendo referências conceituais, não capturas da build. A primeira integração jogável produz assets próprios em `src/assets/`: abertura, taverna, salas do Átrio e da Forja e sprites estáticos do trio. Os inimigos são desenhos de pixels em código. O nome `Junq SoulKnight` permanece como nome de trabalho; `JUNQ: RUPTURA` foi descartado.
+**Estado em 14/10/2026:** o MVP aprovou esta direção. Os quatro mockups abaixo continuam sendo referências conceituais, não capturas da build. A integração jogável produz assets próprios em `src/assets/`: abertura, taverna, salas do Átrio, da Forja e da Cripta e sprites do trio. A Cripta das Velas tem agora uma arte de fundo exclusiva, em pedra violeta fria com nichos funerários e velas; a área central fica livre para o combate. Os inimigos são desenhos de pixels em código. O nome `Junq SoulKnight` permanece como nome de trabalho; `JUNQ: RUPTURA` foi descartado.
 
 **Armas integradas, revisão aprovada:** as três [pranchas do Jão](visual/jao-arma-aprovada.webp), [Alice](visual/alice-arma-aprovada.webp) e [Gui](visual/gui-arma-aprovada.webp) foram aprovadas pelo MVP após rejeitar as armas flutuando sobre os sprites. A arma agora faz parte da pose e do figurino: Jão empunha espada e leva bainha nas costas, Alice segura arco e carrega aljava, Gui segura cartas pequenas e usa estojo de couro. As folhas de origem ficam em `art/sheets/`; os PNGs reduzidos são gerados por `scripts/build_approved_sprites.py`. Os efeitos de ataque existentes foram preservados.
 
@@ -52,6 +52,7 @@ Sala jogável no centro; vida, defesa se existir e energia no canto superior esq
 | Personagens | Cabeça expressiva, corpo compacto, sombra curta e duas ou três marcas reconhecíveis da pessoa mesmo quando o sprite é pequeno. Não trocar cabelo/óculos/porte entre retrato e sprite. |
 | Átrio | Pedra azul-acinzentada, madeira gasta, tochas mais discretas, piso simples com decoração nas bordas. |
 | Forja | Pedra escura, ferro martelado, brasas âmbar, fuligem e braseros; projéteis inimigos com contorno/forma contrastantes contra o chão quente. |
+| Cripta das Velas | Pedra violeta fria, nichos funerários, velas nas paredes e wisps discretos nas bordas; centro aberto e quatro saídas legíveis. |
 | Inimigos | Monstros próprios com silhuetas distintas: perseguidor baixo, atirador fino, resistente largo e sentinela fixa. Barra de vida apenas quando ajuda a entender o encontro. |
 | Objetos | Baú com fecho visível e brilho contido; porta travada e aberta com formas diferentes; moeda, cura e saída não dependem só da cor. |
 | Interface | Molduras de madeira, pedra ou pergaminho; texto pixelado **legível** sem linhas longas durante a ação. Números reais da build substituem os mockups. |

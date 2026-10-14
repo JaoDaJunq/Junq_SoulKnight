@@ -1,8 +1,10 @@
 # 08 · Masmorras, relíquias e primeira sinergia
 
+**Cripta das Velas:** o terceiro mundo usa o fundo autoral `src/assets/sala-cripta.webp`, preparado no canvas de jogo 960×540. A arte tem nichos funerários, velas, névoa violeta discreta e saídas legíveis nos quatro lados, com o centro livre para combate. O asset foi conferido em imagem; encaixe visual no jogo ainda precisa de inspeção no Pages.
+
 ## Contrato da primeira versão jogável
 
-A run começa em **mundo 1, fase 1/5**. Cada mundo tem cinco encontros em sequência. O chefe é sempre **5/5**. Vencê-lo abre a passagem para a próxima masmorra mantendo HP, escudo, energia, relíquias, moedas e afinidades. Os mundos 1, 2 e 3 usam respectivamente Átrio, Forja de Âmbar e Cripta das Velas. A Cripta usa provisoriamente a arte do Átrio com outra paleta; precisa de cenário próprio.
+A run começa em **mundo 1, fase 1/5**. Cada mundo tem cinco encontros em sequência. O chefe é sempre **5/5**. Vencê-lo abre a passagem para a próxima masmorra mantendo HP, escudo, energia, relíquias, moedas e afinidades. Os mundos 1, 2 e 3 usam respectivamente Átrio, Forja de Âmbar e Cripta das Velas. A Cripta usa o fundo original `src/assets/sala-cripta.webp`, preparado no canvas 960×540 com nichos funerários, velas, névoa violeta discreta e saídas nos quatro lados. A imagem foi conferida como asset; encaixe em jogo ainda precisa de inspeção visual no Pages.
 
 | Fase de cada mundo | Recompensa depois do combate |
 | --- | --- |
