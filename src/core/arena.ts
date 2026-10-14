@@ -18,6 +18,13 @@ export function normalizedMovement(x: number, y: number): { x: number; y: number
   return length > 1 ? { x: x / length, y: y / length } : { x, y };
 }
 
+export type Facing = 'north' | 'south' | 'east' | 'west';
+
+export function facingFromMovement(x: number, y: number, deadZone = 0.15): Facing | null {
+  if (Math.hypot(x, y) <= deadZone) return null;
+  return Math.abs(x) > Math.abs(y) ? x > 0 ? 'east' : 'west' : y < 0 ? 'north' : 'south';
+}
+
 export type EscapeStep = { dx: number; dy: number; remaining: number };
 
 export function moveAroundObstacle(

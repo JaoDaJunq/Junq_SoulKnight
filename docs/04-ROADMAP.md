@@ -1,5 +1,7 @@
 # 04 · Etapas para concluir o jogo
 
+**T010 · revisão em execução:** o facing agora usa o deslocamento permitido após colisões; poses laterais de ataque aparecem durante movimento; Alice e Gui fazem pose ao usar suas habilidades em área; o golpe básico do Jão sinaliza a faixa do corte. Typecheck, 17 testes e build passaram localmente. CI/deploy e inspeção visual da partida seguem pendentes.
+
 Cada tarefa termina com commit/PR, teste no Pages quando houver interface, atualização deste documento e `docs/HANDOFF.md` contendo estado, decisões, evidência e próximo passo. Estimativas são de ordem e dependência, não promessa de datas. **T001–T008: aceitos para seguir pelo MVP. T009: implementação publicada; validação em aparelho adiada pelo MVP em 12/10/2026. T010: em execução.** T011–T015: pendentes.
 
 | ID | Entrega | Dependência | Aceite observável |
