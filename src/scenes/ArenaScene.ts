@@ -16,6 +16,7 @@ import openingArt from '../assets/abertura.webp';
 import selectionArt from '../assets/selecao.webp';
 import roomArt from '../assets/sala-atrio.webp';
 import forgeArt from '../assets/sala-forja.webp';
+import cryptArt from '../assets/sala-cripta.webp';
 import chaserArt from '../assets/enemy-chaser.png';
 import shooterArt from '../assets/enemy-shooter.png';
 import sentryArt from '../assets/enemy-sentry.png';
@@ -129,6 +130,7 @@ export class ArenaScene extends Phaser.Scene {
     this.load.image('selection', selectionArt);
     this.load.image('room-atrium', roomArt);
     this.load.image('room-forge', forgeArt);
+    this.load.image('room-crypt', cryptArt);
     for (const [key, url] of Object.entries({
       'enemy-chaser': chaserArt, 'enemy-shooter': shooterArt, 'enemy-sentry': sentryArt,
       'enemy-brute': bruteArt, 'enemy-boss': bossArt,
@@ -221,9 +223,10 @@ export class ArenaScene extends Phaser.Scene {
     this.roomArt.forEach(item => item.destroy());
     const room = this.rooms[this.currentRoom];
     const palette = BIOMES[room?.biome ?? 'atrium'];
-    const backdrop = this.add.image(480, 270, room?.biome === 'forge' ? 'room-forge' : 'room-atrium')
+    const roomTexture = room?.biome === 'forge' ? 'room-forge'
+      : room?.biome === 'crypt' ? 'room-crypt' : 'room-atrium';
+    const backdrop = this.add.image(480, 270, roomTexture)
       .setDisplaySize(W, H).setDepth(-2);
-    if (room?.biome === 'crypt') backdrop.setTint(0xb8a6d2);
     const g = this.add.graphics();
     for (const o of room?.obstacles ?? OBSTACLES) {
       g.fillStyle(0x130b0b, 0.7); g.fillRect(o.x + 6, o.y + 9, o.w, o.h);
