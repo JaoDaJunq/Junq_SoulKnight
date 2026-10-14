@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { Soundscape } from '../audio/Soundscape';
 import { BIOMES } from '../content/biomes';
 import { encounterFor, SPAWNS, type EnemyKind } from '../content/encounters';
-import { blocked, moveAroundObstacle, normalizedMovement, OBSTACLES, type EscapeStep } from '../core/arena';
+import { blocked, facingFromMovement, moveAroundObstacle, normalizedMovement, OBSTACLES, type EscapeStep } from '../core/arena';
 import { ADMIN_FORMS, adminAffinitiesFor, adminSpawnPoint, type AdminForm } from '../core/admin';
 import { FIRST_CHECKPOINT_WORLD, generateRun, parseRunSeed, STAGES_PER_WORLD, type Direction, type Room } from '../core/run';
 import { createShots, ENERGY_DELAY, MAX_ENERGY, restoreEnergy, spendEnergy, WEAPONS, type WeaponId } from '../core/weapons';
@@ -291,8 +291,9 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private animateHero(mx: number, my: number): void {
-    const moving = Math.hypot(mx, my) > 0.15;
-    if (moving) this.facing = Math.abs(mx) > Math.abs(my) ? mx > 0 ? 'east' : 'west' : my < 0 ? 'north' : 'south';
+    const direction = facingFromMovement(mx, my);
+    const moving = direction !== null;
+    if (direction) this.facing = direction;
     const walkFrame = Math.floor(this.elapsed * 8) % 2 + 1;
     const baseKey = this.facing === 'south' ? this.selectedHero
       : this.facing === 'north' ? `${this.selectedHero}-back`
@@ -302,7 +303,7 @@ export class ArenaScene extends Phaser.Scene {
       : '';
     const earthDownWalk = moving && this.facing === 'south' && this.selectedHero === 'jao' && form === '-earth'
       ? `jao-walk-down${walkFrame}-earth-armed` : null;
-    const key = this.attackPose > 0 && !moving && (this.facing === 'east' || this.facing === 'west')
+    const key = this.attackPose > 0 && (this.facing === 'east' || this.facing === 'west')
       ? `${this.selectedHero}-attack${form}` : earthDownWalk ?? `${baseKey}${form}-armed`;
     if (this.heroSprite.texture.key !== key) {
       this.heroSprite.setTexture(key);
@@ -436,13 +437,18 @@ export class ArenaScene extends Phaser.Scene {
     this.heroMoveX = mx; this.heroMoveY = my;
     if (this.tryDoor(mx, my)) return;
     const speed = this.dashTimer > 0 ? 520 : 205;
+    const previousX = this.heroX, previousY = this.heroY;
     const nextX = this.heroX + mx * speed * dt;
     const nextY = this.heroY + my * speed * dt;
     const obstacles = this.rooms[this.currentRoom].obstacles;
     if (!blocked(nextX, this.heroY, 15, obstacles)) this.heroX = nextX;
     if (!blocked(this.heroX, nextY, 15, obstacles)) this.heroY = nextY;
     this.hero.setPosition(this.heroX, this.heroY);
-    this.animateHero(mx, my);
+    const movedX = this.heroX - previousX, movedY = this.heroY - previousY;
+    const distanceMoved = Math.hypot(movedX, movedY);
+    this.heroMoveX = distanceMoved > 0 ? movedX / distanceMoved : 0;
+    this.heroMoveY = distanceMoved > 0 ? movedY / distanceMoved : 0;
+    this.animateHero(this.heroMoveX, this.heroMoveY);
     for (const coin of [...this.groundCoins]) {
       if (Math.hypot(this.heroX - coin.x, this.heroY - coin.y) >= 29) continue;
       coin.view.destroy(); this.groundCoins.splice(this.groundCoins.indexOf(coin), 1);
@@ -598,13 +604,13 @@ export class ArenaScene extends Phaser.Scene {
     this.drawEnergy();
     this.soundscape.play('shot');
     this.attackPose = 0.22;
-    if (Math.hypot(this.heroMoveX, this.heroMoveY) <= 0.15) {
-      this.facing = this.weapon === 'bolt' && Math.abs(dy) > Math.abs(dx) * 1.7
-        ? dy < 0 ? 'north' : 'south' : dx < 0 ? 'west' : 'east';
+    if (!facingFromMovement(this.heroMoveX, this.heroMoveY)) {
+      this.facing = facingFromMovement(dx, dy) ?? this.facing;
     }
     this.animateHero(this.heroMoveX, this.heroMoveY);
     if (this.weapon === 'bolt') {
       const angle = Math.atan2(dy, dx);
+      this.showSwordArc(this.heroX, this.heroY - 8, angle, shots[0].color, 104);
       for (const enemy of [...this.enemies]) {
         const reach = Math.hypot(enemy.x - this.heroX, enemy.y - this.heroY);
         const deviation = Math.atan2(Math.sin(Math.atan2(enemy.y - this.heroY, enemy.x - this.heroX) - angle),
@@ -730,7 +736,7 @@ export class ArenaScene extends Phaser.Scene {
       const dx = target.x - oldX, dy = target.y - oldY, length = Math.max(1, Math.hypot(dx, dy));
       const angle = Math.atan2(dy, dx);
       this.attackPose = 0.24;
-      this.facing = Math.abs(dy) > Math.abs(dx) * 1.7 ? dy < 0 ? 'north' : 'south' : dx < 0 ? 'west' : 'east';
+      this.facing = facingFromMovement(dx, dy) ?? this.facing;
       this.animateHero(0, 0);
       const mastery = jaoMasteryFor(this.affinities);
       const color = mastery?.color ?? effectColor;
@@ -800,6 +806,10 @@ export class ArenaScene extends Phaser.Scene {
     }
     this.skillCooldown = 6;
     this.soundscape.play('pulse');
+    const target = closestTarget({ x: this.heroX, y: this.heroY }, this.enemies, this.rooms[this.currentRoom].obstacles);
+    this.attackPose = 0.38;
+    if (target) this.facing = facingFromMovement(target.x - this.heroX, target.y - this.heroY) ?? this.facing;
+    this.animateHero(0, 0);
     const color = infusion || synergy ? effectColor : this.selectedHero === 'alice' ? 0xd9c191 : 0xc5a17b;
     const radius = this.selectedHero === 'alice' ? 170 : 135;
     if (this.selectedHero === 'alice') this.showArcherVolley(this.heroX, this.heroY, radius, color);

@@ -1,5 +1,9 @@
 # Handoff · 13/10/2026
 
+## Revisão global de direção e golpes · 14/10/2026
+
+O facing usa o deslocamento real após colisões, evitando que movimento diagonal bloqueado deixe o sprite olhando para outra direção. A pose lateral do golpe aparece durante caminhada; Alice e Gui fazem pose ao usar suas habilidades em área; o corte automático do Jão exibe a faixa de alcance. Typecheck, 17 testes e build passaram localmente. Ainda não houve inspeção visual desta versão em partida no Pages ou em celular horizontal; CI e deploy estão pendentes.
+
 ## Estado real
 
 - **T010 · Cripta das Velas publicada.** O fundo que reaproveitava o Átrio foi substituído por uma arte autoral 960×540. A cena seleciona a textura apenas no bioma `crypt`; nichos, velas, quatro saídas e centro livre foram conferidos no asset. PR [#9](https://github.com/JaoDaJunq/Junq_SoulKnight/pull/9) foi integrado no commit [`8c5423f`](https://github.com/JaoDaJunq/Junq_SoulKnight/commit/8c5423f4c3ad745ebf934ae99ee330a2398d0898); CI do PR e [deploy Actions 38496776450](https://github.com/JaoDaJunq/Junq_SoulKnight/actions/runs/38496776450) passaram. Typecheck, 16 testes e build passaram localmente. Ainda falta inspecionar o fundo dentro da partida no Pages; o navegador desta sessão bloqueou essa URL e Android real segue pendente.

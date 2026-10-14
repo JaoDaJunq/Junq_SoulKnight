@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { blocked, moveAroundObstacle, normalizedMovement } from '../src/core/arena.ts';
+import { blocked, facingFromMovement, moveAroundObstacle, normalizedMovement } from '../src/core/arena.ts';
 import { closestTarget } from '../src/core/targeting.ts';
 
 test('inimigo contorna a quina em vez de ficar bloqueado sem linha de tiro', () => {
@@ -24,6 +24,15 @@ test('movimento diagonal conserva a mesma velocidade máxima', () => {
   const move = normalizedMovement(1, 1);
   assert.ok(Math.abs(Math.hypot(move.x, move.y) - 1) < 1e-9);
   assert.deepEqual(normalizedMovement(0, 0), { x: 0, y: 0 });
+});
+
+test('facing segue o deslocamento real e preserva o rumo quando bloqueado', () => {
+  assert.equal(facingFromMovement(0, 0), null);
+  assert.equal(facingFromMovement(0.04, 0.04), null);
+  assert.equal(facingFromMovement(0.3, -0.2), 'east');
+  assert.equal(facingFromMovement(0, 1), 'south');
+  assert.equal(facingFromMovement(-1, 0), 'west');
+  assert.equal(facingFromMovement(0, -1), 'north');
 });
 
 test('jogador não atravessa parede ou quina de obstáculo', () => {
